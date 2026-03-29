@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
+import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -109,6 +110,9 @@ class _PlaybackTimeline extends ConsumerStatefulWidget {
 class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   bool _showDeviceFrame = true;
   bool _cleanPreview = false;
+  final GlobalKey _previewBoundaryKey = GlobalKey();
+  final ScreenshotExportService _screenshotExportService =
+      ScreenshotExportService();
 
   @override
   void initState() {
@@ -244,10 +248,12 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   children: [
                     FilledButton.icon(
                       key: const Key('exportScreenshotButton'),
-                      onPressed: () => _showExportNotice(
-                        context,
-                        mode: 'PNG screenshot',
-                      ),
+                      onPressed: sortedMessages.isEmpty
+                          ? null
+                          : () async => _exportScreenshot(
+                              project: project,
+                              scene: scene,
+                            ),
                       icon: const Icon(Icons.photo_camera_outlined),
                       label: const Text('Export Screenshot'),
                     ),
@@ -376,50 +382,53 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           ),
         ),
         const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Playback Timeline (read-only)',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Sprint 1 placeholder for message visibility over time.',
-                ),
-                const SizedBox(height: 12),
-                if (sortedMessages.isEmpty)
-                  const Text('No messages available for playback.')
-                else
-                  for (final message in sortedMessages) ...[
-                    if (_showTypingIndicator(
-                      message: message,
-                      currentSecond: playbackState.currentSecond,
-                    )) ...[
-                      _TypingIndicatorItem(
+        RepaintBoundary(
+          key: _previewBoundaryKey,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Playback Timeline (read-only)',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Sprint 1 placeholder for message visibility over time.',
+                  ),
+                  const SizedBox(height: 12),
+                  if (sortedMessages.isEmpty)
+                    const Text('No messages available for playback.')
+                  else
+                    for (final message in sortedMessages) ...[
+                      if (_showTypingIndicator(
+                        message: message,
+                        currentSecond: playbackState.currentSecond,
+                      )) ...[
+                        _TypingIndicatorItem(
+                          speakerName: _resolveSpeakerName(
+                            characterId: message.characterId,
+                            project: project,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      _TimelineItem(
+                        message: message,
                         speakerName: _resolveSpeakerName(
                           characterId: message.characterId,
                           project: project,
                         ),
+                        isVisibleAtCurrentTime:
+                            message.timestampSeconds <=
+                            playbackState.currentSecond,
                       ),
                       const SizedBox(height: 8),
                     ],
-                    _TimelineItem(
-                      message: message,
-                      speakerName: _resolveSpeakerName(
-                        characterId: message.characterId,
-                        project: project,
-                      ),
-                      isVisibleAtCurrentTime:
-                          message.timestampSeconds <=
-                          playbackState.currentSecond,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -457,6 +466,46 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           'Export placeholder: $mode with ${_showDeviceFrame ? 'device frame' : 'no frame'} and ${_cleanPreview ? 'clean' : 'full'} preview.',
         ),
       ),
+    );
+  }
+
+  Future<void> _exportScreenshot({
+    required Project project,
+    required Scene? scene,
+  }) async {
+    if (scene == null) {
+      _showSnackBar('Screenshot export failed: no scene selected.');
+      return;
+    }
+
+    final result = await _screenshotExportService.exportBoundaryAsPng(
+      boundaryKey: _previewBoundaryKey,
+      projectName: project.name,
+      sceneTitle: scene.title,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    if (result.isSuccess) {
+      _showSnackBar('Screenshot exported as ${result.filename}.');
+      return;
+    }
+
+    final failureLabel = switch (result.failure) {
+      ScreenshotExportFailure.missingBoundary => 'preview is not ready',
+      ScreenshotExportFailure.captureFailed => 'capture could not complete',
+      ScreenshotExportFailure.downloadUnavailable =>
+        'download is not available on this platform',
+      null => 'unknown error',
+    };
+
+    _showSnackBar('Screenshot export failed: $failureLabel.');
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 

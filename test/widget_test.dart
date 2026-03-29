@@ -827,7 +827,7 @@ void main() {
     },
   );
 
-  testWidgets('playback preview toggles affect export placeholder notice', (
+  testWidgets('playback preview toggles affect screenshot export feedback', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -852,10 +852,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(
-      find.textContaining('Export placeholder: PNG screenshot'),
+      find.textContaining(
+        'Screenshot export failed: capture could not complete.',
+      ),
       findsOneWidget,
     );
-    expect(find.textContaining('no frame and clean preview'), findsOneWidget);
   });
 }
 
