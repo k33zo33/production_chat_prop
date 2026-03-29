@@ -123,6 +123,53 @@ void main() {
     );
     expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
   });
+
+  testWidgets('add message in chat editor and see it in playback', (
+    tester,
+  ) async {
+    const newMessageText = 'Widget flow: newly added message';
+
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Message Text'),
+      newMessageText,
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Timestamp (seconds)'),
+      '15',
+    );
+    final addMessageButton = find.widgetWithText(FilledButton, 'Add Message');
+    await tester.ensureVisible(addMessageButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMessageButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(newMessageText), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back to Projects').first);
+    await tester.pumpAndSettle();
+
+    final openPlaybackButton = find.text('Open Playback');
+    await tester.ensureVisible(openPlaybackButton);
+    await tester.pumpAndSettle();
+    await tester.tap(openPlaybackButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Playback'), findsOneWidget);
+    expect(find.text(newMessageText), findsOneWidget);
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
