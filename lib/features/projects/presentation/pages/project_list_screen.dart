@@ -205,8 +205,6 @@ class _ProjectCard extends ConsumerWidget {
         );
       },
     );
-
-    controller.dispose();
     return result;
   }
 }

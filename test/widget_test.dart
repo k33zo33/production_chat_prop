@@ -72,6 +72,32 @@ void main() {
     expect(find.text('New Project 1 Copy'), findsNothing);
     expect(find.text('New Project 1'), findsOneWidget);
   });
+
+  testWidgets('rename project from popup menu', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('New Project 1'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Renamed Project');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Renamed Project'), findsOneWidget);
+    expect(find.text('New Project 1'), findsNothing);
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
