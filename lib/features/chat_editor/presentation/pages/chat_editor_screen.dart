@@ -174,29 +174,121 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     'Style: ${selectedScene.styleId} • Aspect: ${selectedScene.aspectRatio.name}',
                   ),
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final input = await _showSceneSettingsDialog(
-                        context,
-                        scene: selectedScene,
-                      );
-                      if (input == null) {
-                        return;
-                      }
-
-                      await ref
-                          .read(projectsControllerProvider.notifier)
-                          .updateSceneSettings(
-                            projectId: project.id,
-                            sceneId: selectedScene.id,
-                            title: input.title,
-                            styleId: input.styleId,
-                            aspectRatio: input.aspectRatio,
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () async {
+                          final sceneName = await _showSceneNameDialog(
+                            context,
+                            title: 'Add Scene',
+                            initialValue: 'Scene ${project.scenes.length + 1}',
                           );
-                    },
-                    icon: const Icon(Icons.tune_rounded),
-                    label: const Text('Edit Scene Settings'),
+                          if (sceneName == null) {
+                            return;
+                          }
+
+                          final addedSceneId = await ref
+                              .read(projectsControllerProvider.notifier)
+                              .addScene(
+                                projectId: project.id,
+                                title: sceneName,
+                              );
+                          if (addedSceneId != null) {
+                            onSceneSelected(addedSceneId);
+                          }
+                        },
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Add Scene'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final updatedName = await _showSceneNameDialog(
+                            context,
+                            title: 'Rename Scene',
+                            initialValue: selectedScene.title,
+                          );
+                          if (updatedName == null) {
+                            return;
+                          }
+
+                          await ref
+                              .read(projectsControllerProvider.notifier)
+                              .renameScene(
+                                projectId: project.id,
+                                sceneId: selectedScene.id,
+                                newTitle: updatedName,
+                              );
+                        },
+                        icon: const Icon(
+                          Icons.drive_file_rename_outline_rounded,
+                        ),
+                        label: const Text('Rename Scene'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: project.scenes.length <= 1
+                            ? null
+                            : () async {
+                                final confirmed = await _showDeleteSceneDialog(
+                                  context,
+                                  sceneTitle: selectedScene.title,
+                                );
+                                if (!confirmed) {
+                                  return;
+                                }
+
+                                final deleted = await ref
+                                    .read(projectsControllerProvider.notifier)
+                                    .deleteScene(
+                                      projectId: project.id,
+                                      sceneId: selectedScene.id,
+                                    );
+                                if (!deleted) {
+                                  return;
+                                }
+
+                                for (final scene in project.scenes) {
+                                  if (scene.id != selectedScene.id) {
+                                    onSceneSelected(scene.id);
+                                    break;
+                                  }
+                                }
+                              },
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        label: const Text('Delete Scene'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final input = await _showSceneSettingsDialog(
+                            context,
+                            scene: selectedScene,
+                          );
+                          if (input == null) {
+                            return;
+                          }
+
+                          await ref
+                              .read(projectsControllerProvider.notifier)
+                              .updateSceneSettings(
+                                projectId: project.id,
+                                sceneId: selectedScene.id,
+                                title: input.title,
+                                styleId: input.styleId,
+                                aspectRatio: input.aspectRatio,
+                              );
+                        },
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('Edit Scene Settings'),
+                      ),
+                    ],
                   ),
+                  if (project.scenes.length <= 1) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'At least one scene should remain in the project.',
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -285,6 +377,64 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
       }
     }
     return 'Unknown';
+  }
+
+  Future<String?> _showSceneNameDialog(
+    BuildContext context, {
+    required String title,
+    String? initialValue,
+  }) async {
+    final controller = TextEditingController(text: initialValue ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Scene Title'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    return result;
+  }
+
+  Future<bool> _showDeleteSceneDialog(
+    BuildContext context, {
+    required String sceneTitle,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Scene'),
+          content: Text('Delete "$sceneTitle"? This removes all its messages.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
   }
 
   Future<_SceneSettingsInput?> _showSceneSettingsDialog(

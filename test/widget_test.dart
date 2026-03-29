@@ -39,7 +39,7 @@ void main() {
 
     expect(find.text('Chat Editor'), findsOneWidget);
     expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
-    expect(find.text('Add Message'), findsWidgets);
+    expect(find.text('Add Message', skipOffstage: false), findsWidgets);
   });
 
   testWidgets('duplicate and delete project from popup menu', (tester) async {
@@ -140,6 +140,7 @@ void main() {
 
     await tester.tap(find.text('Open Chat Editor'));
     await tester.pumpAndSettle();
+    await _ensureMessageComposerVisible(tester);
 
     await tester.enterText(
       find.widgetWithText(TextField, 'Message Text'),
@@ -275,6 +276,54 @@ void main() {
     );
   });
 
+  testWidgets('scene add rename delete flow in chat editor', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Add Scene'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Scene Title'),
+      'Scene B',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Scene: Scene B'), findsOneWidget);
+    expect(find.text('Scenes: 2'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Rename Scene'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Scene Title'),
+      'Scene C',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Scene: Scene C'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete Scene'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
+    expect(find.text('Scenes: 1'), findsOneWidget);
+  });
+
   testWidgets('edit message updates timeline metadata in chat editor', (
     tester,
   ) async {
@@ -349,6 +398,7 @@ void main() {
 
     await tester.tap(find.text('Open Chat Editor'));
     await tester.pumpAndSettle();
+    await _ensureMessageComposerVisible(tester);
 
     await tester.enterText(
       find.widgetWithText(TextField, 'Message Text'),
@@ -371,6 +421,40 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('playback step controls update timecode and typing indicator', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('(00:00 / 00:09)'), findsOneWidget);
+
+    final plusOneButton = find.widgetWithText(FilledButton, '+1s');
+    await tester.tap(plusOneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(plusOneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(plusOneButton);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('t=3s / 9 s (00:03 / 00:09)'), findsOneWidget);
+    expect(find.text('Mia is typing...'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'End'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Status: finished'), findsOneWidget);
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
@@ -384,4 +468,12 @@ Future<void> _ensureOnProjectList(WidgetTester tester) async {
     await tester.tap(find.text('Back to Projects').first);
     await tester.pumpAndSettle();
   }
+}
+
+Future<void> _ensureMessageComposerVisible(WidgetTester tester) async {
+  final messageTextField = find
+      .widgetWithText(TextField, 'Message Text', skipOffstage: false)
+      .first;
+  await tester.ensureVisible(messageTextField);
+  await tester.pumpAndSettle();
 }

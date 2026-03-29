@@ -176,7 +176,8 @@ class _PlaybackTimeline extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Status: ${playbackState.status.name} • '
-                  't=${playbackState.currentSecond}s / $maxSecond s',
+                  't=${playbackState.currentSecond}s / $maxSecond s '
+                  '(${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)})',
                 ),
                 const SizedBox(height: 12),
                 Slider(
@@ -194,6 +195,16 @@ class _PlaybackTimeline extends ConsumerWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    FilledButton.tonalIcon(
+                      onPressed: maxSecond == 0
+                          ? null
+                          : () => playbackController.seekBy(
+                              delta: -1,
+                              maxSecond: maxSecond,
+                            ),
+                      icon: const Icon(Icons.replay_10_rounded),
+                      label: const Text('-1s'),
+                    ),
                     FilledButton.icon(
                       onPressed: maxSecond == 0
                           ? null
@@ -212,6 +223,25 @@ class _PlaybackTimeline extends ConsumerWidget {
                       onPressed: playbackController.restart,
                       icon: const Icon(Icons.restart_alt_rounded),
                       label: const Text('Restart'),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: maxSecond == 0
+                          ? null
+                          : () => playbackController.seekBy(
+                              delta: 1,
+                              maxSecond: maxSecond,
+                            ),
+                      icon: const Icon(Icons.forward_10_rounded),
+                      label: const Text('+1s'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: maxSecond == 0
+                          ? null
+                          : () => playbackController.jumpToEnd(
+                              maxSecond: maxSecond,
+                            ),
+                      icon: const Icon(Icons.skip_next_rounded),
+                      label: const Text('End'),
                     ),
                   ],
                 ),
@@ -239,6 +269,18 @@ class _PlaybackTimeline extends ConsumerWidget {
                   const Text('No messages available for playback.')
                 else
                   for (final message in sortedMessages) ...[
+                    if (_showTypingIndicator(
+                      message: message,
+                      currentSecond: playbackState.currentSecond,
+                    )) ...[
+                      _TypingIndicatorItem(
+                        speakerName: _resolveSpeakerName(
+                          characterId: message.characterId,
+                          project: project,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     _TimelineItem(
                       message: message,
                       speakerName: _resolveSpeakerName(
@@ -291,6 +333,46 @@ class _PlaybackTimeline extends ConsumerWidget {
       }
     }
     return 'Unknown';
+  }
+
+  bool _showTypingIndicator({
+    required Message message,
+    required int currentSecond,
+  }) {
+    if (!message.showTypingBefore) {
+      return false;
+    }
+    final typingSecond = message.timestampSeconds - 1;
+    if (typingSecond < 0) {
+      return false;
+    }
+    return currentSecond == typingSecond;
+  }
+
+  String _formatTimecode(int seconds) {
+    final safe = seconds < 0 ? 0 : seconds;
+    final minutes = (safe ~/ 60).toString().padLeft(2, '0');
+    final remainingSeconds = (safe % 60).toString().padLeft(2, '0');
+    return '$minutes:$remainingSeconds';
+  }
+}
+
+class _TypingIndicatorItem extends StatelessWidget {
+  const _TypingIndicatorItem({required this.speakerName});
+
+  final String speakerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text('$speakerName is typing...'),
+    );
   }
 }
 

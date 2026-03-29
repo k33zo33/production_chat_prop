@@ -580,6 +580,132 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<String?> addScene({
+    required String projectId,
+    String? title,
+  }) async {
+    final current = await future;
+    String? addedSceneId;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final nextSceneIndex = project.scenes.length + 1;
+          final scene = _buildEmptyScene(
+            title: title?.trim().isNotEmpty == true
+                ? title!.trim()
+                : 'Scene $nextSceneIndex',
+          );
+          addedSceneId = scene.id;
+          final updatedScenes = [...project.scenes, scene];
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+    return addedSceneId;
+  }
+
+  Future<void> renameScene({
+    required String projectId,
+    required String sceneId,
+    required String newTitle,
+  }) async {
+    final trimmedTitle = newTitle.trim();
+    if (trimmedTitle.isEmpty) {
+      return;
+    }
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                return Scene(
+                  id: scene.id,
+                  title: trimmedTitle,
+                  characters: scene.characters,
+                  messages: scene.messages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
+  Future<bool> deleteScene({
+    required String projectId,
+    required String sceneId,
+  }) async {
+    final current = await future;
+    var deleted = false;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+          if (project.scenes.length <= 1) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .where((scene) => scene.id != sceneId)
+              .toList(growable: false);
+          deleted = updatedScenes.length != project.scenes.length;
+          if (!deleted) {
+            return project;
+          }
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (!deleted) {
+      return false;
+    }
+
+    await _persist(next);
+    return true;
+  }
+
   Future<void> _persist(List<Project> projects) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -640,6 +766,32 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
           showTypingBefore: true,
         ),
       ],
+    );
+  }
+
+  Scene _buildEmptyScene({required String title}) {
+    final firstCharacterId = _uuid.v4();
+    final secondCharacterId = _uuid.v4();
+    return Scene(
+      id: _uuid.v4(),
+      title: title,
+      styleId: 'studio_slate',
+      aspectRatio: SceneAspectRatio.portrait9x16,
+      characters: [
+        Character(
+          id: firstCharacterId,
+          displayName: 'Alex',
+          avatarPath: null,
+          bubbleColor: '#2E90FA',
+        ),
+        Character(
+          id: secondCharacterId,
+          displayName: 'Mia',
+          avatarPath: null,
+          bubbleColor: '#12B76A',
+        ),
+      ],
+      messages: const [],
     );
   }
 }

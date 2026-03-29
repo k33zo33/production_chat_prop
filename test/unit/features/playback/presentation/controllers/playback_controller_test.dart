@@ -82,5 +82,45 @@ void main() {
       expect(state.currentSecond, 5);
       expect(state.status, PlaybackStatus.finished);
     });
+
+    test('scrub to zero sets idle status', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final provider = playbackControllerProvider('project-1');
+
+      container.read(provider.notifier).scrubTo(second: 0, maxSecond: 8);
+      final state = container.read(provider);
+
+      expect(state.currentSecond, 0);
+      expect(state.status, PlaybackStatus.idle);
+    });
+
+    test('seekBy moves current second and clamps by max', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final provider = playbackControllerProvider('project-1');
+
+      container.read(provider.notifier).seekBy(delta: 3, maxSecond: 5);
+      expect(container.read(provider).currentSecond, 3);
+      expect(container.read(provider).status, PlaybackStatus.paused);
+
+      container.read(provider.notifier).seekBy(delta: 10, maxSecond: 5);
+      expect(container.read(provider).currentSecond, 5);
+      expect(container.read(provider).status, PlaybackStatus.finished);
+    });
+
+    test('jumpToEnd and jumpToStart set terminal and reset states', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final provider = playbackControllerProvider('project-1');
+
+      container.read(provider.notifier).jumpToEnd(maxSecond: 6);
+      expect(container.read(provider).currentSecond, 6);
+      expect(container.read(provider).status, PlaybackStatus.finished);
+
+      container.read(provider.notifier).jumpToStart();
+      expect(container.read(provider).currentSecond, 0);
+      expect(container.read(provider).status, PlaybackStatus.idle);
+    });
   });
 }

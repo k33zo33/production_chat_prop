@@ -91,9 +91,35 @@ class PlaybackController extends Notifier<PlaybackState> {
     _disposeTimer();
     state = state.copyWith(
       currentSecond: clamped,
-      status: clamped >= maxSecond
+      status: clamped == 0
+          ? PlaybackStatus.idle
+          : clamped >= maxSecond
           ? PlaybackStatus.finished
           : PlaybackStatus.paused,
+    );
+  }
+
+  void seekBy({required int delta, required int maxSecond}) {
+    final target = state.currentSecond + delta;
+    scrubTo(second: target, maxSecond: maxSecond);
+  }
+
+  void jumpToStart() {
+    _disposeTimer();
+    state = const PlaybackState(
+      status: PlaybackStatus.idle,
+      currentSecond: 0,
+    );
+  }
+
+  void jumpToEnd({required int maxSecond}) {
+    if (maxSecond <= 0) {
+      return;
+    }
+    _disposeTimer();
+    state = state.copyWith(
+      status: PlaybackStatus.finished,
+      currentSecond: maxSecond,
     );
   }
 

@@ -237,6 +237,78 @@ void main() {
       expect(scene.styleId, 'editorial_light');
       expect(scene.aspectRatio, SceneAspectRatio.landscape16x9);
     });
+
+    test('addScene appends new scene with provided title', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final addedSceneId = await container
+          .read(projectsControllerProvider.notifier)
+          .addScene(projectId: 'p1', title: 'Scene Extra');
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final scenes = projects.first.scenes;
+
+      expect(addedSceneId, isNotNull);
+      expect(scenes, hasLength(2));
+      expect(scenes.last.title, 'Scene Extra');
+      expect(scenes.last.messages, isEmpty);
+    });
+
+    test('renameScene updates selected scene title', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .renameScene(
+            projectId: 'p1',
+            sceneId: 's1',
+            newTitle: 'Renamed Scene',
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      expect(projects.first.scenes.first.title, 'Renamed Scene');
+    });
+
+    test('deleteScene removes scene when there are multiple', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final notifier = container.read(projectsControllerProvider.notifier);
+      await notifier.addScene(projectId: 'p1', title: 'To Delete');
+      final withSecondScene = await container.read(
+        projectsControllerProvider.future,
+      );
+      final sceneToDelete = withSecondScene.first.scenes.last;
+
+      final deleted = await notifier.deleteScene(
+        projectId: 'p1',
+        sceneId: sceneToDelete.id,
+      );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      expect(deleted, isTrue);
+      expect(projects.first.scenes, hasLength(1));
+      expect(
+        projects.first.scenes.where((scene) => scene.id == sceneToDelete.id),
+        isEmpty,
+      );
+    });
+
+    test(
+      'deleteScene returns false when trying to remove last scene',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final deleted = await container
+            .read(projectsControllerProvider.notifier)
+            .deleteScene(projectId: 'p1', sceneId: 's1');
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        expect(deleted, isFalse);
+        expect(projects.first.scenes, hasLength(1));
+      },
+    );
   });
 }
 
