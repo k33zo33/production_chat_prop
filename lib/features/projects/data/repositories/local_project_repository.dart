@@ -10,7 +10,21 @@ class LocalProjectRepository implements ProjectRepository {
   @override
   Future<List<Project>> getAll() async {
     final jsonList = await _datasource.loadProjectsJson();
-    return jsonList.map(Project.fromJson).toList(growable: false);
+    final projects = <Project>[];
+    for (final projectJson in jsonList) {
+      try {
+        projects.add(Project.fromJson(projectJson));
+      } catch (error) {
+        final isRecoverableDataError =
+            error is FormatException || error is TypeError;
+        if (isRecoverableDataError) {
+          // Skip malformed persisted payloads and continue loading the rest.
+          continue;
+        }
+        rethrow;
+      }
+    }
+    return projects;
   }
 
   @override

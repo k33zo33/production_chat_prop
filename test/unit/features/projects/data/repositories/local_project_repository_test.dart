@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
@@ -36,6 +38,35 @@ void main() {
       expect(loaded.first.scenes.first.characters, hasLength(2));
       expect(loaded.first.scenes.first.messages, hasLength(2));
       expect(loaded.first.scenes.first.messages.first.text, 'Message one');
+    });
+
+    test(
+      'returns empty list when storage json is not a list payload',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('projects_v1', '{"invalid": true}');
+
+        final loaded = await repository.getAll();
+
+        expect(loaded, isEmpty);
+      },
+    );
+
+    test('skips malformed project entries and keeps valid ones', () async {
+      final project = _sampleProject();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'projects_v1',
+        jsonEncode([
+          {'id': 42},
+          project.toJson(),
+        ]),
+      );
+
+      final loaded = await repository.getAll();
+
+      expect(loaded, hasLength(1));
+      expect(loaded.first.id, project.id);
     });
   });
 }

@@ -14,10 +14,23 @@ class LocalProjectDatasource {
       return <Map<String, dynamic>>[];
     }
 
-    final decoded = jsonDecode(rawJson) as List<dynamic>;
-    return decoded
-        .map((item) => Map<String, dynamic>.from(item as Map))
-        .toList(growable: false);
+    try {
+      final decoded = jsonDecode(rawJson);
+      if (decoded is! List) {
+        return <Map<String, dynamic>>[];
+      }
+
+      final result = <Map<String, dynamic>>[];
+      for (final item in decoded) {
+        if (item is Map) {
+          result.add(Map<String, dynamic>.from(item));
+        }
+      }
+
+      return result;
+    } on FormatException {
+      return <Map<String, dynamic>>[];
+    }
   }
 
   Future<void> saveProjectsJson(List<Map<String, dynamic>> projectsJson) async {
