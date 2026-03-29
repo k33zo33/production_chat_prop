@@ -8,6 +8,7 @@ import 'package:production_chat_prop/features/playback/presentation/controllers/
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
+import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
 class PlaybackScreen extends ConsumerWidget {
   const PlaybackScreen({super.key, this.projectId});
@@ -244,6 +245,51 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                 Text(
                   'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'}',
                 ),
+                const SizedBox(height: 8),
+                if (scene != null) ...[
+                  Text(
+                    'Scene ratio: ${_aspectRatioLabel(scene.aspectRatio)}',
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
+                        key: const Key('aspectRatioPortraitChip'),
+                        label: const Text('9:16'),
+                        selected:
+                            scene.aspectRatio == SceneAspectRatio.portrait9x16,
+                        onSelected: (selected) async {
+                          if (!selected) {
+                            return;
+                          }
+                          await _setSceneAspectRatio(
+                            project: project,
+                            scene: scene,
+                            aspectRatio: SceneAspectRatio.portrait9x16,
+                          );
+                        },
+                      ),
+                      ChoiceChip(
+                        key: const Key('aspectRatioLandscapeChip'),
+                        label: const Text('16:9'),
+                        selected:
+                            scene.aspectRatio == SceneAspectRatio.landscape16x9,
+                        onSelected: (selected) async {
+                          if (!selected) {
+                            return;
+                          }
+                          await _setSceneAspectRatio(
+                            project: project,
+                            scene: scene,
+                            aspectRatio: SceneAspectRatio.landscape16x9,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -529,10 +575,37 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     _showSnackBar('Video export failed: $failureLabel.');
   }
 
+  Future<void> _setSceneAspectRatio({
+    required Project project,
+    required Scene scene,
+    required SceneAspectRatio aspectRatio,
+  }) async {
+    if (scene.aspectRatio == aspectRatio) {
+      return;
+    }
+
+    await ref
+        .read(projectsControllerProvider.notifier)
+        .updateSceneSettings(
+          projectId: project.id,
+          sceneId: scene.id,
+          title: scene.title,
+          styleId: scene.styleId,
+          aspectRatio: aspectRatio,
+        );
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  String _aspectRatioLabel(SceneAspectRatio value) {
+    return switch (value) {
+      SceneAspectRatio.portrait9x16 => '9:16',
+      SceneAspectRatio.landscape16x9 => '16:9',
+    };
   }
 
   String _resolveSpeakerName({

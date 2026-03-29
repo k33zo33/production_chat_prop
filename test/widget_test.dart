@@ -885,6 +885,36 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('playback aspect ratio chips update selected scene ratio', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Scene ratio: 9:16', skipOffstage: false),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('aspectRatioLandscapeChip')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Scene ratio: 16:9', skipOffstage: false),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
