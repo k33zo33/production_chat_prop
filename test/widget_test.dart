@@ -98,6 +98,32 @@ void main() {
     expect(find.text('Renamed Project'), findsOneWidget);
     expect(find.text('New Project 1'), findsNothing);
   });
+
+  testWidgets('create project and navigate to playback from project card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('New Project 1'), findsOneWidget);
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Playback'), findsOneWidget);
+    expect(
+      find.textContaining('Playback Timeline (read-only)'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
