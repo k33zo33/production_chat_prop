@@ -31,7 +31,10 @@ class Scene {
           )
           .toList(),
       messages: (json['messages'] as List<dynamic>)
-          .map((messageJson) => Message.fromJson(messageJson as Map<String, dynamic>))
+          .map(
+            (messageJson) =>
+                Message.fromJson(messageJson as Map<String, dynamic>),
+          )
           .toList(),
       styleId: json['styleId'] as String,
       aspectRatio: SceneAspectRatio.values.firstWhere(

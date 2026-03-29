@@ -24,7 +24,7 @@ class Message {
       id: json['id'] as String,
       characterId: json['characterId'] as String,
       text: json['text'] as String,
-      timestampSeconds: json['timestampSeconds'] as int,
+      timestampSeconds: (json['timestampSeconds'] as num).toInt(),
       status: MessageStatus.values.firstWhere(
         (value) => value.name == json['status'],
         orElse: () => MessageStatus.sent,
