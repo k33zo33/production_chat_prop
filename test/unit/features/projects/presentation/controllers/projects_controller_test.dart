@@ -378,6 +378,34 @@ void main() {
 
       expect(moved, isFalse);
     });
+
+    test('deleteMessagesByIds removes all selected messages', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final removed = await container
+          .read(projectsControllerProvider.notifier)
+          .deleteMessagesByIds(
+            projectId: 'p1',
+            sceneId: 's1',
+            messageIds: {'m1', 'm2'},
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      expect(removed, 2);
+      expect(projects.first.scenes.first.messages, isEmpty);
+    });
+
+    test('clearSceneMessages removes all scene messages', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final removed = await container
+          .read(projectsControllerProvider.notifier)
+          .clearSceneMessages(projectId: 'p1', sceneId: 's1');
+
+      final projects = await container.read(projectsControllerProvider.future);
+      expect(removed, 2);
+      expect(projects.first.scenes.first.messages, isEmpty);
+    });
   });
 }
 

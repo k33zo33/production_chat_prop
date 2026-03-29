@@ -833,6 +833,118 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return true;
   }
 
+  Future<int> deleteMessagesByIds({
+    required String projectId,
+    required String sceneId,
+    required Set<String> messageIds,
+  }) async {
+    if (messageIds.isEmpty) {
+      return 0;
+    }
+
+    final current = await future;
+    var removedCount = 0;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedMessages = scene.messages
+                    .where((message) {
+                      final shouldRemove = messageIds.contains(message.id);
+                      if (shouldRemove) {
+                        removedCount++;
+                      }
+                      return !shouldRemove;
+                    })
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: scene.characters,
+                  messages: updatedMessages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (removedCount == 0) {
+      return 0;
+    }
+
+    await _persist(next);
+    return removedCount;
+  }
+
+  Future<int> clearSceneMessages({
+    required String projectId,
+    required String sceneId,
+  }) async {
+    final current = await future;
+    var removedCount = 0;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                removedCount += scene.messages.length;
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: scene.characters,
+                  messages: const [],
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (removedCount == 0) {
+      return 0;
+    }
+
+    await _persist(next);
+    return removedCount;
+  }
+
   Future<void> _persist(List<Project> projects) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {

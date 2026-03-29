@@ -5,6 +5,7 @@ import 'package:production_chat_prop/features/chat_editor/presentation/controlle
 import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
+import 'package:production_chat_prop/features/projects/domain/scene.dart';
 
 class PlaybackScreen extends ConsumerWidget {
   const PlaybackScreen({super.key, this.projectId});
@@ -108,6 +109,26 @@ class _PlaybackTimeline extends ConsumerStatefulWidget {
 class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   bool _showDeviceFrame = true;
   bool _cleanPreview = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncPlaybackWithScene(
+        previousSceneId: null,
+        currentSceneId: widget.snapshot.scene?.id,
+      );
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlaybackTimeline oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncPlaybackWithScene(
+      previousSceneId: oldWidget.snapshot.scene?.id,
+      currentSceneId: widget.snapshot.scene?.id,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -442,6 +463,39 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final minutes = (safe ~/ 60).toString().padLeft(2, '0');
     final remainingSeconds = (safe % 60).toString().padLeft(2, '0');
     return '$minutes:$remainingSeconds';
+  }
+
+  int _maxSecondForScene(Scene? scene) {
+    if (scene == null || scene.messages.isEmpty) {
+      return 0;
+    }
+    final sortedMessages = [...scene.messages]
+      ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
+    return sortedMessages.last.timestampSeconds;
+  }
+
+  void _syncPlaybackWithScene({
+    required String? previousSceneId,
+    required String? currentSceneId,
+  }) {
+    final projectId = widget.snapshot.project.id;
+    final playbackController = ref.read(
+      playbackControllerProvider(projectId).notifier,
+    );
+    final playbackState = ref.read(playbackControllerProvider(projectId));
+    final newMaxSecond = _maxSecondForScene(widget.snapshot.scene);
+
+    if (previousSceneId != currentSceneId) {
+      playbackController.restart();
+      return;
+    }
+
+    if (playbackState.currentSecond > newMaxSecond) {
+      playbackController.scrubTo(
+        second: newMaxSecond,
+        maxSecond: newMaxSecond,
+      );
+    }
   }
 }
 

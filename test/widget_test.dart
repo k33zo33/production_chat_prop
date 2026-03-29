@@ -493,13 +493,99 @@ void main() {
     final beforeGreat = tester.getTopLeft(greatFinder).dy;
     expect(beforeGreat, greaterThan(beforeYes));
 
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded).last);
+    final moveUpButton = find.byIcon(Icons.arrow_upward_rounded).last;
+    await tester.ensureVisible(moveUpButton);
+    await tester.pumpAndSettle();
+    await tester.tap(moveUpButton);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
     final afterYes = tester.getTopLeft(yesFinder).dy;
     final afterGreat = tester.getTopLeft(greatFinder).dy;
     expect(afterGreat, lessThan(afterYes));
+  });
+
+  testWidgets('bulk select deletes multiple messages in chat editor', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('toggleMessageSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    final firstCheckbox = find.byType(Checkbox).at(0);
+    await tester.ensureVisible(firstCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(firstCheckbox);
+    await tester.pumpAndSettle();
+    final secondCheckbox = find.byType(Checkbox).at(1);
+    await tester.ensureVisible(secondCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(secondCheckbox);
+    await tester.pumpAndSettle();
+
+    final deleteSelectedButton = find.byKey(
+      const Key('deleteSelectedMessagesButton'),
+    );
+    await tester.ensureVisible(deleteSelectedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(deleteSelectedButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Deleted 2 selected messages.'), findsOneWidget);
+    expect(find.text('Ready for set in 10?'), findsNothing);
+    expect(find.text('Yes, prop phone is prepared.'), findsNothing);
+  });
+
+  testWidgets('clear scene chat removes all messages in editor', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('clearSceneMessagesButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Clear'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Cleared 3 messages from scene.'),
+      findsOneWidget,
+    );
+    expect(find.text('No messages in this scene yet.'), findsOneWidget);
   });
 
   testWidgets('playback step controls update timecode and typing indicator', (
@@ -549,6 +635,67 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'playback resets stale progress after scene messages are cleared',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await tester.tap(find.text('Open Playback'));
+      await tester.pumpAndSettle();
+
+      final plusOneButton = find.widgetWithText(FilledButton, '+1s');
+      await tester.ensureVisible(plusOneButton);
+      await tester.pumpAndSettle();
+      await tester.tap(plusOneButton);
+      await tester.pumpAndSettle();
+      await tester.tap(plusOneButton);
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('t=2s / 9 s', skipOffstage: false),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byTooltip('Back to Projects').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Chat Editor'));
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < 4; i++) {
+        await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('clearSceneMessagesButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Clear'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Back to Projects').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Playback'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Status: idle', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('t=0s / 0 s', skipOffstage: false),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('playback preview toggles affect export placeholder notice', (
     tester,

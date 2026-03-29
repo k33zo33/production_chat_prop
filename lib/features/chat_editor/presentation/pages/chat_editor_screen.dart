@@ -352,38 +352,12 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                 : selectedScene.messages.last.timestampSeconds,
           ),
           const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Messages (read-only)',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 12),
-                  if (selectedScene.messages.isEmpty)
-                    const Text('No messages in this scene yet.')
-                  else
-                    for (var i = 0; i < selectedScene.messages.length; i++) ...[
-                      _MessageRow(
-                        projectId: project.id,
-                        sceneId: selectedScene.id,
-                        message: selectedScene.messages[i],
-                        characters: selectedScene.characters,
-                        speakerName: _resolveSpeakerName(
-                          characterId: selectedScene.messages[i].characterId,
-                          sceneProject: project,
-                        ),
-                        canMoveEarlier: i > 0,
-                        canMoveLater: i < selectedScene.messages.length - 1,
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                ],
-              ),
-            ),
+          _MessageTimelineCard(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+            sceneMessages: selectedScene.messages,
+            sceneCharacters: selectedScene.characters,
+            sceneProject: project,
           ),
         ],
         const SizedBox(height: 12),
@@ -408,20 +382,6 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  String _resolveSpeakerName({
-    required String characterId,
-    required Project sceneProject,
-  }) {
-    for (final scene in sceneProject.scenes) {
-      for (final character in scene.characters) {
-        if (character.id == characterId) {
-          return character.displayName;
-        }
-      }
-    }
-    return 'Unknown';
   }
 
   Future<String?> _showSceneNameDialog(
@@ -590,6 +550,232 @@ class _SceneSettingsInput {
   final SceneAspectRatio aspectRatio;
 }
 
+class _MessageTimelineCard extends ConsumerStatefulWidget {
+  const _MessageTimelineCard({
+    required this.projectId,
+    required this.sceneId,
+    required this.sceneMessages,
+    required this.sceneCharacters,
+    required this.sceneProject,
+  });
+
+  final String projectId;
+  final String sceneId;
+  final List<Message> sceneMessages;
+  final List<Character> sceneCharacters;
+  final Project sceneProject;
+
+  @override
+  ConsumerState<_MessageTimelineCard> createState() =>
+      _MessageTimelineCardState();
+}
+
+class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
+  bool _selectionMode = false;
+  final Set<String> _selectedMessageIds = <String>{};
+
+  @override
+  void didUpdateWidget(covariant _MessageTimelineCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final availableIds = widget.sceneMessages
+        .map((message) => message.id)
+        .toSet();
+    _selectedMessageIds.removeWhere((id) => !availableIds.contains(id));
+    if (_selectedMessageIds.isEmpty && _selectionMode) {
+      _selectionMode = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Messages',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('toggleMessageSelectionModeButton'),
+                  onPressed: () {
+                    setState(() {
+                      _selectionMode = !_selectionMode;
+                      if (!_selectionMode) {
+                        _selectedMessageIds.clear();
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    _selectionMode
+                        ? Icons.check_box_rounded
+                        : Icons.check_box_outline_blank_rounded,
+                  ),
+                  label: Text(
+                    _selectionMode ? 'Selection On' : 'Select Multiple',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  key: const Key('clearSceneMessagesButton'),
+                  onPressed: widget.sceneMessages.isEmpty
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final confirmed = await _showClearMessagesDialog(
+                            context,
+                          );
+                          if (!confirmed) {
+                            return;
+                          }
+
+                          final removed = await ref
+                              .read(projectsControllerProvider.notifier)
+                              .clearSceneMessages(
+                                projectId: widget.projectId,
+                                sceneId: widget.sceneId,
+                              );
+                          if (!mounted) {
+                            return;
+                          }
+                          setState(() {
+                            _selectedMessageIds.clear();
+                            _selectionMode = false;
+                          });
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Cleared $removed messages from scene.',
+                              ),
+                            ),
+                          );
+                        },
+                  icon: const Icon(Icons.clear_all_rounded),
+                  label: const Text('Clear Scene Chat'),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('deleteSelectedMessagesButton'),
+                  onPressed: !_selectionMode || _selectedMessageIds.isEmpty
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final removed = await ref
+                              .read(projectsControllerProvider.notifier)
+                              .deleteMessagesByIds(
+                                projectId: widget.projectId,
+                                sceneId: widget.sceneId,
+                                messageIds: _selectedMessageIds,
+                              );
+                          if (!mounted) {
+                            return;
+                          }
+                          setState(() {
+                            _selectedMessageIds.clear();
+                            _selectionMode = false;
+                          });
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Deleted $removed selected messages.',
+                              ),
+                            ),
+                          );
+                        },
+                  icon: const Icon(Icons.delete_sweep_rounded),
+                  label: Text(
+                    'Delete Selected (${_selectedMessageIds.length})',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (widget.sceneMessages.isEmpty)
+              const Text('No messages in this scene yet.')
+            else
+              for (var i = 0; i < widget.sceneMessages.length; i++) ...[
+                _MessageRow(
+                  projectId: widget.projectId,
+                  sceneId: widget.sceneId,
+                  message: widget.sceneMessages[i],
+                  characters: widget.sceneCharacters,
+                  speakerName: _resolveSpeakerName(
+                    characterId: widget.sceneMessages[i].characterId,
+                    sceneProject: widget.sceneProject,
+                  ),
+                  canMoveEarlier: i > 0,
+                  canMoveLater: i < widget.sceneMessages.length - 1,
+                  selectionMode: _selectionMode,
+                  isSelected: _selectedMessageIds.contains(
+                    widget.sceneMessages[i].id,
+                  ),
+                  onSelectedChanged: (selected) {
+                    setState(() {
+                      if (selected) {
+                        _selectedMessageIds.add(widget.sceneMessages[i].id);
+                      } else {
+                        _selectedMessageIds.remove(widget.sceneMessages[i].id);
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _resolveSpeakerName({
+    required String characterId,
+    required Project sceneProject,
+  }) {
+    for (final scene in sceneProject.scenes) {
+      for (final character in scene.characters) {
+        if (character.id == characterId) {
+          return character.displayName;
+        }
+      }
+    }
+    return 'Unknown';
+  }
+
+  Future<bool> _showClearMessagesDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Clear Scene Messages'),
+          content: const Text('Delete all messages in this scene?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Clear'),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+}
+
 class _MessageRow extends StatelessWidget {
   const _MessageRow({
     required this.projectId,
@@ -599,6 +785,9 @@ class _MessageRow extends StatelessWidget {
     required this.speakerName,
     required this.canMoveEarlier,
     required this.canMoveLater,
+    required this.selectionMode,
+    required this.isSelected,
+    required this.onSelectedChanged,
   });
 
   final String projectId;
@@ -608,6 +797,9 @@ class _MessageRow extends StatelessWidget {
   final String speakerName;
   final bool canMoveEarlier;
   final bool canMoveLater;
+  final bool selectionMode;
+  final bool isSelected;
+  final ValueChanged<bool> onSelectedChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -631,6 +823,11 @@ class _MessageRow extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelMedium,
                 ),
               ),
+              if (selectionMode)
+                Checkbox(
+                  value: isSelected,
+                  onChanged: (value) => onSelectedChanged(value ?? false),
+                ),
               _MessageActions(
                 projectId: projectId,
                 sceneId: sceneId,
@@ -638,6 +835,7 @@ class _MessageRow extends StatelessWidget {
                 characters: characters,
                 canMoveEarlier: canMoveEarlier,
                 canMoveLater: canMoveLater,
+                selectionMode: selectionMode,
               ),
             ],
           ),
@@ -855,6 +1053,7 @@ class _MessageActions extends ConsumerWidget {
     required this.characters,
     required this.canMoveEarlier,
     required this.canMoveLater,
+    required this.selectionMode,
   });
 
   final String projectId;
@@ -863,9 +1062,14 @@ class _MessageActions extends ConsumerWidget {
   final List<Character> characters;
   final bool canMoveEarlier;
   final bool canMoveLater;
+  final bool selectionMode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (selectionMode) {
+      return const SizedBox.shrink();
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
