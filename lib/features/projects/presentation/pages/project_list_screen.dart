@@ -154,7 +154,10 @@ class _ProjectCard extends ConsumerWidget {
               runSpacing: 8,
               children: [
                 FilledButton.icon(
-                  onPressed: () => context.goNamed('editor'),
+                  onPressed: () => context.goNamed(
+                    'editorProject',
+                    pathParameters: {'projectId': project.id},
+                  ),
                   icon: const Icon(Icons.edit_note_rounded),
                   label: const Text('Open Chat Editor'),
                 ),
