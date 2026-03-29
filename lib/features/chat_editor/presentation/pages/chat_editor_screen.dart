@@ -107,6 +107,9 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final project = snapshot.project;
     final selectedScene = snapshot.scene;
+    final selectedSceneIndex = selectedScene == null
+        ? -1
+        : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -227,6 +230,46 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                         label: const Text('Rename Scene'),
                       ),
                       OutlinedButton.icon(
+                        key: const Key('moveSceneUpButton'),
+                        onPressed: selectedSceneIndex <= 0
+                            ? null
+                            : () async {
+                                final moved = await ref
+                                    .read(projectsControllerProvider.notifier)
+                                    .moveScene(
+                                      projectId: project.id,
+                                      sceneId: selectedScene.id,
+                                      direction: -1,
+                                    );
+                                if (moved) {
+                                  onSceneSelected(selectedScene.id);
+                                }
+                              },
+                        icon: const Icon(Icons.keyboard_arrow_up_rounded),
+                        label: const Text('Move Scene Up'),
+                      ),
+                      OutlinedButton.icon(
+                        key: const Key('moveSceneDownButton'),
+                        onPressed:
+                            selectedSceneIndex < 0 ||
+                                selectedSceneIndex >= project.scenes.length - 1
+                            ? null
+                            : () async {
+                                final moved = await ref
+                                    .read(projectsControllerProvider.notifier)
+                                    .moveScene(
+                                      projectId: project.id,
+                                      sceneId: selectedScene.id,
+                                      direction: 1,
+                                    );
+                                if (moved) {
+                                  onSceneSelected(selectedScene.id);
+                                }
+                              },
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                        label: const Text('Move Scene Down'),
+                      ),
+                      OutlinedButton.icon(
                         onPressed: project.scenes.length <= 1
                             ? null
                             : () async {
@@ -323,16 +366,18 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                   if (selectedScene.messages.isEmpty)
                     const Text('No messages in this scene yet.')
                   else
-                    for (final message in selectedScene.messages) ...[
+                    for (var i = 0; i < selectedScene.messages.length; i++) ...[
                       _MessageRow(
                         projectId: project.id,
                         sceneId: selectedScene.id,
-                        message: message,
+                        message: selectedScene.messages[i],
                         characters: selectedScene.characters,
                         speakerName: _resolveSpeakerName(
-                          characterId: message.characterId,
+                          characterId: selectedScene.messages[i].characterId,
                           sceneProject: project,
                         ),
+                        canMoveEarlier: i > 0,
+                        canMoveLater: i < selectedScene.messages.length - 1,
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -552,6 +597,8 @@ class _MessageRow extends StatelessWidget {
     required this.message,
     required this.characters,
     required this.speakerName,
+    required this.canMoveEarlier,
+    required this.canMoveLater,
   });
 
   final String projectId;
@@ -559,6 +606,8 @@ class _MessageRow extends StatelessWidget {
   final Message message;
   final List<Character> characters;
   final String speakerName;
+  final bool canMoveEarlier;
+  final bool canMoveLater;
 
   @override
   Widget build(BuildContext context) {
@@ -587,6 +636,8 @@ class _MessageRow extends StatelessWidget {
                 sceneId: sceneId,
                 message: message,
                 characters: characters,
+                canMoveEarlier: canMoveEarlier,
+                canMoveLater: canMoveLater,
               ),
             ],
           ),
@@ -802,74 +853,114 @@ class _MessageActions extends ConsumerWidget {
     required this.sceneId,
     required this.message,
     required this.characters,
+    required this.canMoveEarlier,
+    required this.canMoveLater,
   });
 
   final String projectId;
   final String sceneId;
   final Message message;
   final List<Character> characters;
+  final bool canMoveEarlier;
+  final bool canMoveLater;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return PopupMenuButton<_MessageAction>(
-      onSelected: (action) async {
-        switch (action) {
-          case _MessageAction.editMessage:
-            final updatedMessage = await _showEditMessageDialog(
-              context,
-              message: message,
-            );
-            if (updatedMessage == null) {
-              return;
-            }
-
-            if (updatedMessage.timestampSeconds < message.timestampSeconds &&
-                context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Warning: timestamp goes backward for this message.',
-                  ),
-                ),
-              );
-            }
-
-            await ref
-                .read(projectsControllerProvider.notifier)
-                .updateMessage(
-                  projectId: projectId,
-                  sceneId: sceneId,
-                  messageId: message.id,
-                  characterId: updatedMessage.characterId,
-                  text: updatedMessage.text,
-                  timestampSeconds: updatedMessage.timestampSeconds,
-                  status: updatedMessage.status,
-                  isIncoming: updatedMessage.isIncoming,
-                  showTypingBefore: updatedMessage.showTypingBefore,
-                );
-            return;
-          case _MessageAction.delete:
-            await ref
-                .read(projectsControllerProvider.notifier)
-                .deleteMessage(
-                  projectId: projectId,
-                  sceneId: sceneId,
-                  messageId: message.id,
-                );
-            return;
-        }
-      },
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: _MessageAction.editMessage,
-          child: Text('Edit Message'),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          key: Key('moveMessageUp_${message.id}'),
+          tooltip: 'Move Message Up',
+          onPressed: !canMoveEarlier
+              ? null
+              : () => ref
+                    .read(projectsControllerProvider.notifier)
+                    .moveMessageInOrder(
+                      projectId: projectId,
+                      sceneId: sceneId,
+                      messageId: message.id,
+                      direction: -1,
+                    ),
+          icon: const Icon(Icons.arrow_upward_rounded),
         ),
-        PopupMenuItem(
-          value: _MessageAction.delete,
-          child: Text('Delete'),
+        IconButton(
+          key: Key('moveMessageDown_${message.id}'),
+          tooltip: 'Move Message Down',
+          onPressed: !canMoveLater
+              ? null
+              : () => ref
+                    .read(projectsControllerProvider.notifier)
+                    .moveMessageInOrder(
+                      projectId: projectId,
+                      sceneId: sceneId,
+                      messageId: message.id,
+                      direction: 1,
+                    ),
+          icon: const Icon(Icons.arrow_downward_rounded),
+        ),
+        PopupMenuButton<_MessageAction>(
+          onSelected: (action) async {
+            switch (action) {
+              case _MessageAction.editMessage:
+                final updatedMessage = await _showEditMessageDialog(
+                  context,
+                  message: message,
+                );
+                if (updatedMessage == null) {
+                  return;
+                }
+
+                if (updatedMessage.timestampSeconds <
+                        message.timestampSeconds &&
+                    context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Warning: timestamp goes backward for this message.',
+                      ),
+                    ),
+                  );
+                }
+
+                await ref
+                    .read(projectsControllerProvider.notifier)
+                    .updateMessage(
+                      projectId: projectId,
+                      sceneId: sceneId,
+                      messageId: message.id,
+                      characterId: updatedMessage.characterId,
+                      text: updatedMessage.text,
+                      timestampSeconds: updatedMessage.timestampSeconds,
+                      status: updatedMessage.status,
+                      isIncoming: updatedMessage.isIncoming,
+                      showTypingBefore: updatedMessage.showTypingBefore,
+                    );
+                return;
+              case _MessageAction.delete:
+                await ref
+                    .read(projectsControllerProvider.notifier)
+                    .deleteMessage(
+                      projectId: projectId,
+                      sceneId: sceneId,
+                      messageId: message.id,
+                    );
+                return;
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: _MessageAction.editMessage,
+              child: Text('Edit Message'),
+            ),
+            PopupMenuItem(
+              value: _MessageAction.delete,
+              child: Text('Delete'),
+            ),
+          ],
+          icon: const Icon(Icons.more_horiz_rounded),
         ),
       ],
-      icon: const Icon(Icons.more_horiz_rounded),
     );
   }
 

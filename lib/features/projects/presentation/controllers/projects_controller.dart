@@ -706,6 +706,133 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return true;
   }
 
+  Future<bool> moveScene({
+    required String projectId,
+    required String sceneId,
+    required int direction,
+  }) async {
+    if (direction != -1 && direction != 1) {
+      return false;
+    }
+
+    final current = await future;
+    var moved = false;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final scenes = [...project.scenes];
+          final fromIndex = scenes.indexWhere((scene) => scene.id == sceneId);
+          if (fromIndex < 0) {
+            return project;
+          }
+
+          final toIndex = fromIndex + direction;
+          if (toIndex < 0 || toIndex >= scenes.length) {
+            return project;
+          }
+
+          final picked = scenes.removeAt(fromIndex);
+          scenes.insert(toIndex, picked);
+          moved = true;
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: scenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (!moved) {
+      return false;
+    }
+
+    await _persist(next);
+    return true;
+  }
+
+  Future<bool> moveMessageInOrder({
+    required String projectId,
+    required String sceneId,
+    required String messageId,
+    required int direction,
+  }) async {
+    if (direction != -1 && direction != 1) {
+      return false;
+    }
+
+    final current = await future;
+    var moved = false;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final orderedMessages = [...scene.messages]
+                  ..sort(
+                    (a, b) => a.timestampSeconds != b.timestampSeconds
+                        ? a.timestampSeconds.compareTo(b.timestampSeconds)
+                        : a.id.compareTo(b.id),
+                  );
+                final fromIndex = orderedMessages.indexWhere(
+                  (message) => message.id == messageId,
+                );
+                if (fromIndex < 0) {
+                  return scene;
+                }
+
+                final toIndex = fromIndex + direction;
+                if (toIndex < 0 || toIndex >= orderedMessages.length) {
+                  return scene;
+                }
+
+                final movedMessage = orderedMessages.removeAt(fromIndex);
+                orderedMessages.insert(toIndex, movedMessage);
+                moved = true;
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: scene.characters,
+                  messages: _reindexMessagesByOrder(orderedMessages),
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (!moved) {
+      return false;
+    }
+
+    await _persist(next);
+    return true;
+  }
+
   Future<void> _persist(List<Project> projects) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -793,5 +920,28 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       ],
       messages: const [],
     );
+  }
+
+  List<Message> _reindexMessagesByOrder(List<Message> orderedMessages) {
+    if (orderedMessages.isEmpty) {
+      return const [];
+    }
+
+    final reindexed = <Message>[];
+    for (var i = 0; i < orderedMessages.length; i++) {
+      final message = orderedMessages[i];
+      reindexed.add(
+        Message(
+          id: message.id,
+          characterId: message.characterId,
+          text: message.text,
+          timestampSeconds: i,
+          status: message.status,
+          isIncoming: message.isIncoming,
+          showTypingBefore: message.showTypingBefore,
+        ),
+      );
+    }
+    return reindexed;
   }
 }

@@ -309,6 +309,75 @@ void main() {
         expect(projects.first.scenes, hasLength(1));
       },
     );
+
+    test('moveScene reorders scenes when neighbor exists', () async {
+      await container.read(projectsControllerProvider.future);
+      final notifier = container.read(projectsControllerProvider.notifier);
+      await notifier.addScene(projectId: 'p1', title: 'Scene 2');
+      await notifier.addScene(projectId: 'p1', title: 'Scene 3');
+
+      final before = await container.read(projectsControllerProvider.future);
+      final scene3 = before.first.scenes.last;
+
+      final moved = await notifier.moveScene(
+        projectId: 'p1',
+        sceneId: scene3.id,
+        direction: -1,
+      );
+
+      final after = await container.read(projectsControllerProvider.future);
+      expect(moved, isTrue);
+      expect(after.first.scenes.map((scene) => scene.title), [
+        'Scene 1',
+        'Scene 3',
+        'Scene 2',
+      ]);
+    });
+
+    test('moveScene returns false at boundaries', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final moved = await container
+          .read(projectsControllerProvider.notifier)
+          .moveScene(projectId: 'p1', sceneId: 's1', direction: -1);
+
+      expect(moved, isFalse);
+    });
+
+    test('moveMessageInOrder moves message and reindexes timestamps', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final moved = await container
+          .read(projectsControllerProvider.notifier)
+          .moveMessageInOrder(
+            projectId: 'p1',
+            sceneId: 's1',
+            messageId: 'm2',
+            direction: -1,
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final messages = projects.first.scenes.first.messages;
+
+      expect(moved, isTrue);
+      expect(messages.map((message) => message.id), ['m2', 'm1']);
+      expect(messages.map((message) => message.timestampSeconds), [0, 1]);
+    });
+
+    test('moveMessageInOrder returns false when already at edge', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final moved = await container
+          .read(projectsControllerProvider.notifier)
+          .moveMessageInOrder(
+            projectId: 'p1',
+            sceneId: 's1',
+            messageId: 'm1',
+            direction: -1,
+          );
+
+      expect(moved, isFalse);
+    });
   });
 }
 

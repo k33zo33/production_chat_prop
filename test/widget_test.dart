@@ -324,6 +324,52 @@ void main() {
     expect(find.text('Scenes: 1'), findsOneWidget);
   });
 
+  testWidgets('scene move up changes selected scene position', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    Future<void> addSceneNamed(String name) async {
+      await tester.tap(find.widgetWithText(FilledButton, 'Add Scene'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Scene Title'),
+        name,
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    await addSceneNamed('Scene B');
+    await addSceneNamed('Scene C');
+
+    expect(find.textContaining('Scene: Scene C'), findsOneWidget);
+
+    final moveDownBefore = tester.widget<OutlinedButton>(
+      find.byKey(const Key('moveSceneDownButton')),
+    );
+    expect(moveDownBefore.onPressed, isNull);
+
+    await tester.tap(find.byKey(const Key('moveSceneUpButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final moveDownAfter = tester.widget<OutlinedButton>(
+      find.byKey(const Key('moveSceneDownButton')),
+    );
+    expect(moveDownAfter.onPressed, isNotNull);
+    expect(find.textContaining('Scene: Scene C'), findsOneWidget);
+  });
+
   testWidgets('edit message updates timeline metadata in chat editor', (
     tester,
   ) async {
@@ -420,6 +466,40 @@ void main() {
       find.textContaining('Warning: timestamp goes backward'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('message move up reorders visible timeline rows', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -250));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    final yesFinder = find.text('Yes, prop phone is prepared.');
+    final greatFinder = find.text('Great, rolling in 3 minutes.');
+    final beforeYes = tester.getTopLeft(yesFinder).dy;
+    final beforeGreat = tester.getTopLeft(greatFinder).dy;
+    expect(beforeGreat, greaterThan(beforeYes));
+
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded).last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final afterYes = tester.getTopLeft(yesFinder).dy;
+    final afterGreat = tester.getTopLeft(greatFinder).dy;
+    expect(afterGreat, lessThan(afterYes));
   });
 
   testWidgets('playback step controls update timecode and typing indicator', (
