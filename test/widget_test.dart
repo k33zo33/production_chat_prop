@@ -170,6 +170,65 @@ void main() {
     expect(find.text('Playback'), findsOneWidget);
     expect(find.text(newMessageText), findsOneWidget);
   });
+
+  testWidgets('character add rename delete flow in chat editor', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    final addCharacterButton = find.widgetWithText(FilledButton, 'Add');
+    await tester.ensureVisible(addCharacterButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addCharacterButton);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Character Name'),
+      'Zara',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Zara'), findsWidgets);
+
+    final renameZaraButton = find.widgetWithText(OutlinedButton, 'Rename Zara');
+    await tester.ensureVisible(renameZaraButton);
+    await tester.pumpAndSettle();
+    await tester.tap(renameZaraButton);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Character Name'),
+      'Zed',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rename Zed'), findsOneWidget);
+
+    final zedChip = find.widgetWithText(Chip, 'Zed');
+    final zedDeleteIcon = find.descendant(
+      of: zedChip,
+      matching: find.byIcon(Icons.person_remove_rounded),
+    );
+    await tester.ensureVisible(zedChip);
+    await tester.pumpAndSettle();
+    await tester.tapAt(tester.getCenter(zedDeleteIcon));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rename Zed'), findsNothing);
+    expect(find.text('Zed'), findsNothing);
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
