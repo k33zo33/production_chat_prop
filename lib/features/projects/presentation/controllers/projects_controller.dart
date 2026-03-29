@@ -180,6 +180,178 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<void> addCharacter({
+    required String projectId,
+    required String sceneId,
+    required String displayName,
+  }) async {
+    final trimmedName = displayName.trim();
+    if (trimmedName.isEmpty) {
+      return;
+    }
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedCharacters = [
+                  ...scene.characters,
+                  Character(
+                    id: _uuid.v4(),
+                    displayName: trimmedName,
+                    avatarPath: null,
+                    bubbleColor: '#9E77ED',
+                  ),
+                ];
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: updatedCharacters,
+                  messages: scene.messages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
+  Future<void> renameCharacter({
+    required String projectId,
+    required String sceneId,
+    required String characterId,
+    required String newDisplayName,
+  }) async {
+    final trimmedName = newDisplayName.trim();
+    if (trimmedName.isEmpty) {
+      return;
+    }
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedCharacters = scene.characters
+                    .map((character) {
+                      if (character.id != characterId) {
+                        return character;
+                      }
+
+                      return Character(
+                        id: character.id,
+                        displayName: trimmedName,
+                        avatarPath: character.avatarPath,
+                        bubbleColor: character.bubbleColor,
+                      );
+                    })
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: updatedCharacters,
+                  messages: scene.messages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
+  Future<void> deleteCharacter({
+    required String projectId,
+    required String sceneId,
+    required String characterId,
+  }) async {
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedCharacters = scene.characters
+                    .where((character) => character.id != characterId)
+                    .toList(growable: false);
+                final updatedMessages = scene.messages
+                    .where((message) => message.characterId != characterId)
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: updatedCharacters,
+                  messages: updatedMessages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
   Future<void> deleteMessage({
     required String projectId,
     required String sceneId,

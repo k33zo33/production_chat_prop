@@ -172,23 +172,15 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                   Text(
                     'Style: ${selectedScene.styleId} • Aspect: ${selectedScene.aspectRatio.name}',
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Characters',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final character in selectedScene.characters)
-                        Chip(label: Text(character.displayName)),
-                    ],
-                  ),
                 ],
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+          _CharacterManagerCard(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+            characters: selectedScene.characters,
           ),
           const SizedBox(height: 12),
           _MessageComposerCard(
@@ -363,6 +355,19 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
     _textController.dispose();
     _timestampController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _MessageComposerCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final hasCurrentCharacter = widget.characters.any(
+      (character) => character.id == _selectedCharacterId,
+    );
+    if (!hasCurrentCharacter) {
+      _selectedCharacterId = widget.characters.isEmpty
+          ? null
+          : widget.characters.first.id;
+    }
   }
 
   @override
@@ -588,6 +593,161 @@ class _MessageActions extends ConsumerWidget {
 }
 
 enum _MessageAction { editText, delete }
+
+class _CharacterManagerCard extends ConsumerWidget {
+  const _CharacterManagerCard({
+    required this.projectId,
+    required this.sceneId,
+    required this.characters,
+  });
+
+  final String projectId;
+  final String sceneId;
+  final List<Character> characters;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Characters',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const Spacer(),
+                FilledButton.icon(
+                  onPressed: () async {
+                    final newName = await _showCharacterNameDialog(
+                      context,
+                      title: 'Add Character',
+                    );
+                    if (newName == null) {
+                      return;
+                    }
+
+                    await ref
+                        .read(projectsControllerProvider.notifier)
+                        .addCharacter(
+                          projectId: projectId,
+                          sceneId: sceneId,
+                          displayName: newName,
+                        );
+                  },
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: const Text('Add'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (characters.isEmpty)
+              const Text('No characters in this scene.')
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final character in characters)
+                    Chip(
+                      label: Text(character.displayName),
+                      onDeleted: () async {
+                        if (characters.length == 1) {
+                          return;
+                        }
+
+                        await ref
+                            .read(projectsControllerProvider.notifier)
+                            .deleteCharacter(
+                              projectId: projectId,
+                              sceneId: sceneId,
+                              characterId: character.id,
+                            );
+                      },
+                      deleteIcon: const Icon(Icons.person_remove_rounded),
+                    ),
+                ],
+              ),
+            if (characters.length <= 1) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'At least one character should remain in the scene.',
+              ),
+            ],
+            if (characters.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final character in characters)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final updatedName = await _showCharacterNameDialog(
+                          context,
+                          title: 'Rename Character',
+                          initialValue: character.displayName,
+                        );
+                        if (updatedName == null) {
+                          return;
+                        }
+
+                        await ref
+                            .read(projectsControllerProvider.notifier)
+                            .renameCharacter(
+                              projectId: projectId,
+                              sceneId: sceneId,
+                              characterId: character.id,
+                              newDisplayName: updatedName,
+                            );
+                      },
+                      icon: const Icon(Icons.edit_rounded),
+                      label: Text('Rename ${character.displayName}'),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _showCharacterNameDialog(
+    BuildContext context, {
+    required String title,
+    String? initialValue,
+  }) async {
+    final controller = TextEditingController(text: initialValue ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Character Name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    return result;
+  }
+}
 
 class _ProjectNotFoundState extends StatelessWidget {
   const _ProjectNotFoundState();
