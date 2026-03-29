@@ -757,6 +757,50 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return true;
   }
 
+  Future<String?> duplicateScene({
+    required String projectId,
+    required String sceneId,
+  }) async {
+    final current = await future;
+    String? duplicatedSceneId;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = <Scene>[];
+          for (final scene in project.scenes) {
+            updatedScenes.add(scene);
+            if (scene.id == sceneId) {
+              final duplicated = _duplicateScene(scene);
+              duplicatedSceneId = duplicated.id;
+              updatedScenes.add(duplicated);
+            }
+          }
+          if (duplicatedSceneId == null) {
+            return project;
+          }
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (duplicatedSceneId == null) {
+      return null;
+    }
+
+    await _persist(next);
+    return duplicatedSceneId;
+  }
+
   Future<bool> moveMessageInOrder({
     required String projectId,
     required String sceneId,
@@ -1085,6 +1129,46 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
         ),
       ],
       messages: const [],
+    );
+  }
+
+  Scene _duplicateScene(Scene source) {
+    final characterIdMap = <String, String>{};
+    final duplicatedCharacters = source.characters
+        .map((character) {
+          final newId = _uuid.v4();
+          characterIdMap[character.id] = newId;
+          return Character(
+            id: newId,
+            displayName: character.displayName,
+            avatarPath: character.avatarPath,
+            bubbleColor: character.bubbleColor,
+          );
+        })
+        .toList(growable: false);
+
+    final duplicatedMessages = source.messages
+        .map((message) {
+          final mappedCharacterId = characterIdMap[message.characterId];
+          return Message(
+            id: _uuid.v4(),
+            characterId: mappedCharacterId ?? message.characterId,
+            text: message.text,
+            timestampSeconds: message.timestampSeconds,
+            status: message.status,
+            isIncoming: message.isIncoming,
+            showTypingBefore: message.showTypingBefore,
+          );
+        })
+        .toList(growable: false);
+
+    return Scene(
+      id: _uuid.v4(),
+      title: '${source.title} Copy',
+      characters: duplicatedCharacters,
+      messages: duplicatedMessages,
+      styleId: source.styleId,
+      aspectRatio: source.aspectRatio,
     );
   }
 

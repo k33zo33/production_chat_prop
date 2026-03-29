@@ -187,7 +187,9 @@ void main() {
     await tester.tap(find.text('Open Chat Editor'));
     await tester.pumpAndSettle();
 
-    final addCharacterButton = find.widgetWithText(FilledButton, 'Add');
+    final addCharacterButton = find
+        .widgetWithText(FilledButton, 'Add', skipOffstage: false)
+        .first;
     await tester.ensureVisible(addCharacterButton);
     await tester.pumpAndSettle();
     await tester.tap(addCharacterButton);
@@ -300,7 +302,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.textContaining('Scene: Scene B'), findsOneWidget);
-    expect(find.text('Scenes: 2'), findsOneWidget);
+    expect(find.text('Scenes: 2', skipOffstage: false), findsOneWidget);
 
     await tester.tap(find.widgetWithText(OutlinedButton, 'Rename Scene'));
     await tester.pumpAndSettle();
@@ -368,6 +370,31 @@ void main() {
     );
     expect(moveDownAfter.onPressed, isNotNull);
     expect(find.textContaining('Scene: Scene C'), findsOneWidget);
+  });
+
+  testWidgets('duplicate scene creates and selects copied scene', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    final duplicateSceneButton = find.byKey(const Key('duplicateSceneButton'));
+    await tester.ensureVisible(duplicateSceneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(duplicateSceneButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Scene: Scene 1 Copy'), findsOneWidget);
   });
 
   testWidgets('apply scene template updates editor content', (tester) async {
@@ -606,9 +633,12 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('clearSceneMessagesButton')));
+    final clearSceneButton = find.byKey(const Key('clearSceneMessagesButton'));
+    await tester.ensureVisible(clearSceneButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Clear'));
+    await tester.tap(clearSceneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Clear').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -693,6 +723,44 @@ void main() {
     expect(find.text('TYPING BEFORE', skipOffstage: false), findsWidgets);
   });
 
+  testWidgets('playback cue buttons jump between message timestamps', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    final nextCueButton = find.byKey(const Key('nextCueButton'));
+    await tester.ensureVisible(nextCueButton);
+    await tester.pumpAndSettle();
+    await tester.tap(nextCueButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('t=4s / 9 s', skipOffstage: false),
+      findsOneWidget,
+    );
+
+    final prevCueButton = find.byKey(const Key('prevCueButton'));
+    await tester.ensureVisible(prevCueButton);
+    await tester.pumpAndSettle();
+    await tester.tap(prevCueButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('t=0s / 9 s', skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'playback resets stale progress after scene messages are cleared',
     (
@@ -733,9 +801,14 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('clearSceneMessagesButton')));
+      final clearSceneButton = find.byKey(
+        const Key('clearSceneMessagesButton'),
+      );
+      await tester.ensureVisible(clearSceneButton);
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Clear'));
+      await tester.tap(clearSceneButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Clear').last);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byTooltip('Back to Projects').first);

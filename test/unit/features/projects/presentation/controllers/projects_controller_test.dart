@@ -334,6 +334,28 @@ void main() {
       ]);
     });
 
+    test('duplicateScene creates copy with cloned structure', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final duplicatedSceneId = await container
+          .read(projectsControllerProvider.notifier)
+          .duplicateScene(projectId: 'p1', sceneId: 's1');
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final scenes = projects.first.scenes;
+      final duplicate = scenes.firstWhere(
+        (scene) => scene.id == duplicatedSceneId,
+      );
+
+      expect(duplicatedSceneId, isNotNull);
+      expect(scenes.length, 2);
+      expect(duplicate.title, 'Scene 1 Copy');
+      expect(duplicate.characters.length, 1);
+      expect(duplicate.messages.length, 2);
+      expect(duplicate.characters.first.id, isNot('c1'));
+      expect(duplicate.messages.first.id, isNot('m1'));
+    });
+
     test('moveScene returns false at boundaries', () async {
       await container.read(projectsControllerProvider.future);
 

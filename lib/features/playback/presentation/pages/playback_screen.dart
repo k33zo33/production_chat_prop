@@ -148,6 +148,14 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final sliderValue = playbackState.currentSecond > maxSecond
         ? maxSecond.toDouble()
         : playbackState.currentSecond.toDouble();
+    final previousCue = _findPreviousCue(
+      messages: sortedMessages,
+      currentSecond: playbackState.currentSecond,
+    );
+    final nextCue = _findNextCue(
+      messages: sortedMessages,
+      currentSecond: playbackState.currentSecond,
+    );
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -291,6 +299,28 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    OutlinedButton.icon(
+                      key: const Key('prevCueButton'),
+                      onPressed: previousCue == null
+                          ? null
+                          : () => playbackController.scrubTo(
+                              second: previousCue,
+                              maxSecond: maxSecond,
+                            ),
+                      icon: const Icon(Icons.skip_previous_rounded),
+                      label: const Text('Prev Cue'),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('nextCueButton'),
+                      onPressed: nextCue == null
+                          ? null
+                          : () => playbackController.scrubTo(
+                              second: nextCue,
+                              maxSecond: maxSecond,
+                            ),
+                      icon: const Icon(Icons.skip_next_rounded),
+                      label: const Text('Next Cue'),
+                    ),
                     FilledButton.tonalIcon(
                       onPressed: maxSecond == 0
                           ? null
@@ -472,6 +502,33 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final sortedMessages = [...scene.messages]
       ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
     return sortedMessages.last.timestampSeconds;
+  }
+
+  int? _findNextCue({
+    required List<Message> messages,
+    required int currentSecond,
+  }) {
+    for (final message in messages) {
+      if (message.timestampSeconds > currentSecond) {
+        return message.timestampSeconds;
+      }
+    }
+    return null;
+  }
+
+  int? _findPreviousCue({
+    required List<Message> messages,
+    required int currentSecond,
+  }) {
+    int? candidate;
+    for (final message in messages) {
+      if (message.timestampSeconds < currentSecond) {
+        candidate = message.timestampSeconds;
+      } else {
+        break;
+      }
+    }
+    return candidate;
   }
 
   void _syncPlaybackWithScene({

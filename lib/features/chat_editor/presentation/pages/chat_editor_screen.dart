@@ -206,6 +206,22 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                         label: const Text('Add Scene'),
                       ),
                       OutlinedButton.icon(
+                        key: const Key('duplicateSceneButton'),
+                        onPressed: () async {
+                          final duplicatedSceneId = await ref
+                              .read(projectsControllerProvider.notifier)
+                              .duplicateScene(
+                                projectId: project.id,
+                                sceneId: selectedScene.id,
+                              );
+                          if (duplicatedSceneId != null) {
+                            onSceneSelected(duplicatedSceneId);
+                          }
+                        },
+                        icon: const Icon(Icons.copy_rounded),
+                        label: const Text('Duplicate Scene'),
+                      ),
+                      OutlinedButton.icon(
                         key: const Key('applyTemplateBriefingButton'),
                         onPressed: () async {
                           final applied = await ref
