@@ -2,22 +2,26 @@
 
 Production Chat Prop je Flutter web-first MVP za kreiranje i reprodukciju simuliranih chat razgovora za produkcijske potrebe.
 
-## MVP bootstrap status
+## Trenutni status
 
-Ovaj commit pokriva Fazu 0 bootstrap:
-- Flutter projekt inicijaliziran u rootu repozitorija
-- Web-first setup
-- Riverpod + GoRouter + very_good_analysis
-- Feature-first početna struktura mapa
-- Početni router, tema i placeholder ekrani:
-  - Project List
-  - Chat Editor
-  - Playback
-- Početni domenski modeli:
-  - `Project`
-  - `Scene`
-  - `Character`
-  - `Message`
+- Faza 0 završena: bootstrap, routing, folder struktura, lint setup
+- Sprint 1/2 osnova:
+  - modeli (`Project`, `Scene`, `Character`, `Message`) + JSON serijalizacija
+  - lokalno spremanje projekata
+  - Project list CRUD (create/rename/duplicate/delete)
+  - Chat editor:
+    - likovi CRUD
+    - poruke CRUD + reorder + bulk delete
+    - scene CRUD + reorder + duplicate
+    - scene template akcije
+- Sprint 3 osnova:
+  - Playback controller (play/pause/restart/scrub/seek/end)
+  - typing indikator, status prikaz, cue skokovi
+  - sinkronizacija s editor promjenama
+- Sprint 4 početni deliverables:
+  - PNG screenshot export pipeline (web download + fallback poruka)
+  - video fallback package export (`.json`) za post-produkcijski workflow
+  - kontrola scene omjera 9:16 / 16:9 u Playbacku
 
 ## Lokalno pokretanje
 
@@ -26,6 +30,7 @@ Ako `flutter` nije globalno na PATH-u, koristi apsolutnu putanju:
 ```bash
 /home/server/flutter/bin/flutter pub get
 /home/server/flutter/bin/flutter analyze
+/home/server/flutter/bin/flutter test
 /home/server/flutter/bin/flutter run -d web-server
 ```
 
