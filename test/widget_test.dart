@@ -229,6 +229,43 @@ void main() {
     expect(find.text('Rename Zed'), findsNothing);
     expect(find.text('Zed'), findsNothing);
   });
+
+  testWidgets('warns when adding message with backward timestamp', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Message Text'),
+      'This timestamp is behind',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Timestamp (seconds)'),
+      '1',
+    );
+
+    final addMessageButton = find.widgetWithText(FilledButton, 'Add Message');
+    await tester.ensureVisible(addMessageButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMessageButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Warning: timestamp goes backward'),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {

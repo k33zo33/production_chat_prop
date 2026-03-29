@@ -475,6 +475,16 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
       return;
     }
 
+    if (timestamp < widget.latestTimestamp && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Warning: timestamp goes backward compared to the current scene order.',
+          ),
+        ),
+      );
+    }
+
     await ref
         .read(projectsControllerProvider.notifier)
         .addMessage(
