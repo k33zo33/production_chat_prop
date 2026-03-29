@@ -405,7 +405,65 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     required String messageId,
     required String newText,
   }) async {
-    final trimmedText = newText.trim();
+    final current = await future;
+    Project? selectedProject;
+    for (final project in current) {
+      if (project.id == projectId) {
+        selectedProject = project;
+        break;
+      }
+    }
+    if (selectedProject == null) {
+      return;
+    }
+
+    Scene? selectedScene;
+    for (final scene in selectedProject.scenes) {
+      if (scene.id == sceneId) {
+        selectedScene = scene;
+        break;
+      }
+    }
+    if (selectedScene == null) {
+      return;
+    }
+
+    Message? selectedMessage;
+    for (final message in selectedScene.messages) {
+      if (message.id == messageId) {
+        selectedMessage = message;
+        break;
+      }
+    }
+    if (selectedMessage == null) {
+      return;
+    }
+
+    await updateMessage(
+      projectId: projectId,
+      sceneId: sceneId,
+      messageId: messageId,
+      characterId: selectedMessage.characterId,
+      text: newText,
+      timestampSeconds: selectedMessage.timestampSeconds,
+      status: selectedMessage.status,
+      isIncoming: selectedMessage.isIncoming,
+      showTypingBefore: selectedMessage.showTypingBefore,
+    );
+  }
+
+  Future<void> updateMessage({
+    required String projectId,
+    required String sceneId,
+    required String messageId,
+    required String characterId,
+    required String text,
+    required int timestampSeconds,
+    required MessageStatus status,
+    required bool isIncoming,
+    required bool showTypingBefore,
+  }) async {
+    final trimmedText = text.trim();
     if (trimmedText.isEmpty) {
       return;
     }
@@ -423,23 +481,28 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                   return scene;
                 }
 
-                final updatedMessages = scene.messages
-                    .map((message) {
-                      if (message.id != messageId) {
-                        return message;
-                      }
+                final updatedMessages =
+                    scene.messages
+                        .map((message) {
+                          if (message.id != messageId) {
+                            return message;
+                          }
 
-                      return Message(
-                        id: message.id,
-                        characterId: message.characterId,
-                        text: trimmedText,
-                        timestampSeconds: message.timestampSeconds,
-                        status: message.status,
-                        isIncoming: message.isIncoming,
-                        showTypingBefore: message.showTypingBefore,
+                          return Message(
+                            id: message.id,
+                            characterId: characterId,
+                            text: trimmedText,
+                            timestampSeconds: timestampSeconds,
+                            status: status,
+                            isIncoming: isIncoming,
+                            showTypingBefore: showTypingBefore,
+                          );
+                        })
+                        .toList(growable: false)
+                      ..sort(
+                        (a, b) =>
+                            a.timestampSeconds.compareTo(b.timestampSeconds),
                       );
-                    })
-                    .toList(growable: false);
 
                 return Scene(
                   id: scene.id,

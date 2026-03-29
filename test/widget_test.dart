@@ -230,6 +230,66 @@ void main() {
     expect(find.text('Zed'), findsNothing);
   });
 
+  testWidgets('edit message updates timeline metadata in chat editor', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -250));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    final messageMenuButton = find.byIcon(Icons.more_horiz_rounded).first;
+    await tester.tap(messageMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Message'));
+    await tester.pumpAndSettle();
+
+    final dialogFinder = find.byType(AlertDialog);
+    await tester.enterText(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Text'),
+      ),
+      'Edited from dialog',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Timestamp (seconds)'),
+      ),
+      '1',
+    );
+
+    final incomingTile = find.descendant(
+      of: dialogFinder,
+      matching: find.widgetWithText(SwitchListTile, 'Incoming'),
+    );
+    await tester.tap(incomingTile);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(of: dialogFinder, matching: find.text('Save')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Edited from dialog'), findsOneWidget);
+    expect(find.textContaining('t=1s'), findsOneWidget);
+  });
+
   testWidgets('warns when adding message with backward timestamp', (
     tester,
   ) async {

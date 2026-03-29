@@ -65,6 +65,34 @@ void main() {
       expect(messages[0].text, 'Message A');
     });
 
+    test('updateMessage can change metadata and keep sorted order', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .updateMessage(
+            projectId: 'p1',
+            sceneId: 's1',
+            messageId: 'm2',
+            characterId: 'c1',
+            text: 'Moved earlier',
+            timestampSeconds: 1,
+            status: MessageStatus.seen,
+            isIncoming: true,
+            showTypingBefore: true,
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final messages = projects.first.scenes.first.messages;
+      final updated = messages.firstWhere((message) => message.id == 'm2');
+
+      expect(messages.map((message) => message.timestampSeconds), [0, 1]);
+      expect(updated.text, 'Moved earlier');
+      expect(updated.status, MessageStatus.seen);
+      expect(updated.isIncoming, isTrue);
+      expect(updated.showTypingBefore, isTrue);
+    });
+
     test('deleteMessage removes targeted message', () async {
       await container.read(projectsControllerProvider.future);
 

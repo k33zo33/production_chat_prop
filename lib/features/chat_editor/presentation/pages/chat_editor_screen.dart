@@ -211,6 +211,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                         projectId: project.id,
                         sceneId: selectedScene.id,
                         message: message,
+                        characters: selectedScene.characters,
                         speakerName: _resolveSpeakerName(
                           characterId: message.characterId,
                           sceneProject: project,
@@ -267,12 +268,14 @@ class _MessageRow extends StatelessWidget {
     required this.projectId,
     required this.sceneId,
     required this.message,
+    required this.characters,
     required this.speakerName,
   });
 
   final String projectId;
   final String sceneId;
   final Message message;
+  final List<Character> characters;
   final String speakerName;
 
   @override
@@ -301,6 +304,7 @@ class _MessageRow extends StatelessWidget {
                 projectId: projectId,
                 sceneId: sceneId,
                 message: message,
+                characters: characters,
               ),
             ],
           ),
@@ -515,32 +519,51 @@ class _MessageActions extends ConsumerWidget {
     required this.projectId,
     required this.sceneId,
     required this.message,
+    required this.characters,
   });
 
   final String projectId;
   final String sceneId;
   final Message message;
+  final List<Character> characters;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<_MessageAction>(
       onSelected: (action) async {
         switch (action) {
-          case _MessageAction.editText:
-            final updatedText = await _showEditMessageDialog(
+          case _MessageAction.editMessage:
+            final updatedMessage = await _showEditMessageDialog(
               context,
-              message.text,
+              message: message,
             );
-            if (updatedText == null) {
+            if (updatedMessage == null) {
               return;
             }
+
+            if (updatedMessage.timestampSeconds < message.timestampSeconds &&
+                context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Warning: timestamp goes backward for this message.',
+                  ),
+                ),
+              );
+            }
+
             await ref
                 .read(projectsControllerProvider.notifier)
-                .updateMessageText(
+                .updateMessage(
                   projectId: projectId,
                   sceneId: sceneId,
                   messageId: message.id,
-                  newText: updatedText,
+                  characterId: updatedMessage.characterId,
+                  text: updatedMessage.text,
+                  timestampSeconds: updatedMessage.timestampSeconds,
+                  status: updatedMessage.status,
+                  isIncoming: updatedMessage.isIncoming,
+                  showTypingBefore: updatedMessage.showTypingBefore,
                 );
             return;
           case _MessageAction.delete:
@@ -556,8 +579,8 @@ class _MessageActions extends ConsumerWidget {
       },
       itemBuilder: (context) => const [
         PopupMenuItem(
-          value: _MessageAction.editText,
-          child: Text('Edit Text'),
+          value: _MessageAction.editMessage,
+          child: Text('Edit Message'),
         ),
         PopupMenuItem(
           value: _MessageAction.delete,
@@ -568,33 +591,156 @@ class _MessageActions extends ConsumerWidget {
     );
   }
 
-  Future<String?> _showEditMessageDialog(
-    BuildContext context,
-    String currentText,
-  ) async {
-    final controller = TextEditingController(text: currentText);
-    final result = await showDialog<String>(
+  Future<_EditedMessageInput?> _showEditMessageDialog(
+    BuildContext context, {
+    required Message message,
+  }) async {
+    final textController = TextEditingController(text: message.text);
+    final timestampController = TextEditingController(
+      text: message.timestampSeconds.toString(),
+    );
+    var selectedCharacterId = message.characterId;
+    var selectedStatus = message.status;
+    var isIncoming = message.isIncoming;
+    var showTypingBefore = message.showTypingBefore;
+
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final result = await showDialog<_EditedMessageInput>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Message Text'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            minLines: 1,
-            maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Text'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Save'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Message'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCharacterId,
+                      decoration: const InputDecoration(labelText: 'Character'),
+                      items: [
+                        for (final character in characters)
+                          DropdownMenuItem(
+                            value: character.id,
+                            child: Text(character.displayName),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedCharacterId = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: textController,
+                      autofocus: true,
+                      minLines: 1,
+                      maxLines: 3,
+                      decoration: const InputDecoration(labelText: 'Text'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: timestampController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Timestamp (seconds)',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<MessageStatus>(
+                      initialValue: selectedStatus,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      items: MessageStatus.values
+                          .map(
+                            (status) => DropdownMenuItem(
+                              value: status,
+                              child: Text(status.name),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedStatus = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      value: isIncoming,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Incoming'),
+                      onChanged: (value) {
+                        setState(() {
+                          isIncoming = value;
+                        });
+                      },
+                    ),
+                    SwitchListTile(
+                      value: showTypingBefore,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Show typing before'),
+                      onChanged: (value) {
+                        setState(() {
+                          showTypingBefore = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final parsedTimestamp = int.tryParse(
+                      timestampController.text.trim(),
+                    );
+                    final trimmedText = textController.text.trim();
+
+                    if (parsedTimestamp == null) {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Timestamp must be a valid number.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (trimmedText.isEmpty) {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Message text cannot be empty.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(context).pop(
+                      _EditedMessageInput(
+                        characterId: selectedCharacterId,
+                        text: trimmedText,
+                        timestampSeconds: parsedTimestamp,
+                        status: selectedStatus,
+                        isIncoming: isIncoming,
+                        showTypingBefore: showTypingBefore,
+                      ),
+                    );
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -602,7 +748,25 @@ class _MessageActions extends ConsumerWidget {
   }
 }
 
-enum _MessageAction { editText, delete }
+enum _MessageAction { editMessage, delete }
+
+class _EditedMessageInput {
+  const _EditedMessageInput({
+    required this.characterId,
+    required this.text,
+    required this.timestampSeconds,
+    required this.status,
+    required this.isIncoming,
+    required this.showTypingBefore,
+  });
+
+  final String characterId;
+  final String text;
+  final int timestampSeconds;
+  final MessageStatus status;
+  final bool isIncoming;
+  final bool showTypingBefore;
+}
 
 class _CharacterManagerCard extends ConsumerWidget {
   const _CharacterManagerCard({
