@@ -858,6 +858,33 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('video export button shows fallback package feedback', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('exportVideoButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining(
+        'Video export failed: download is not available on this platform.',
+      ),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
+import 'package:production_chat_prop/features/playback/data/services/video_export_fallback_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -113,6 +114,8 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   final GlobalKey _previewBoundaryKey = GlobalKey();
   final ScreenshotExportService _screenshotExportService =
       ScreenshotExportService();
+  final VideoExportFallbackService _videoExportFallbackService =
+      VideoExportFallbackService();
 
   @override
   void initState() {
@@ -259,10 +262,12 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     ),
                     OutlinedButton.icon(
                       key: const Key('exportVideoButton'),
-                      onPressed: () => _showExportNotice(
-                        context,
-                        mode: '9:16 / 16:9 video',
-                      ),
+                      onPressed: sortedMessages.isEmpty
+                          ? null
+                          : () async => _exportVideoFallback(
+                              project: project,
+                              scene: scene,
+                            ),
                       icon: const Icon(Icons.videocam_outlined),
                       label: const Text('Export Video'),
                     ),
@@ -456,19 +461,6 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     );
   }
 
-  void _showExportNotice(
-    BuildContext context, {
-    required String mode,
-  }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Export placeholder: $mode with ${_showDeviceFrame ? 'device frame' : 'no frame'} and ${_cleanPreview ? 'clean' : 'full'} preview.',
-        ),
-      ),
-    );
-  }
-
   Future<void> _exportScreenshot({
     required Project project,
     required Scene? scene,
@@ -501,6 +493,40 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     };
 
     _showSnackBar('Screenshot export failed: $failureLabel.');
+  }
+
+  Future<void> _exportVideoFallback({
+    required Project project,
+    required Scene? scene,
+  }) async {
+    if (scene == null) {
+      _showSnackBar('Video export failed: no scene selected.');
+      return;
+    }
+
+    final result = await _videoExportFallbackService.exportFallbackPackage(
+      project: project,
+      scene: scene,
+      includeDeviceFrame: _showDeviceFrame,
+      cleanPreview: _cleanPreview,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    if (result.isSuccess) {
+      _showSnackBar(
+        'Video fallback package exported as ${result.filename}.',
+      );
+      return;
+    }
+
+    final failureLabel = switch (result.failure) {
+      VideoFallbackExportFailure.downloadUnavailable =>
+        'download is not available on this platform',
+      null => 'unknown error',
+    };
+    _showSnackBar('Video export failed: $failureLabel.');
   }
 
   void _showSnackBar(String message) {
