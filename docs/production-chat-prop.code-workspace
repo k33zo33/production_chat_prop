@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.dart_tool": true,
+      "**/build": true
+    },
+    "search.exclude": {
+      "**/.dart_tool": true,
+      "**/build": true
+    },
+    "editor.formatOnSave": true,
+    "dart.flutterHotReloadOnSave": "all"
+  }
+}
