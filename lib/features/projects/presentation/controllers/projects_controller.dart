@@ -529,6 +529,57 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<void> updateSceneSettings({
+    required String projectId,
+    required String sceneId,
+    required String title,
+    required String styleId,
+    required SceneAspectRatio aspectRatio,
+  }) async {
+    final trimmedTitle = title.trim();
+    final trimmedStyleId = styleId.trim();
+    if (trimmedTitle.isEmpty || trimmedStyleId.isEmpty) {
+      return;
+    }
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                return Scene(
+                  id: scene.id,
+                  title: trimmedTitle,
+                  characters: scene.characters,
+                  messages: scene.messages,
+                  styleId: trimmedStyleId,
+                  aspectRatio: aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
   Future<void> _persist(List<Project> projects) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {

@@ -216,6 +216,27 @@ void main() {
         isEmpty,
       );
     });
+
+    test('updateSceneSettings updates title style and aspect ratio', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .updateSceneSettings(
+            projectId: 'p1',
+            sceneId: 's1',
+            title: 'Scene Updated',
+            styleId: 'editorial_light',
+            aspectRatio: SceneAspectRatio.landscape16x9,
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final scene = projects.first.scenes.first;
+
+      expect(scene.title, 'Scene Updated');
+      expect(scene.styleId, 'editorial_light');
+      expect(scene.aspectRatio, SceneAspectRatio.landscape16x9);
+    });
   });
 }
 

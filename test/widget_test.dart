@@ -230,6 +230,51 @@ void main() {
     expect(find.text('Zed'), findsNothing);
   });
 
+  testWidgets('edit scene settings updates scene header info', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit Scene Settings'));
+    await tester.pumpAndSettle();
+
+    final dialogFinder = find.byType(AlertDialog);
+    await tester.enterText(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Scene Title'),
+      ),
+      'Act 2',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Style ID'),
+      ),
+      'cleanroom_day',
+    );
+
+    await tester.tap(
+      find.descendant(of: dialogFinder, matching: find.text('Save')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Scene: Act 2'), findsOneWidget);
+    expect(
+      find.textContaining('Style: cleanroom_day'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('edit message updates timeline metadata in chat editor', (
     tester,
   ) async {

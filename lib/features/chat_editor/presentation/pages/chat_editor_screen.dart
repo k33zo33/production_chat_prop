@@ -5,6 +5,7 @@ import 'package:production_chat_prop/features/chat_editor/presentation/controlle
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
+import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
 class ChatEditorScreen extends ConsumerWidget {
@@ -172,6 +173,30 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                   Text(
                     'Style: ${selectedScene.styleId} • Aspect: ${selectedScene.aspectRatio.name}',
                   ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final input = await _showSceneSettingsDialog(
+                        context,
+                        scene: selectedScene,
+                      );
+                      if (input == null) {
+                        return;
+                      }
+
+                      await ref
+                          .read(projectsControllerProvider.notifier)
+                          .updateSceneSettings(
+                            projectId: project.id,
+                            sceneId: selectedScene.id,
+                            title: input.title,
+                            styleId: input.styleId,
+                            aspectRatio: input.aspectRatio,
+                          );
+                    },
+                    icon: const Icon(Icons.tune_rounded),
+                    label: const Text('Edit Scene Settings'),
+                  ),
                 ],
               ),
             ),
@@ -261,6 +286,113 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
     }
     return 'Unknown';
   }
+
+  Future<_SceneSettingsInput?> _showSceneSettingsDialog(
+    BuildContext context, {
+    required Scene scene,
+  }) async {
+    final titleController = TextEditingController(text: scene.title);
+    final styleIdController = TextEditingController(text: scene.styleId);
+    var selectedAspectRatio = scene.aspectRatio;
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final result = await showDialog<_SceneSettingsInput>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Scene Settings'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Scene Title',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: styleIdController,
+                      decoration: const InputDecoration(labelText: 'Style ID'),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<SceneAspectRatio>(
+                      initialValue: selectedAspectRatio,
+                      decoration: const InputDecoration(
+                        labelText: 'Aspect Ratio',
+                      ),
+                      items: SceneAspectRatio.values
+                          .map(
+                            (ratio) => DropdownMenuItem(
+                              value: ratio,
+                              child: Text(ratio.name),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedAspectRatio = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final trimmedTitle = titleController.text.trim();
+                    final trimmedStyleId = styleIdController.text.trim();
+                    if (trimmedTitle.isEmpty || trimmedStyleId.isEmpty) {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Scene title and style are required.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(context).pop(
+                      _SceneSettingsInput(
+                        title: trimmedTitle,
+                        styleId: trimmedStyleId,
+                        aspectRatio: selectedAspectRatio,
+                      ),
+                    );
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return result;
+  }
+}
+
+class _SceneSettingsInput {
+  const _SceneSettingsInput({
+    required this.title,
+    required this.styleId,
+    required this.aspectRatio,
+  });
+
+  final String title;
+  final String styleId;
+  final SceneAspectRatio aspectRatio;
 }
 
 class _MessageRow extends StatelessWidget {
