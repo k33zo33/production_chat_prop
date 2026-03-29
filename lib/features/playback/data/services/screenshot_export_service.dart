@@ -31,6 +31,11 @@ class ScreenshotExportResult {
 }
 
 class ScreenshotExportService {
+  ScreenshotExportService({BytesDownloader? downloader})
+    : _downloader = downloader ?? downloadBytes;
+
+  final BytesDownloader _downloader;
+
   Future<ScreenshotExportResult> exportBoundaryAsPng({
     required GlobalKey boundaryKey,
     required String projectName,
@@ -70,7 +75,7 @@ class ScreenshotExportService {
       projectName: projectName,
       sceneTitle: sceneTitle,
     );
-    final isDownloaded = await downloadBytes(
+    final isDownloaded = await _downloader(
       bytes: bytes,
       filename: filename,
       mimeType: 'image/png',

@@ -28,6 +28,11 @@ class VideoFallbackExportResult {
 }
 
 class VideoExportFallbackService {
+  VideoExportFallbackService({BytesDownloader? downloader})
+    : _downloader = downloader ?? downloadBytes;
+
+  final BytesDownloader _downloader;
+
   Future<VideoFallbackExportResult> exportFallbackPackage({
     required Project project,
     required Scene scene,
@@ -48,7 +53,7 @@ class VideoExportFallbackService {
       sceneTitle: scene.title,
     );
 
-    final isDownloaded = await downloadBytes(
+    final isDownloaded = await _downloader(
       bytes: encoded,
       filename: filename,
       mimeType: 'application/json',

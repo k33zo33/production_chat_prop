@@ -3,6 +3,12 @@ import 'package:production_chat_prop/core/utils/file_download/file_downloader_st
     'package:production_chat_prop/core/utils/file_download/file_downloader_web.dart'
     as impl;
 
+typedef BytesDownloader = Future<bool> Function({
+  required List<int> bytes,
+  required String filename,
+  required String mimeType,
+});
+
 Future<bool> downloadBytes({
   required List<int> bytes,
   required String filename,
