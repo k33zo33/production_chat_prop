@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
+import 'package:production_chat_prop/features/projects/domain/character.dart';
+import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/repositories/project_repository.dart';
+import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:uuid/uuid.dart';
 
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) {
@@ -34,7 +37,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       type: ProjectType.other,
       createdAt: now,
       updatedAt: now,
-      scenes: const [],
+      scenes: [_buildStarterScene()],
     );
 
     final next = [...current, project];
@@ -113,5 +116,60 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       await _repository.saveAll(projects);
       return projects;
     });
+  }
+
+  Scene _buildStarterScene() {
+    final firstCharacterId = _uuid.v4();
+    final secondCharacterId = _uuid.v4();
+
+    return Scene(
+      id: _uuid.v4(),
+      title: 'Scene 1',
+      styleId: 'studio_slate',
+      aspectRatio: SceneAspectRatio.portrait9x16,
+      characters: [
+        Character(
+          id: firstCharacterId,
+          displayName: 'Alex',
+          avatarPath: null,
+          bubbleColor: '#2E90FA',
+        ),
+        Character(
+          id: secondCharacterId,
+          displayName: 'Mia',
+          avatarPath: null,
+          bubbleColor: '#12B76A',
+        ),
+      ],
+      messages: [
+        Message(
+          id: _uuid.v4(),
+          characterId: firstCharacterId,
+          text: 'Ready for set in 10?',
+          timestampSeconds: 0,
+          status: MessageStatus.sent,
+          isIncoming: false,
+          showTypingBefore: false,
+        ),
+        Message(
+          id: _uuid.v4(),
+          characterId: secondCharacterId,
+          text: 'Yes, prop phone is prepared.',
+          timestampSeconds: 4,
+          status: MessageStatus.delivered,
+          isIncoming: true,
+          showTypingBefore: true,
+        ),
+        Message(
+          id: _uuid.v4(),
+          characterId: firstCharacterId,
+          text: 'Great, rolling in 3 minutes.',
+          timestampSeconds: 9,
+          status: MessageStatus.seen,
+          isIncoming: false,
+          showTypingBefore: true,
+        ),
+      ],
+    );
   }
 }
