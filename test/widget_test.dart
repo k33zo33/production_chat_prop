@@ -118,7 +118,7 @@ void main() {
 
     expect(find.text('Playback'), findsOneWidget);
     expect(
-      find.textContaining('Playback Timeline (read-only)'),
+      find.textContaining('Playback Timeline (read-only)', skipOffstage: false),
       findsOneWidget,
     );
     expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
@@ -169,7 +169,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Playback'), findsOneWidget);
-    expect(find.text(newMessageText), findsOneWidget);
+    expect(find.text(newMessageText, skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('character add rename delete flow in chat editor', (
@@ -520,6 +520,8 @@ void main() {
     expect(find.textContaining('(00:00 / 00:09)'), findsOneWidget);
 
     final plusOneButton = find.widgetWithText(FilledButton, '+1s');
+    await tester.ensureVisible(plusOneButton);
+    await tester.pumpAndSettle();
     await tester.tap(plusOneButton);
     await tester.pumpAndSettle();
     await tester.tap(plusOneButton);
@@ -527,13 +529,56 @@ void main() {
     await tester.tap(plusOneButton);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('t=3s / 9 s (00:03 / 00:09)'), findsOneWidget);
-    expect(find.text('Mia is typing...'), findsOneWidget);
+    expect(
+      find.textContaining(
+        't=3s / 9 s (00:03 / 00:09)',
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Mia is typing...', skipOffstage: false), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'End'));
+    final endButton = find.widgetWithText(OutlinedButton, 'End');
+    await tester.ensureVisible(endButton);
+    await tester.pumpAndSettle();
+    await tester.tap(endButton);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Status: finished'), findsOneWidget);
+    expect(
+      find.textContaining('Status: finished', skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('playback preview toggles affect export placeholder notice', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('playbackDeviceFrameSwitch')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('playbackCleanPreviewSwitch')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('exportScreenshotButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Export placeholder: PNG screenshot'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('no frame and clean preview'), findsOneWidget);
   });
 }
 

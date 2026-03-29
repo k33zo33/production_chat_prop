@@ -92,7 +92,7 @@ class PlaybackScreen extends ConsumerWidget {
   }
 }
 
-class _PlaybackTimeline extends ConsumerWidget {
+class _PlaybackTimeline extends ConsumerStatefulWidget {
   const _PlaybackTimeline({
     required this.snapshot,
     required this.onSceneSelected,
@@ -102,9 +102,17 @@ class _PlaybackTimeline extends ConsumerWidget {
   final ValueChanged<String> onSceneSelected;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final project = snapshot.project;
-    final scene = snapshot.scene;
+  ConsumerState<_PlaybackTimeline> createState() => _PlaybackTimelineState();
+}
+
+class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
+  bool _showDeviceFrame = true;
+  bool _cleanPreview = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final project = widget.snapshot.project;
+    final scene = widget.snapshot.scene;
     final sortedMessages = scene == null ? <Message>[] : [...scene.messages]
       ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
     final maxSecond = sortedMessages.isEmpty
@@ -153,11 +161,78 @@ class _PlaybackTimeline extends ConsumerWidget {
                     ],
                     onChanged: (sceneId) {
                       if (sceneId != null) {
-                        onSceneSelected(sceneId);
+                        widget.onSceneSelected(sceneId);
                       }
                     },
                   ),
                 ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Preview Options',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  key: const Key('playbackDeviceFrameSwitch'),
+                  value: _showDeviceFrame,
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Show Device Frame'),
+                  onChanged: (value) {
+                    setState(() {
+                      _showDeviceFrame = value;
+                    });
+                  },
+                ),
+                SwitchListTile(
+                  key: const Key('playbackCleanPreviewSwitch'),
+                  value: _cleanPreview,
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Clean Preview Mode'),
+                  onChanged: (value) {
+                    setState(() {
+                      _cleanPreview = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'}',
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      key: const Key('exportScreenshotButton'),
+                      onPressed: () => _showExportNotice(
+                        context,
+                        mode: 'PNG screenshot',
+                      ),
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: const Text('Export Screenshot'),
+                    ),
+                    OutlinedButton.icon(
+                      key: const Key('exportVideoButton'),
+                      onPressed: () => _showExportNotice(
+                        context,
+                        mode: '9:16 / 16:9 video',
+                      ),
+                      icon: const Icon(Icons.videocam_outlined),
+                      label: const Text('Export Video'),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -318,6 +393,19 @@ class _PlaybackTimeline extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+
+  void _showExportNotice(
+    BuildContext context, {
+    required String mode,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Export placeholder: $mode with ${_showDeviceFrame ? 'device frame' : 'no frame'} and ${_cleanPreview ? 'clean' : 'full'} preview.',
+        ),
+      ),
     );
   }
 
