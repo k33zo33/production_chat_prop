@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
-import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
 class PlaybackScreen extends ConsumerWidget {
   const PlaybackScreen({super.key, this.projectId});
@@ -35,7 +35,8 @@ class PlaybackScreen extends ConsumerWidget {
       );
     }
 
-    final projectsState = ref.watch(projectsControllerProvider);
+    final activeProjectId = projectId!;
+    final snapshotState = ref.watch(sceneSnapshotProvider(activeProjectId));
 
     return Scaffold(
       appBar: AppBar(
@@ -49,20 +50,21 @@ class PlaybackScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: projectsState.when(
-          data: (projects) {
-            Project? project;
-            for (final item in projects) {
-              if (item.id == projectId) {
-                project = item;
-                break;
-              }
-            }
-            if (project == null) {
+        child: snapshotState.when(
+          data: (snapshot) {
+            if (snapshot == null) {
               return const _ProjectNotFoundState();
             }
 
-            return _PlaybackTimeline(project: project);
+            return _PlaybackTimeline(
+              snapshot: snapshot,
+              onSceneSelected: (sceneId) {
+                ref
+                        .read(sceneSelectionProvider(activeProjectId).notifier)
+                        .selectedSceneId =
+                    sceneId;
+              },
+            );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
@@ -87,13 +89,18 @@ class PlaybackScreen extends ConsumerWidget {
 }
 
 class _PlaybackTimeline extends StatelessWidget {
-  const _PlaybackTimeline({required this.project});
+  const _PlaybackTimeline({
+    required this.snapshot,
+    required this.onSceneSelected,
+  });
 
-  final Project project;
+  final SceneSnapshot snapshot;
+  final ValueChanged<String> onSceneSelected;
 
   @override
   Widget build(BuildContext context) {
-    final scene = project.scenes.isNotEmpty ? project.scenes.first : null;
+    final project = snapshot.project;
+    final scene = snapshot.scene;
     final sortedMessages = scene == null ? <Message>[] : [...scene.messages]
       ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
 
@@ -114,6 +121,27 @@ class _PlaybackTimeline extends StatelessWidget {
                 Text('Scene: ${scene?.title ?? 'No scene'}'),
                 const SizedBox(height: 4),
                 Text('Messages: ${sortedMessages.length}'),
+                if (project.scenes.length > 1) ...[
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: scene?.id,
+                    decoration: const InputDecoration(
+                      labelText: 'Selected Scene',
+                    ),
+                    items: [
+                      for (final item in project.scenes)
+                        DropdownMenuItem(
+                          value: item.id,
+                          child: Text(item.title),
+                        ),
+                    ],
+                    onChanged: (sceneId) {
+                      if (sceneId != null) {
+                        onSceneSelected(sceneId);
+                      }
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -179,8 +207,8 @@ class _PlaybackTimeline extends StatelessWidget {
     required String characterId,
     required Project project,
   }) {
-    for (final scene in project.scenes) {
-      for (final character in scene.characters) {
+    for (final item in project.scenes) {
+      for (final character in item.characters) {
         if (character.id == characterId) {
           return character.displayName;
         }
