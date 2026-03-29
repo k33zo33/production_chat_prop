@@ -82,6 +82,112 @@ void main() {
       expect(messages, hasLength(1));
       expect(messages.first.id, 'm2');
     });
+
+    test('addCharacter appends a new character', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addCharacter(
+            projectId: 'p1',
+            sceneId: 's1',
+            displayName: 'Mia',
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final characters = projects.first.scenes.first.characters;
+
+      expect(characters, hasLength(2));
+      expect(characters.map((character) => character.displayName), [
+        'Alex',
+        'Mia',
+      ]);
+    });
+
+    test('renameCharacter updates only selected character', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addCharacter(
+            projectId: 'p1',
+            sceneId: 's1',
+            displayName: 'Mia',
+          );
+
+      final beforeRename = await container.read(
+        projectsControllerProvider.future,
+      );
+      final mia = beforeRename.first.scenes.first.characters.firstWhere(
+        (character) => character.displayName == 'Mia',
+      );
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .renameCharacter(
+            projectId: 'p1',
+            sceneId: 's1',
+            characterId: mia.id,
+            newDisplayName: 'Mia Updated',
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final names = projects.first.scenes.first.characters
+          .map((character) => character.displayName)
+          .toList(growable: false);
+
+      expect(names, ['Alex', 'Mia Updated']);
+    });
+
+    test('deleteCharacter removes character and its messages', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addCharacter(
+            projectId: 'p1',
+            sceneId: 's1',
+            displayName: 'Mia',
+          );
+
+      final withMia = await container.read(projectsControllerProvider.future);
+      final mia = withMia.first.scenes.first.characters.firstWhere(
+        (character) => character.displayName == 'Mia',
+      );
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addMessage(
+            projectId: 'p1',
+            sceneId: 's1',
+            characterId: mia.id,
+            text: 'Mia message',
+            timestampSeconds: 9,
+            status: MessageStatus.sent,
+            isIncoming: true,
+            showTypingBefore: false,
+          );
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .deleteCharacter(
+            projectId: 'p1',
+            sceneId: 's1',
+            characterId: mia.id,
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final scene = projects.first.scenes.first;
+
+      expect(
+        scene.characters.where((character) => character.id == mia.id),
+        isEmpty,
+      );
+      expect(
+        scene.messages.where((message) => message.characterId == mia.id),
+        isEmpty,
+      );
+    });
   });
 }
 
