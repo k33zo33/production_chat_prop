@@ -206,6 +206,50 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                         label: const Text('Add Scene'),
                       ),
                       OutlinedButton.icon(
+                        key: const Key('applyTemplateBriefingButton'),
+                        onPressed: () async {
+                          final applied = await ref
+                              .read(projectsControllerProvider.notifier)
+                              .applySceneTemplate(
+                                projectId: project.id,
+                                sceneId: selectedScene.id,
+                                templateId: 'briefing',
+                              );
+                          if (!context.mounted || !applied) {
+                            return;
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Applied template: Briefing'),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.auto_awesome_rounded),
+                        label: const Text('Template: Briefing'),
+                      ),
+                      OutlinedButton.icon(
+                        key: const Key('applyTemplateGroupAlertButton'),
+                        onPressed: () async {
+                          final applied = await ref
+                              .read(projectsControllerProvider.notifier)
+                              .applySceneTemplate(
+                                projectId: project.id,
+                                sceneId: selectedScene.id,
+                                templateId: 'group_alert',
+                              );
+                          if (!context.mounted || !applied) {
+                            return;
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Applied template: Group Alert'),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.groups_rounded),
+                        label: const Text('Template: Group Alert'),
+                      ),
+                      OutlinedButton.icon(
                         onPressed: () async {
                           final updatedName = await _showSceneNameDialog(
                             context,

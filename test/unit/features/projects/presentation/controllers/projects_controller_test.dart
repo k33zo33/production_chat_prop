@@ -406,6 +406,29 @@ void main() {
       expect(removed, 2);
       expect(projects.first.scenes.first.messages, isEmpty);
     });
+
+    test('applySceneTemplate replaces scene characters and messages', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final applied = await container
+          .read(projectsControllerProvider.notifier)
+          .applySceneTemplate(
+            projectId: 'p1',
+            sceneId: 's1',
+            templateId: 'group_alert',
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final scene = projects.first.scenes.first;
+
+      expect(applied, isTrue);
+      expect(scene.characters.length, 3);
+      expect(scene.messages.length, 4);
+      expect(
+        scene.messages.first.text,
+        'Stand by for rehearsal in 90 seconds.',
+      );
+    });
   });
 }
 

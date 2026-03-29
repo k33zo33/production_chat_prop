@@ -513,7 +513,13 @@ class _TypingIndicatorItem extends StatelessWidget {
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text('$speakerName is typing...'),
+      child: Row(
+        children: [
+          const Icon(Icons.more_horiz_rounded, size: 18),
+          const SizedBox(width: 8),
+          Text('$speakerName is typing...'),
+        ],
+      ),
     );
   }
 }
@@ -531,6 +537,14 @@ class _TimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final directionLabel = message.isIncoming ? 'INCOMING' : 'OUTGOING';
+    final statusLabel = message.status.name.toUpperCase();
+    final statusIcon = switch (message.status) {
+      MessageStatus.sent => Icons.check_rounded,
+      MessageStatus.delivered => Icons.done_all_rounded,
+      MessageStatus.seen => Icons.visibility_rounded,
+    };
+
     return Opacity(
       opacity: isVisibleAtCurrentTime ? 1 : 0.45,
       child: Container(
@@ -551,7 +565,28 @@ class _TimelineItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('$speakerName • ${message.status.name}'),
+                  Text(speakerName),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Chip(
+                        visualDensity: VisualDensity.compact,
+                        avatar: Icon(statusIcon, size: 14),
+                        label: Text(statusLabel),
+                      ),
+                      Chip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text(directionLabel),
+                      ),
+                      if (message.showTypingBefore)
+                        const Chip(
+                          visualDensity: VisualDensity.compact,
+                          label: Text('TYPING BEFORE'),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 2),
                   Text(message.text),
                 ],

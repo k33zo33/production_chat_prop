@@ -370,6 +370,37 @@ void main() {
     expect(find.textContaining('Scene: Scene C'), findsOneWidget);
   });
 
+  testWidgets('apply scene template updates editor content', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    final templateButton = find.byKey(const Key('applyTemplateBriefingButton'));
+    await tester.ensureVisible(templateButton);
+    await tester.pumpAndSettle();
+    await tester.tap(templateButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Applied template: Briefing'), findsOneWidget);
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    expect(find.text('Call time shifted to 08:30.'), findsOneWidget);
+  });
+
   testWidgets('edit message updates timeline metadata in chat editor', (
     tester,
   ) async {
@@ -634,6 +665,32 @@ void main() {
       find.textContaining('Status: finished', skipOffstage: false),
       findsOneWidget,
     );
+  });
+
+  testWidgets('playback timeline shows polished status and direction chips', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 5; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -180));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    expect(find.text('OUTGOING', skipOffstage: false), findsWidgets);
+    expect(find.text('SENT', skipOffstage: false), findsWidgets);
+    expect(find.text('TYPING BEFORE', skipOffstage: false), findsWidgets);
   });
 
   testWidgets(

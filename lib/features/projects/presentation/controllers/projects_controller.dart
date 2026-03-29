@@ -945,6 +945,60 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return removedCount;
   }
 
+  Future<bool> applySceneTemplate({
+    required String projectId,
+    required String sceneId,
+    required String templateId,
+  }) async {
+    final templateData = _buildTemplateData(templateId);
+    if (templateData == null) {
+      return false;
+    }
+
+    final current = await future;
+    var applied = false;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+                applied = true;
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: templateData.characters,
+                  messages: templateData.messages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (!applied) {
+      return false;
+    }
+
+    await _persist(next);
+    return true;
+  }
+
   Future<void> _persist(List<Project> projects) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -1056,4 +1110,133 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     }
     return reindexed;
   }
+
+  _SceneTemplateData? _buildTemplateData(String templateId) {
+    switch (templateId) {
+      case 'briefing':
+        final producerId = _uuid.v4();
+        final propLeadId = _uuid.v4();
+        return _SceneTemplateData(
+          characters: [
+            Character(
+              id: producerId,
+              displayName: 'Producer',
+              avatarPath: null,
+              bubbleColor: '#2E90FA',
+            ),
+            Character(
+              id: propLeadId,
+              displayName: 'Prop Lead',
+              avatarPath: null,
+              bubbleColor: '#12B76A',
+            ),
+          ],
+          messages: [
+            Message(
+              id: _uuid.v4(),
+              characterId: producerId,
+              text: 'Call time shifted to 08:30.',
+              timestampSeconds: 0,
+              status: MessageStatus.sent,
+              isIncoming: false,
+              showTypingBefore: false,
+            ),
+            Message(
+              id: _uuid.v4(),
+              characterId: propLeadId,
+              text: 'Copy. Updating prop handoff list now.',
+              timestampSeconds: 2,
+              status: MessageStatus.delivered,
+              isIncoming: true,
+              showTypingBefore: true,
+            ),
+            Message(
+              id: _uuid.v4(),
+              characterId: producerId,
+              text: 'Thanks. Share final checklist before rollout.',
+              timestampSeconds: 5,
+              status: MessageStatus.seen,
+              isIncoming: false,
+              showTypingBefore: true,
+            ),
+          ],
+        );
+      case 'group_alert':
+        final adId = _uuid.v4();
+        final cameraId = _uuid.v4();
+        final soundId = _uuid.v4();
+        return _SceneTemplateData(
+          characters: [
+            Character(
+              id: adId,
+              displayName: '1st AD',
+              avatarPath: null,
+              bubbleColor: '#F79009',
+            ),
+            Character(
+              id: cameraId,
+              displayName: 'Camera',
+              avatarPath: null,
+              bubbleColor: '#2E90FA',
+            ),
+            Character(
+              id: soundId,
+              displayName: 'Sound',
+              avatarPath: null,
+              bubbleColor: '#12B76A',
+            ),
+          ],
+          messages: [
+            Message(
+              id: _uuid.v4(),
+              characterId: adId,
+              text: 'Stand by for rehearsal in 90 seconds.',
+              timestampSeconds: 0,
+              status: MessageStatus.sent,
+              isIncoming: false,
+              showTypingBefore: false,
+            ),
+            Message(
+              id: _uuid.v4(),
+              characterId: cameraId,
+              text: 'Camera locked. Ready on A.',
+              timestampSeconds: 1,
+              status: MessageStatus.delivered,
+              isIncoming: true,
+              showTypingBefore: false,
+            ),
+            Message(
+              id: _uuid.v4(),
+              characterId: soundId,
+              text: 'Boom clear. Rolling tone.',
+              timestampSeconds: 3,
+              status: MessageStatus.delivered,
+              isIncoming: true,
+              showTypingBefore: true,
+            ),
+            Message(
+              id: _uuid.v4(),
+              characterId: adId,
+              text: 'Great. Go for rehearsal.',
+              timestampSeconds: 5,
+              status: MessageStatus.seen,
+              isIncoming: false,
+              showTypingBefore: true,
+            ),
+          ],
+        );
+      default:
+        return null;
+    }
+  }
+}
+
+class _SceneTemplateData {
+  const _SceneTemplateData({
+    required this.characters,
+    required this.messages,
+  });
+
+  final List<Character> characters;
+  final List<Message> messages;
 }
