@@ -35,12 +35,11 @@ void main() {
     expect(find.text('New Project 1'), findsOneWidget);
 
     await tester.tap(find.text('Open Chat Editor'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     expect(find.text('Chat Editor'), findsOneWidget);
     expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
-    expect(find.textContaining('Messages (read-only)'), findsOneWidget);
+    expect(find.text('Add Message'), findsWidgets);
   });
 
   testWidgets('duplicate and delete project from popup menu', (tester) async {

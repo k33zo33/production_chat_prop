@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
+import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
+import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
 class ChatEditorScreen extends ConsumerWidget {
   const ChatEditorScreen({super.key, this.projectId});
@@ -57,6 +59,7 @@ class ChatEditorScreen extends ConsumerWidget {
             }
 
             return _ProjectEditorPlaceholder(
+              projectId: activeProjectId,
               snapshot: snapshot,
               onSceneSelected: (sceneId) {
                 ref
@@ -88,17 +91,19 @@ class ChatEditorScreen extends ConsumerWidget {
   }
 }
 
-class _ProjectEditorPlaceholder extends StatelessWidget {
+class _ProjectEditorPlaceholder extends ConsumerWidget {
   const _ProjectEditorPlaceholder({
+    required this.projectId,
     required this.snapshot,
     required this.onSceneSelected,
   });
 
+  final String projectId;
   final SceneSnapshot snapshot;
   final ValueChanged<String> onSceneSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final project = snapshot.project;
     final selectedScene = snapshot.scene;
 
@@ -186,6 +191,15 @@ class _ProjectEditorPlaceholder extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          _MessageComposerCard(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+            characters: selectedScene.characters,
+            latestTimestamp: selectedScene.messages.isEmpty
+                ? 0
+                : selectedScene.messages.last.timestampSeconds,
+          ),
+          const SizedBox(height: 12),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -202,6 +216,8 @@ class _ProjectEditorPlaceholder extends StatelessWidget {
                   else
                     for (final message in selectedScene.messages) ...[
                       _MessageRow(
+                        projectId: project.id,
+                        sceneId: selectedScene.id,
                         message: message,
                         speakerName: _resolveSpeakerName(
                           characterId: message.characterId,
@@ -255,8 +271,15 @@ class _ProjectEditorPlaceholder extends StatelessWidget {
 }
 
 class _MessageRow extends StatelessWidget {
-  const _MessageRow({required this.message, required this.speakerName});
+  const _MessageRow({
+    required this.projectId,
+    required this.sceneId,
+    required this.message,
+    required this.speakerName,
+  });
 
+  final String projectId;
+  final String sceneId;
   final Message message;
   final String speakerName;
 
@@ -274,9 +297,20 @@ class _MessageRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
-            style: Theme.of(context).textTheme.labelMedium,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ),
+              _MessageActions(
+                projectId: projectId,
+                sceneId: sceneId,
+                message: message,
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(message.text),
@@ -285,6 +319,275 @@ class _MessageRow extends StatelessWidget {
     );
   }
 }
+
+class _MessageComposerCard extends ConsumerStatefulWidget {
+  const _MessageComposerCard({
+    required this.projectId,
+    required this.sceneId,
+    required this.characters,
+    required this.latestTimestamp,
+  });
+
+  final String projectId;
+  final String sceneId;
+  final List<Character> characters;
+  final int latestTimestamp;
+
+  @override
+  ConsumerState<_MessageComposerCard> createState() =>
+      _MessageComposerCardState();
+}
+
+class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
+  late final TextEditingController _textController;
+  late final TextEditingController _timestampController;
+  String? _selectedCharacterId;
+  MessageStatus _status = MessageStatus.sent;
+  bool _isIncoming = false;
+  bool _showTypingBefore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController();
+    _timestampController = TextEditingController(
+      text: (widget.latestTimestamp + 1).toString(),
+    );
+    if (widget.characters.isNotEmpty) {
+      _selectedCharacterId = widget.characters.first.id;
+    }
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _timestampController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add Message',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedCharacterId,
+              decoration: const InputDecoration(labelText: 'Character'),
+              items: [
+                for (final character in widget.characters)
+                  DropdownMenuItem(
+                    value: character.id,
+                    child: Text(character.displayName),
+                  ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedCharacterId = value;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _textController,
+              decoration: const InputDecoration(labelText: 'Message Text'),
+              minLines: 1,
+              maxLines: 3,
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _timestampController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Timestamp (seconds)',
+              ),
+            ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<MessageStatus>(
+              initialValue: _status,
+              decoration: const InputDecoration(labelText: 'Status'),
+              items: MessageStatus.values
+                  .map(
+                    (status) => DropdownMenuItem(
+                      value: status,
+                      child: Text(status.name),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _status = value;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              value: _isIncoming,
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Incoming'),
+              onChanged: (value) {
+                setState(() {
+                  _isIncoming = value;
+                });
+              },
+            ),
+            SwitchListTile(
+              value: _showTypingBefore,
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Show typing before'),
+              onChanged: (value) {
+                setState(() {
+                  _showTypingBefore = value;
+                });
+              },
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _selectedCharacterId == null ? null : _addMessage,
+              icon: const Icon(Icons.add_comment_outlined),
+              label: const Text('Add Message'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addMessage() async {
+    final timestamp = int.tryParse(_timestampController.text.trim());
+    if (timestamp == null || _selectedCharacterId == null) {
+      return;
+    }
+
+    await ref
+        .read(projectsControllerProvider.notifier)
+        .addMessage(
+          projectId: widget.projectId,
+          sceneId: widget.sceneId,
+          characterId: _selectedCharacterId!,
+          text: _textController.text,
+          timestampSeconds: timestamp,
+          status: _status,
+          isIncoming: _isIncoming,
+          showTypingBefore: _showTypingBefore,
+        );
+
+    if (!mounted) {
+      return;
+    }
+
+    _textController.clear();
+    _timestampController.text = (timestamp + 1).toString();
+    setState(() {
+      _showTypingBefore = false;
+    });
+  }
+}
+
+class _MessageActions extends ConsumerWidget {
+  const _MessageActions({
+    required this.projectId,
+    required this.sceneId,
+    required this.message,
+  });
+
+  final String projectId;
+  final String sceneId;
+  final Message message;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopupMenuButton<_MessageAction>(
+      onSelected: (action) async {
+        switch (action) {
+          case _MessageAction.editText:
+            final updatedText = await _showEditMessageDialog(
+              context,
+              message.text,
+            );
+            if (updatedText == null) {
+              return;
+            }
+            await ref
+                .read(projectsControllerProvider.notifier)
+                .updateMessageText(
+                  projectId: projectId,
+                  sceneId: sceneId,
+                  messageId: message.id,
+                  newText: updatedText,
+                );
+            return;
+          case _MessageAction.delete:
+            await ref
+                .read(projectsControllerProvider.notifier)
+                .deleteMessage(
+                  projectId: projectId,
+                  sceneId: sceneId,
+                  messageId: message.id,
+                );
+            return;
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: _MessageAction.editText,
+          child: Text('Edit Text'),
+        ),
+        PopupMenuItem(
+          value: _MessageAction.delete,
+          child: Text('Delete'),
+        ),
+      ],
+      icon: const Icon(Icons.more_horiz_rounded),
+    );
+  }
+
+  Future<String?> _showEditMessageDialog(
+    BuildContext context,
+    String currentText,
+  ) async {
+    final controller = TextEditingController(text: currentText);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Message Text'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            minLines: 1,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Text'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    return result;
+  }
+}
+
+enum _MessageAction { editText, delete }
 
 class _ProjectNotFoundState extends StatelessWidget {
   const _ProjectNotFoundState();

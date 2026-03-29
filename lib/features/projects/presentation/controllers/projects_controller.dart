@@ -110,6 +110,190 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<void> addMessage({
+    required String projectId,
+    required String sceneId,
+    required String characterId,
+    required String text,
+    required int timestampSeconds,
+    required MessageStatus status,
+    required bool isIncoming,
+    required bool showTypingBefore,
+  }) async {
+    final trimmedText = text.trim();
+    if (trimmedText.isEmpty) {
+      return;
+    }
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedMessages =
+                    [
+                      ...scene.messages,
+                      Message(
+                        id: _uuid.v4(),
+                        characterId: characterId,
+                        text: trimmedText,
+                        timestampSeconds: timestampSeconds,
+                        status: status,
+                        isIncoming: isIncoming,
+                        showTypingBefore: showTypingBefore,
+                      ),
+                    ]..sort(
+                      (a, b) =>
+                          a.timestampSeconds.compareTo(b.timestampSeconds),
+                    );
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: scene.characters,
+                  messages: updatedMessages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
+  Future<void> deleteMessage({
+    required String projectId,
+    required String sceneId,
+    required String messageId,
+  }) async {
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedMessages = scene.messages
+                    .where((message) => message.id != messageId)
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: scene.characters,
+                  messages: updatedMessages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
+  Future<void> updateMessageText({
+    required String projectId,
+    required String sceneId,
+    required String messageId,
+    required String newText,
+  }) async {
+    final trimmedText = newText.trim();
+    if (trimmedText.isEmpty) {
+      return;
+    }
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedMessages = scene.messages
+                    .map((message) {
+                      if (message.id != messageId) {
+                        return message;
+                      }
+
+                      return Message(
+                        id: message.id,
+                        characterId: message.characterId,
+                        text: trimmedText,
+                        timestampSeconds: message.timestampSeconds,
+                        status: message.status,
+                        isIncoming: message.isIncoming,
+                        showTypingBefore: message.showTypingBefore,
+                      );
+                    })
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: scene.characters,
+                  messages: updatedMessages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
   Future<void> _persist(List<Project> projects) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
