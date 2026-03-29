@@ -27,5 +27,11 @@ final appRouter = GoRouter(
       name: 'playback',
       builder: (context, state) => const PlaybackScreen(),
     ),
+    GoRoute(
+      path: '/playback/:projectId',
+      name: 'playbackProject',
+      builder: (context, state) =>
+          PlaybackScreen(projectId: state.pathParameters['projectId']),
+    ),
   ],
 );

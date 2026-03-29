@@ -193,7 +193,10 @@ class _ProjectEditorPlaceholder extends StatelessWidget {
           runSpacing: 8,
           children: [
             FilledButton.icon(
-              onPressed: () => context.goNamed('playback'),
+              onPressed: () => context.goNamed(
+                'playbackProject',
+                pathParameters: {'projectId': project.id},
+              ),
               icon: const Icon(Icons.play_circle_outline_rounded),
               label: const Text('Open Playback'),
             ),
