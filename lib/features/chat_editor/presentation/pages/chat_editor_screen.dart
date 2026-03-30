@@ -732,6 +732,7 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
   @override
   Widget build(BuildContext context) {
     final palette = resolveChatStylePalette(widget.sceneStyleId);
+    final speakerNameById = _buildSpeakerNameById(widget.sceneProject);
 
     return Card(
       child: Padding(
@@ -858,7 +859,7 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                   characters: widget.sceneCharacters,
                   speakerName: _resolveSpeakerName(
                     characterId: widget.sceneMessages[i].characterId,
-                    sceneProject: widget.sceneProject,
+                    speakerNameById: speakerNameById,
                   ),
                   canMoveEarlier: i > 0,
                   canMoveLater: i < widget.sceneMessages.length - 1,
@@ -886,16 +887,19 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
 
   String _resolveSpeakerName({
     required String characterId,
-    required Project sceneProject,
+    required Map<String, String> speakerNameById,
   }) {
+    return speakerNameById[characterId] ?? 'Unknown';
+  }
+
+  Map<String, String> _buildSpeakerNameById(Project sceneProject) {
+    final map = <String, String>{};
     for (final scene in sceneProject.scenes) {
       for (final character in scene.characters) {
-        if (character.id == characterId) {
-          return character.displayName;
-        }
+        map[character.id] = character.displayName;
       }
     }
-    return 'Unknown';
+    return map;
   }
 
   Future<bool> _showClearMessagesDialog(BuildContext context) async {
