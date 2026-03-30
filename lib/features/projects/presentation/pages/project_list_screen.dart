@@ -14,6 +14,7 @@ class ProjectListScreen extends ConsumerStatefulWidget {
 class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   late final TextEditingController _searchController;
   String _searchQuery = '';
+  ProjectType? _selectedTypeFilter;
 
   @override
   void initState() {
@@ -56,14 +57,14 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
             }
 
             final normalizedQuery = _searchQuery.trim().toLowerCase();
-            final filteredProjects = normalizedQuery.isEmpty
-                ? projects
-                : projects
-                      .where(
-                        (project) =>
-                            project.name.toLowerCase().contains(normalizedQuery),
-                      )
-                      .toList(growable: false);
+            final filteredProjects = projects.where((project) {
+              final matchesQuery =
+                  normalizedQuery.isEmpty ||
+                  project.name.toLowerCase().contains(normalizedQuery);
+              final matchesType =
+                  _selectedTypeFilter == null || project.type == _selectedTypeFilter;
+              return matchesQuery && matchesType;
+            }).toList(growable: false);
 
             return Column(
               children: [
@@ -83,12 +84,51 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     },
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          key: const Key('projectTypeFilter_all'),
+                          label: const Text('All'),
+                          selected: _selectedTypeFilter == null,
+                          onSelected: (selected) {
+                            if (!selected) {
+                              return;
+                            }
+                            setState(() {
+                              _selectedTypeFilter = null;
+                            });
+                          },
+                        ),
+                        for (final type in ProjectType.values)
+                          ChoiceChip(
+                            key: Key('projectTypeFilter_${type.name}'),
+                            label: Text(_typeLabel(type)),
+                            selected: _selectedTypeFilter == type,
+                            onSelected: (selected) {
+                              if (!selected) {
+                                return;
+                              }
+                              setState(() {
+                                _selectedTypeFilter = type;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: filteredProjects.isEmpty
                       ? const Center(
                           child: Padding(
                             padding: EdgeInsets.all(24),
-                            child: Text('No projects match your search.'),
+                            child: Text('No projects match current filters.'),
                           ),
                         )
                       : ListView.separated(
@@ -137,6 +177,14 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       ),
     );
   }
+}
+
+String _typeLabel(ProjectType type) {
+  return switch (type) {
+    ProjectType.ad => 'Ad',
+    ProjectType.series => 'Series',
+    ProjectType.other => 'Other',
+  };
 }
 
 class _ProjectCard extends ConsumerWidget {

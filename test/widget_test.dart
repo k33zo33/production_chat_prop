@@ -133,13 +133,38 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('No projects match your search.'), findsOneWidget);
+    expect(find.text('No projects match current filters.'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('projectSearchField')), '');
     await tester.pumpAndSettle();
 
     expect(find.text('New Project 1'), findsOneWidget);
     expect(find.text('New Project 2'), findsOneWidget);
+  });
+
+  testWidgets('project list type chips filter result set', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('New Project 1'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
+    await tester.pumpAndSettle();
+    expect(find.text('No projects match current filters.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('projectTypeFilter_other')));
+    await tester.pumpAndSettle();
+    expect(find.text('New Project 1'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('projectTypeFilter_all')));
+    await tester.pumpAndSettle();
+    expect(find.text('New Project 1'), findsOneWidget);
   });
 
   testWidgets('create project and navigate to playback from project card', (
