@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
@@ -429,6 +430,9 @@ class _ProjectCard extends ConsumerWidget {
                       case _ProjectMenuAction.copyJson:
                         await _copyProjectJson(context, project);
                         return;
+                      case _ProjectMenuAction.downloadJson:
+                        await _downloadProjectJson(context, project);
+                        return;
                       case _ProjectMenuAction.setTypeAd:
                         await controller.setProjectType(
                           projectId: project.id,
@@ -464,6 +468,10 @@ class _ProjectCard extends ConsumerWidget {
                     PopupMenuItem(
                       value: _ProjectMenuAction.copyJson,
                       child: Text('Copy JSON'),
+                    ),
+                    PopupMenuItem(
+                      value: _ProjectMenuAction.downloadJson,
+                      child: Text('Download JSON'),
                     ),
                     PopupMenuItem(
                       value: _ProjectMenuAction.setTypeAd,
@@ -574,6 +582,24 @@ class _ProjectCard extends ConsumerWidget {
       const SnackBar(content: Text('Project JSON copied to clipboard.')),
     );
   }
+
+  Future<void> _downloadProjectJson(
+    BuildContext context,
+    Project project,
+  ) async {
+    final service = ProjectPackageExportService();
+    final result = await service.exportProjectPackage(project: project);
+    if (!context.mounted) {
+      return;
+    }
+
+    final message = result.isSuccess
+        ? 'Project package exported: ${result.filename}.'
+        : 'Project package export failed: download is not available on this platform.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 }
 
 class _EmptyProjectState extends StatelessWidget {
@@ -636,6 +662,7 @@ enum _ProjectMenuAction {
   rename,
   duplicate,
   copyJson,
+  downloadJson,
   setTypeAd,
   setTypeSeries,
   setTypeOther,

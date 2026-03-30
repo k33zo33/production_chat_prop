@@ -596,6 +596,29 @@ void main() {
         expect(imported.scenes.first.title, 'Scene 1');
       },
     );
+
+    test(
+      'importProjectFromJson accepts wrapped project payload from package export',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'meta': {'format': 'project_package', 'version': 1},
+          'project': _sampleProject().toJson(),
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson(payload);
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        expect(result.status, ProjectJsonImportStatus.success);
+        expect(projects, hasLength(2));
+        expect(projects.last.name, 'Project One (Imported)');
+      },
+    );
   });
 }
 

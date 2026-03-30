@@ -15,7 +15,7 @@ U 2-3 minute pokazati tri MVP use-casea:
 1) **Project list (20-30s)**
 - pokaži da je demo projekt označen badgeom `DEMO PRESET`
 - istakni scene/message sažetak na kartici
-- pokaži `Copy JSON` na kartici i `Import Project JSON` u top baru za handoff između timova
+- pokaži `Copy JSON` i `Download JSON` na kartici, pa `Import Project JSON` u top baru za handoff između timova
 - otvori `Open Chat Editor`
 
 2) **Chat editor (45-60s)**
@@ -39,7 +39,7 @@ U 2-3 minute pokazati tri MVP use-casea:
 
 ## Optional Q&A backup točke
 - lokalno spremanje projekata
-- JSON handoff (`Copy JSON` / `Import Project JSON`)
+- JSON handoff (`Copy JSON` / `Download JSON` / `Import Project JSON`)
 - 9:16 i 16:9 ratio podrška
 - scene/template workflow
 - test coverage i verify/demo-smoke skripte

@@ -190,6 +190,33 @@ void main() {
     expect(clipboardText, contains('"name": "New Project 1"'));
   });
 
+  testWidgets(
+    'project popup download json shows fallback feedback on unsupported platform',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await tester.tap(find.byIcon(Icons.more_vert).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Download JSON'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        find.text(
+          'Project package export failed: download is not available on this platform.',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('import project json dialog adds new project card', (
     tester,
   ) async {
