@@ -69,6 +69,22 @@ void main() {
     expect(find.text('Type: ad'), findsOneWidget);
   });
 
+  testWidgets('empty state create button creates starter project', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('emptyCreateProjectButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('New Project 1'), findsOneWidget);
+    expect(find.text('Type: other'), findsOneWidget);
+  });
+
   testWidgets('create project and navigate to chat editor from project card', (
     tester,
   ) async {
