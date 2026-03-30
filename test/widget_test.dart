@@ -294,6 +294,24 @@ void main() {
     expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
   });
 
+  testWidgets('project card shows scene and message summary stats', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.textContaining('Scenes: 1 • Messages: 3 • Max: 9s'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('create project and navigate to playback from project card', (
     tester,
   ) async {

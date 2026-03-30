@@ -64,15 +64,19 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
             for (final project in projects) {
               typeCounts[project.type] = (typeCounts[project.type] ?? 0) + 1;
             }
-            final filteredProjects = projects.where((project) {
-              final matchesQuery =
-                  normalizedQuery.isEmpty ||
-                  project.name.toLowerCase().contains(normalizedQuery);
-              final matchesType =
-                  _selectedTypeFilter == null || project.type == _selectedTypeFilter;
-              return matchesQuery && matchesType;
-            }).toList(growable: false)
-              ..sort(_projectSortComparator(_selectedSortMode));
+            final filteredProjects =
+                projects
+                    .where((project) {
+                      final matchesQuery =
+                          normalizedQuery.isEmpty ||
+                          project.name.toLowerCase().contains(normalizedQuery);
+                      final matchesType =
+                          _selectedTypeFilter == null ||
+                          project.type == _selectedTypeFilter;
+                      return matchesQuery && matchesType;
+                    })
+                    .toList(growable: false)
+                  ..sort(_projectSortComparator(_selectedSortMode));
 
             return Column(
               children: [
@@ -267,12 +271,15 @@ String _projectSortLabel(_ProjectSortMode mode) {
 
 int Function(Project, Project) _projectSortComparator(_ProjectSortMode mode) {
   return switch (mode) {
-    _ProjectSortMode.updatedNewest =>
-      (a, b) => b.updatedAt.compareTo(a.updatedAt),
-    _ProjectSortMode.nameAscending =>
-      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
-    _ProjectSortMode.nameDescending =>
-      (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+    _ProjectSortMode.updatedNewest => (a, b) => b.updatedAt.compareTo(
+      a.updatedAt,
+    ),
+    _ProjectSortMode.nameAscending => (a, b) => a.name.toLowerCase().compareTo(
+      b.name.toLowerCase(),
+    ),
+    _ProjectSortMode.nameDescending => (a, b) => b.name.toLowerCase().compareTo(
+      a.name.toLowerCase(),
+    ),
   };
 }
 
@@ -345,6 +352,12 @@ class _ProjectCard extends ConsumerWidget {
             Text('Type: ${project.type.name}'),
             const SizedBox(height: 4),
             Text('Updated: ${_formatDateTime(project.updatedAt)}'),
+            const SizedBox(height: 4),
+            Text(
+              'Scenes: ${project.scenes.length} • '
+              'Messages: ${_projectMessageCount(project)} • '
+              'Max: ${_projectMaxSecond(project)}s',
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
@@ -444,4 +457,24 @@ String _formatDateTime(DateTime value) {
   final hour = value.hour.toString().padLeft(2, '0');
   final minute = value.minute.toString().padLeft(2, '0');
   return '${value.year}-$month-$day $hour:$minute';
+}
+
+int _projectMessageCount(Project project) {
+  var total = 0;
+  for (final scene in project.scenes) {
+    total += scene.messages.length;
+  }
+  return total;
+}
+
+int _projectMaxSecond(Project project) {
+  var maxSecond = 0;
+  for (final scene in project.scenes) {
+    for (final message in scene.messages) {
+      if (message.timestampSeconds > maxSecond) {
+        maxSecond = message.timestampSeconds;
+      }
+    }
+  }
+  return maxSecond;
 }
