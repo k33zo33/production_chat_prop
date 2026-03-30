@@ -38,6 +38,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         title: const Text('Project List'),
         actions: [
           IconButton(
+            tooltip: 'Add Demo Project',
+            onPressed: () => ref
+                .read(projectsControllerProvider.notifier)
+                .createDemoProject(),
+            icon: const Icon(Icons.auto_awesome_rounded),
+          ),
+          IconButton(
             tooltip: 'Refresh',
             onPressed: () => ref.invalidate(projectsControllerProvider),
             icon: const Icon(Icons.refresh_rounded),

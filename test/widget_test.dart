@@ -18,6 +18,28 @@ void main() {
     expect(find.text('Project List'), findsOneWidget);
   });
 
+  testWidgets('add demo project action seeds prefilled project', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    expect(find.text('No projects yet'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Demo Project 1'), findsOneWidget);
+    expect(find.text('Type: ad'), findsOneWidget);
+    expect(
+      find.textContaining('Scenes: 2 • Messages: 7 • Max: 11s'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('create project and navigate to chat editor from project card', (
     tester,
   ) async {

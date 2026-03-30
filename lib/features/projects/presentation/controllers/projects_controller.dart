@@ -44,6 +44,22 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<void> createDemoProject() async {
+    final current = await future;
+    final now = DateTime.now();
+    final project = Project(
+      id: _uuid.v4(),
+      name: 'Demo Project ${current.length + 1}',
+      type: ProjectType.ad,
+      createdAt: now,
+      updatedAt: now,
+      scenes: _buildDemoScenes(),
+    );
+
+    final next = [...current, project];
+    await _persist(next);
+  }
+
   Future<void> renameProject({
     required String projectId,
     required String newName,
@@ -1341,6 +1357,131 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       default:
         return null;
     }
+  }
+
+  List<Scene> _buildDemoScenes() {
+    final sceneOneProducerId = _uuid.v4();
+    final sceneOneTalentId = _uuid.v4();
+    final sceneOneDirectorId = _uuid.v4();
+
+    final sceneTwoProducerId = _uuid.v4();
+    final sceneTwoCameraId = _uuid.v4();
+
+    return [
+      Scene(
+        id: _uuid.v4(),
+        title: 'Scene 1 - Prep Chat',
+        styleId: 'studio_default',
+        aspectRatio: SceneAspectRatio.portrait9x16,
+        characters: [
+          Character(
+            id: sceneOneProducerId,
+            displayName: 'Producer',
+            avatarPath: null,
+            bubbleColor: '#2E90FA',
+          ),
+          Character(
+            id: sceneOneTalentId,
+            displayName: 'Talent',
+            avatarPath: null,
+            bubbleColor: '#12B76A',
+          ),
+          Character(
+            id: sceneOneDirectorId,
+            displayName: 'Director',
+            avatarPath: null,
+            bubbleColor: '#F79009',
+          ),
+        ],
+        messages: [
+          Message(
+            id: _uuid.v4(),
+            characterId: sceneOneProducerId,
+            text: 'Call time confirmed for 08:30.',
+            timestampSeconds: 0,
+            status: MessageStatus.sent,
+            isIncoming: false,
+            showTypingBefore: false,
+          ),
+          Message(
+            id: _uuid.v4(),
+            characterId: sceneOneTalentId,
+            text: 'Arriving in 20 minutes.',
+            timestampSeconds: 3,
+            status: MessageStatus.delivered,
+            isIncoming: true,
+            showTypingBefore: true,
+          ),
+          Message(
+            id: _uuid.v4(),
+            characterId: sceneOneDirectorId,
+            text: 'We start with close-up, then hallway walk.',
+            timestampSeconds: 7,
+            status: MessageStatus.seen,
+            isIncoming: true,
+            showTypingBefore: true,
+          ),
+          Message(
+            id: _uuid.v4(),
+            characterId: sceneOneProducerId,
+            text: 'Copy that, props are already on set.',
+            timestampSeconds: 11,
+            status: MessageStatus.sent,
+            isIncoming: false,
+            showTypingBefore: false,
+          ),
+        ],
+      ),
+      Scene(
+        id: _uuid.v4(),
+        title: 'Scene 2 - Rolling',
+        styleId: 'night_shift',
+        aspectRatio: SceneAspectRatio.landscape16x9,
+        characters: [
+          Character(
+            id: sceneTwoProducerId,
+            displayName: 'Producer',
+            avatarPath: null,
+            bubbleColor: '#2E90FA',
+          ),
+          Character(
+            id: sceneTwoCameraId,
+            displayName: 'Camera Op',
+            avatarPath: null,
+            bubbleColor: '#7A5AF8',
+          ),
+        ],
+        messages: [
+          Message(
+            id: _uuid.v4(),
+            characterId: sceneTwoProducerId,
+            text: 'Rolling in 5, stand by.',
+            timestampSeconds: 0,
+            status: MessageStatus.sent,
+            isIncoming: false,
+            showTypingBefore: false,
+          ),
+          Message(
+            id: _uuid.v4(),
+            characterId: sceneTwoCameraId,
+            text: 'Frame locked. Exposure set.',
+            timestampSeconds: 4,
+            status: MessageStatus.delivered,
+            isIncoming: true,
+            showTypingBefore: true,
+          ),
+          Message(
+            id: _uuid.v4(),
+            characterId: sceneTwoProducerId,
+            text: 'Action on my mark.',
+            timestampSeconds: 8,
+            status: MessageStatus.seen,
+            isIncoming: false,
+            showTypingBefore: false,
+          ),
+        ],
+      ),
+    ];
   }
 }
 

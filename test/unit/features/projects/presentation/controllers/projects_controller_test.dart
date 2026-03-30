@@ -492,6 +492,39 @@ void main() {
             ),
       );
     });
+
+    test(
+      'createDemoProject appends prefilled ad project with scene variety',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        await container
+            .read(projectsControllerProvider.notifier)
+            .createDemoProject();
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        expect(projects, hasLength(2));
+
+        final demo = projects.last;
+        final messageCount = demo.scenes.fold<int>(
+          0,
+          (count, scene) => count + scene.messages.length,
+        );
+
+        expect(demo.name, startsWith('Demo Project'));
+        expect(demo.type, ProjectType.ad);
+        expect(demo.scenes, hasLength(2));
+        expect(messageCount, greaterThanOrEqualTo(7));
+        expect(
+          demo.scenes.any(
+            (scene) => scene.aspectRatio == SceneAspectRatio.landscape16x9,
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 }
 
