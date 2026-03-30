@@ -519,6 +519,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final selectedPalette = resolveChatStylePalette(selectedStyleId);
             return AlertDialog(
               title: const Text('Edit Scene Settings'),
               content: SingleChildScrollView(
@@ -565,6 +566,36 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                           });
                         }
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      key: const Key('sceneStylePreviewRow'),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: selectedPalette.surfaceColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          _StyleDot(
+                            color: selectedPalette.incomingBubbleColor,
+                          ),
+                          const SizedBox(width: 8),
+                          _StyleDot(
+                            color: selectedPalette.outgoingBubbleColor,
+                          ),
+                          const SizedBox(width: 8),
+                          _StyleDot(color: selectedPalette.typingColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              selectedPalette.name,
+                              style: TextStyle(color: selectedPalette.textColor),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<SceneAspectRatio>(
@@ -640,6 +671,24 @@ class _SceneSettingsInput {
   final String title;
   final String styleId;
   final SceneAspectRatio aspectRatio;
+}
+
+class _StyleDot extends StatelessWidget {
+  const _StyleDot({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
 }
 
 class _MessageTimelineCard extends ConsumerStatefulWidget {

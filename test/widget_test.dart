@@ -301,10 +301,21 @@ void main() {
       of: dialogFinder,
       matching: find.byType(DropdownButtonFormField<String>).first,
     );
+    expect(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.byKey(const Key('sceneStylePreviewRow')),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(presetDropdown);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Night Shift (night_shift)').last);
     await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: dialogFinder, matching: find.text('Night Shift')),
+      findsOneWidget,
+    );
 
     await tester.tap(
       find.descendant(of: dialogFinder, matching: find.text('Save')),
