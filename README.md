@@ -22,6 +22,10 @@ Production Chat Prop je Flutter web-first MVP za kreiranje i reprodukciju simuli
   - PNG screenshot export pipeline (web download + fallback poruka)
   - video fallback package export (`.json`) za post-produkcijski workflow
   - kontrola scene omjera 9:16 / 16:9 u Playbacku
+- Sprint 5 polish (u tijeku):
+  - scene style presetovi (`studio_default`, `cleanroom_day`, `night_shift`, `warm_paper`)
+  - style preset izbor u Scene Settings dijalogu
+  - primjena style paleta na poruke u editoru i playbacku
 
 ## Lokalno pokretanje
 
