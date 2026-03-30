@@ -451,6 +451,47 @@ void main() {
         'Stand by for rehearsal in 90 seconds.',
       );
     });
+
+    test('setProjectType updates selected project type', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .setProjectType(projectId: 'p1', type: ProjectType.ad);
+
+      final projects = await container.read(projectsControllerProvider.future);
+      expect(projects.first.type, ProjectType.ad);
+    });
+
+    test('setProjectType keeps scenes and messages unchanged', () async {
+      await container.read(projectsControllerProvider.future);
+      final before = await container.read(projectsControllerProvider.future);
+      final beforeScene = before.first.scenes.first;
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .setProjectType(projectId: 'p1', type: ProjectType.series);
+
+      final after = await container.read(projectsControllerProvider.future);
+      final afterScene = after.first.scenes.first;
+
+      expect(after.first.type, ProjectType.series);
+      expect(afterScene.title, beforeScene.title);
+      expect(afterScene.characters.length, beforeScene.characters.length);
+      expect(afterScene.messages.length, beforeScene.messages.length);
+      expect(
+        afterScene.messages
+            .map((message) => message.text)
+            .toList(
+              growable: false,
+            ),
+        beforeScene.messages
+            .map((message) => message.text)
+            .toList(
+              growable: false,
+            ),
+      );
+    });
   });
 }
 
