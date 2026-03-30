@@ -144,6 +144,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final scene = widget.snapshot.scene;
     final sortedMessages = scene == null ? <Message>[] : [...scene.messages]
       ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
+    final speakerNameById = _buildSpeakerNameById(project);
     final maxSecond = sortedMessages.isEmpty
         ? 0
         : sortedMessages.last.timestampSeconds;
@@ -461,7 +462,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                         _TypingIndicatorItem(
                           speakerName: _resolveSpeakerName(
                             characterId: message.characterId,
-                            project: project,
+                            speakerNameById: speakerNameById,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -470,7 +471,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                         message: message,
                         speakerName: _resolveSpeakerName(
                           characterId: message.characterId,
-                          project: project,
+                          speakerNameById: speakerNameById,
                         ),
                         isVisibleAtCurrentTime:
                             message.timestampSeconds <=
@@ -610,16 +611,19 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 
   String _resolveSpeakerName({
     required String characterId,
-    required Project project,
+    required Map<String, String> speakerNameById,
   }) {
+    return speakerNameById[characterId] ?? 'Unknown';
+  }
+
+  Map<String, String> _buildSpeakerNameById(Project project) {
+    final map = <String, String>{};
     for (final item in project.scenes) {
       for (final character in item.characters) {
-        if (character.id == characterId) {
-          return character.displayName;
-        }
+        map[character.id] = character.displayName;
       }
     }
-    return 'Unknown';
+    return map;
   }
 
   bool _showTypingIndicator({
