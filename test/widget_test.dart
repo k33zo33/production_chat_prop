@@ -210,6 +210,50 @@ void main() {
     expect(yNewProject1Asc, lessThan(yNewProject2Asc));
   });
 
+  testWidgets('project reset button clears search and filter state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.enterText(find.byKey(const Key('projectSearchField')), '2');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
+    await tester.pumpAndSettle();
+
+    final sortDropdown = find.byKey(const Key('projectSortDropdown'));
+    await tester.tap(sortDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Name (A-Z)').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('No projects match current filters.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('projectResetFiltersButton')));
+    await tester.pumpAndSettle();
+
+    final searchField = tester.widget<TextField>(
+      find.byKey(const Key('projectSearchField')),
+    );
+    expect(searchField.controller?.text ?? '', isEmpty);
+
+    final allChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('projectTypeFilter_all')),
+    );
+    expect(allChip.selected, isTrue);
+    expect(find.text('New Project 1'), findsOneWidget);
+    expect(find.text('New Project 2'), findsOneWidget);
+  });
+
   testWidgets('create project and navigate to playback from project card', (
     tester,
   ) async {

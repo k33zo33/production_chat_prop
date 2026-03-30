@@ -127,25 +127,46 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: DropdownButtonFormField<_ProjectSortMode>(
-                    key: const Key('projectSortDropdown'),
-                    initialValue: _selectedSortMode,
-                    decoration: const InputDecoration(labelText: 'Sort Projects'),
-                    items: [
-                      for (final sort in _ProjectSortMode.values)
-                        DropdownMenuItem(
-                          value: sort,
-                          child: Text(_projectSortLabel(sort)),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<_ProjectSortMode>(
+                          key: const Key('projectSortDropdown'),
+                          initialValue: _selectedSortMode,
+                          decoration: const InputDecoration(
+                            labelText: 'Sort Projects',
+                          ),
+                          items: [
+                            for (final sort in _ProjectSortMode.values)
+                              DropdownMenuItem(
+                                value: sort,
+                                child: Text(_projectSortLabel(sort)),
+                              ),
+                          ],
+                          onChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            setState(() {
+                              _selectedSortMode = value;
+                            });
+                          },
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        key: const Key('projectResetFiltersButton'),
+                        onPressed: () {
+                          setState(() {
+                            _selectedTypeFilter = null;
+                            _selectedSortMode = _ProjectSortMode.updatedNewest;
+                            _searchQuery = '';
+                            _searchController.clear();
+                          });
+                        },
+                        child: const Text('Reset'),
+                      ),
                     ],
-                    onChanged: (value) {
-                      if (value == null) {
-                        return;
-                      }
-                      setState(() {
-                        _selectedSortMode = value;
-                      });
-                    },
                   ),
                 ),
                 Expanded(
