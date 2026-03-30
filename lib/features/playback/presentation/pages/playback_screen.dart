@@ -384,6 +384,17 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       label: const Text('Next Cue'),
                     ),
                     FilledButton.tonalIcon(
+                      key: const Key('seekBackward5Button'),
+                      onPressed: maxSecond == 0
+                          ? null
+                          : () => playbackController.seekBy(
+                              delta: -5,
+                              maxSecond: maxSecond,
+                            ),
+                      icon: const Icon(Icons.replay_30_rounded),
+                      label: const Text('-5s'),
+                    ),
+                    FilledButton.tonalIcon(
                       onPressed: maxSecond == 0
                           ? null
                           : () => playbackController.seekBy(
@@ -421,6 +432,17 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                             ),
                       icon: const Icon(Icons.forward_10_rounded),
                       label: const Text('+1s'),
+                    ),
+                    FilledButton.tonalIcon(
+                      key: const Key('seekForward5Button'),
+                      onPressed: maxSecond == 0
+                          ? null
+                          : () => playbackController.seekBy(
+                              delta: 5,
+                              maxSecond: maxSecond,
+                            ),
+                      icon: const Icon(Icons.forward_30_rounded),
+                      label: const Text('+5s'),
                     ),
                     OutlinedButton.icon(
                       onPressed: maxSecond == 0
