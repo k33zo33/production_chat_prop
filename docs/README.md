@@ -10,6 +10,7 @@ Ovaj paket je pripremljen kao ulaz za AI coding asistenta i kao početna dokumen
 - `04-export-qa-checklist.md` — ručna QA checklista za export flow
 - `05-vscode-setup-and-workflow.md` — preporučeni način rada u VS Codeu
 - `06-product-description.md` — landing/product copy draft za prezentaciju
+- `07-demo-script.md` — koraci za 2-3 minute produkt demo walkthrough
 - `production-chat-prop.code-workspace` — opcionalni workspace file za VS Code
 
 ## Preporučeni redoslijed

@@ -65,6 +65,12 @@ Za brzi demo smoke check koristi:
 ./tool/demo_smoke.sh
 ```
 
+## Demo Flow
+
+Za 2-3 minute walkthrough koristi:
+
+- `docs/07-demo-script.md`
+
 ## Struktura
 
 ```text
@@ -96,3 +102,4 @@ Izvor istine za scope i arhitekturu nalazi se u `docs/`:
 - `03-roadmap-and-sprints.md`
 - `04-export-qa-checklist.md`
 - `06-product-description.md`
+- `07-demo-script.md`
