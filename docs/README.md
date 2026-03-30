@@ -7,7 +7,9 @@ Ovaj paket je pripremljen kao ulaz za AI coding asistenta i kao početna dokumen
 - `02-technical-architecture-flutter.md` — tehnička arhitektura i odluke
 - `03-roadmap-and-sprints.md` — faze rada i sprintovi
 - `04-codex-master-prompt.md` — glavni prompt koji zalijepiš u Codex
+- `04-export-qa-checklist.md` — ručna QA checklista za export flow
 - `05-vscode-setup-and-workflow.md` — preporučeni način rada u VS Codeu
+- `06-product-description.md` — landing/product copy draft za prezentaciju
 - `production-chat-prop.code-workspace` — opcionalni workspace file za VS Code
 
 ## Preporučeni redoslijed

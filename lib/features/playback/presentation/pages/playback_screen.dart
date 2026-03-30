@@ -501,7 +501,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Sprint 1 placeholder for message visibility over time.',
+                    'Timeline preview follows timecode: queued messages stay dim until their cue time.',
                   ),
                   const SizedBox(height: 12),
                   if (sortedMessages.isEmpty)

@@ -58,6 +58,12 @@ Za puni lokalni release check koristi:
 ./tool/verify.sh
 ```
 
+Za brzi demo smoke check koristi:
+
+```bash
+./tool/demo_smoke.sh
+```
+
 ## Struktura
 
 ```text
@@ -88,3 +94,4 @@ Izvor istine za scope i arhitekturu nalazi se u `docs/`:
 - `02-technical-architecture-flutter.md`
 - `03-roadmap-and-sprints.md`
 - `04-export-qa-checklist.md`
+- `06-product-description.md`
