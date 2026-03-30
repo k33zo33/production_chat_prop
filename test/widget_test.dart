@@ -1194,6 +1194,35 @@ void main() {
     );
   });
 
+  testWidgets('playback space shortcut toggles play and pause', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump(const Duration(milliseconds: 120));
+
+    expect(
+      find.textContaining('Status: playing', skipOffstage: false),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Status: paused', skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('playback timeline shows polished status and direction chips', (
     tester,
   ) async {
