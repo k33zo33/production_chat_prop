@@ -173,6 +173,25 @@ void main() {
     expect(find.text('New Project 1'), findsOneWidget);
   });
 
+  testWidgets('project type chips show per-type counts', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('All (2)'), findsOneWidget);
+    expect(find.text('Other (2)'), findsOneWidget);
+    expect(find.text('Ad (0)'), findsOneWidget);
+    expect(find.text('Series (0)'), findsOneWidget);
+  });
+
   testWidgets('project sort dropdown changes card ordering by name', (
     tester,
   ) async {

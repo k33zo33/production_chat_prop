@@ -58,6 +58,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
             }
 
             final normalizedQuery = _searchQuery.trim().toLowerCase();
+            final typeCounts = <ProjectType, int>{
+              for (final type in ProjectType.values) type: 0,
+            };
+            for (final project in projects) {
+              typeCounts[project.type] = (typeCounts[project.type] ?? 0) + 1;
+            }
             final filteredProjects = projects.where((project) {
               final matchesQuery =
                   normalizedQuery.isEmpty ||
@@ -96,7 +102,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       children: [
                         ChoiceChip(
                           key: const Key('projectTypeFilter_all'),
-                          label: const Text('All'),
+                          label: Text('All (${projects.length})'),
                           selected: _selectedTypeFilter == null,
                           onSelected: (selected) {
                             if (!selected) {
@@ -110,7 +116,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                         for (final type in ProjectType.values)
                           ChoiceChip(
                             key: Key('projectTypeFilter_${type.name}'),
-                            label: Text(_typeLabel(type)),
+                            label: Text(
+                              '${_typeLabel(type)} (${typeCounts[type] ?? 0})',
+                            ),
                             selected: _selectedTypeFilter == type,
                             onSelected: (selected) {
                               if (!selected) {
