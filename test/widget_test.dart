@@ -35,6 +35,7 @@ void main() {
 
     expect(find.text('Demo Project 1'), findsOneWidget);
     expect(find.text('Type: ad'), findsOneWidget);
+    expect(find.byKey(const Key('demoProjectBadge')), findsOneWidget);
     expect(
       find.textContaining('Scenes: 2 • Messages: 7 • Max: 11s'),
       findsOneWidget,

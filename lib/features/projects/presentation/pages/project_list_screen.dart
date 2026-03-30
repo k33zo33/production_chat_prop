@@ -398,6 +398,14 @@ class _ProjectCard extends ConsumerWidget {
                 ),
               ],
             ),
+            if (_isDemoProject(project)) ...[
+              const SizedBox(height: 8),
+              const Chip(
+                key: Key('demoProjectBadge'),
+                avatar: Icon(Icons.auto_awesome_rounded, size: 16),
+                label: Text('DEMO PRESET'),
+              ),
+            ],
             const SizedBox(height: 8),
             Text('Type: ${project.type.name}'),
             const SizedBox(height: 4),
@@ -540,6 +548,10 @@ String _formatDateTime(DateTime value) {
   final hour = value.hour.toString().padLeft(2, '0');
   final minute = value.minute.toString().padLeft(2, '0');
   return '${value.year}-$month-$day $hour:$minute';
+}
+
+bool _isDemoProject(Project project) {
+  return project.name.startsWith('Demo Project');
 }
 
 int _projectMessageCount(Project project) {
