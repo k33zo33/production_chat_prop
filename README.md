@@ -34,6 +34,14 @@ Ako `flutter` nije globalno na PATH-u, koristi apsolutnu putanju:
 /home/server/flutter/bin/flutter run -d web-server
 ```
 
+## Quality Gate
+
+Za puni lokalni release check koristi:
+
+```bash
+./tool/verify.sh
+```
+
 ## Struktura
 
 ```text
