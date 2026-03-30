@@ -108,6 +108,9 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final project = snapshot.project;
     final selectedScene = snapshot.scene;
+    final selectedSceneMaxSecond = selectedScene == null
+        ? 0
+        : _sceneMaxSecond(selectedScene);
     final selectedSceneIndex = selectedScene == null
         ? -1
         : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
@@ -176,6 +179,14 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Style: ${selectedScene.styleId} • Aspect: ${selectedScene.aspectRatio.name}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    key: const Key('sceneSummaryLine'),
+                    'Scene summary: '
+                    '${selectedScene.characters.length} characters • '
+                    '${selectedScene.messages.length} messages • '
+                    'max ${selectedSceneMaxSecond}s',
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -1691,6 +1702,20 @@ class _CharacterManagerCard extends ConsumerWidget {
     );
     return result;
   }
+}
+
+int _sceneMaxSecond(Scene scene) {
+  if (scene.messages.isEmpty) {
+    return 0;
+  }
+
+  var maxSecond = 0;
+  for (final message in scene.messages) {
+    if (message.timestampSeconds > maxSecond) {
+      maxSecond = message.timestampSeconds;
+    }
+  }
+  return maxSecond;
 }
 
 class _ProjectNotFoundState extends StatelessWidget {

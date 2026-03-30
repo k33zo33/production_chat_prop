@@ -39,7 +39,10 @@ void main() {
 
     expect(find.text('Chat Editor'), findsOneWidget);
     expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
-    expect(find.text('Add Message', skipOffstage: false), findsWidgets);
+    expect(
+      find.textContaining('Scene summary: 2 characters • 3 messages • max 9s'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('duplicate and delete project from popup menu', (tester) async {
