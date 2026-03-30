@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/app/app.dart';
@@ -1145,6 +1146,37 @@ void main() {
     },
   );
 
+  testWidgets('playback responds to keyboard seek and restart shortcuts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('t=1s / 9 s', skipOffstage: false),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyR);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('t=0s / 9 s', skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('playback timeline shows polished status and direction chips', (
     tester,
   ) async {
@@ -1544,6 +1576,14 @@ void main() {
       const Key('aspectRatioLandscapeChip'),
       skipOffstage: false,
     );
+    for (var i = 0; i < 8; i++) {
+      if (aspectRatioLandscapeChip.evaluate().isNotEmpty) {
+        break;
+      }
+      await tester.drag(find.byType(ListView).first, const Offset(0, 220));
+      await tester.pump();
+    }
+    expect(aspectRatioLandscapeChip, findsOneWidget);
     await tester.ensureVisible(aspectRatioLandscapeChip);
     await tester.pumpAndSettle();
     await tester.tap(aspectRatioLandscapeChip);

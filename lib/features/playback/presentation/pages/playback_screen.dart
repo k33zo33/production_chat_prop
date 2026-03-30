@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
@@ -186,380 +187,430 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       currentSecond: playbackState.currentSecond,
     );
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  project.name,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text('Scene: ${scene?.title ?? 'No scene'}'),
-                const SizedBox(height: 4),
-                Text('Messages: ${sortedMessages.length}'),
-                if (project.scenes.length > 1) ...[
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: scene?.id,
-                    decoration: const InputDecoration(
-                      labelText: 'Selected Scene',
-                    ),
-                    items: [
-                      for (final item in project.scenes)
-                        DropdownMenuItem(
-                          value: item.id,
-                          child: Text(item.title),
-                        ),
-                    ],
-                    onChanged: (sceneId) {
-                      if (sceneId != null) {
-                        widget.onSceneSelected(sceneId);
-                      }
-                    },
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Preview Options',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  key: const Key('playbackDeviceFrameSwitch'),
-                  value: _showDeviceFrame,
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Show Device Frame'),
-                  onChanged: (value) {
-                    setState(() {
-                      _showDeviceFrame = value;
-                    });
-                  },
-                ),
-                SwitchListTile(
-                  key: const Key('playbackCleanPreviewSwitch'),
-                  value: _cleanPreview,
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Clean Preview Mode'),
-                  onChanged: (value) {
-                    setState(() {
-                      _cleanPreview = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'} • Export: ${_exportStateLabel(_lastExportState)}',
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  key: const Key('exportReadinessLabel'),
-                  'Export readiness: $exportReadiness',
-                ),
-                const SizedBox(height: 8),
-                if (scene != null) ...[
-                  Text(
-                    'Scene ratio: ${_aspectRatioLabel(scene.aspectRatio)}',
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ChoiceChip(
-                        key: const Key('aspectRatioPortraitChip'),
-                        label: const Text('9:16'),
-                        selected:
-                            scene.aspectRatio == SceneAspectRatio.portrait9x16,
-                        onSelected: (selected) async {
-                          if (!selected) {
-                            return;
-                          }
-                          await _setSceneAspectRatio(
-                            project: project,
-                            scene: scene,
-                            aspectRatio: SceneAspectRatio.portrait9x16,
-                          );
-                        },
-                      ),
-                      ChoiceChip(
-                        key: const Key('aspectRatioLandscapeChip'),
-                        label: const Text('16:9'),
-                        selected:
-                            scene.aspectRatio == SceneAspectRatio.landscape16x9,
-                        onSelected: (selected) async {
-                          if (!selected) {
-                            return;
-                          }
-                          await _setSceneAspectRatio(
-                            project: project,
-                            scene: scene,
-                            aspectRatio: SceneAspectRatio.landscape16x9,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FilledButton.icon(
-                      key: const Key('exportScreenshotButton'),
-                      onPressed: sortedMessages.isEmpty || _isExporting
-                          ? null
-                          : () async => _exportScreenshot(
-                              project: project,
-                              scene: scene,
-                            ),
-                      icon: const Icon(Icons.photo_camera_outlined),
-                      label: const Text('Export Screenshot'),
-                    ),
-                    OutlinedButton.icon(
-                      key: const Key('exportVideoButton'),
-                      onPressed: sortedMessages.isEmpty || _isExporting
-                          ? null
-                          : () async => _exportVideoFallback(
-                              project: project,
-                              scene: scene,
-                            ),
-                      icon: const Icon(Icons.videocam_outlined),
-                      label: const Text('Export Video'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Playback Controls',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Status: ${playbackState.status.name} • '
-                  't=${playbackState.currentSecond}s / $maxSecond s '
-                  '(${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)})',
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  key: const Key('playbackProgressSummary'),
-                  'Progress: $progressPercent% • Visible messages: $visibleMessagesCount/${sortedMessages.length}',
-                ),
-                const SizedBox(height: 12),
-                Slider(
-                  value: sliderValue,
-                  max: sliderMax,
-                  onChanged: (value) {
-                    playbackController.scrubTo(
-                      second: value.round(),
-                      maxSecond: maxSecond,
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      key: const Key('prevCueButton'),
-                      onPressed: previousCue == null
-                          ? null
-                          : () => playbackController.scrubTo(
-                              second: previousCue,
-                              maxSecond: maxSecond,
-                            ),
-                      icon: const Icon(Icons.skip_previous_rounded),
-                      label: const Text('Prev Cue'),
-                    ),
-                    OutlinedButton.icon(
-                      key: const Key('nextCueButton'),
-                      onPressed: nextCue == null
-                          ? null
-                          : () => playbackController.scrubTo(
-                              second: nextCue,
-                              maxSecond: maxSecond,
-                            ),
-                      icon: const Icon(Icons.skip_next_rounded),
-                      label: const Text('Next Cue'),
-                    ),
-                    FilledButton.tonalIcon(
-                      key: const Key('seekBackward5Button'),
-                      onPressed: maxSecond == 0
-                          ? null
-                          : () => playbackController.seekBy(
-                              delta: -5,
-                              maxSecond: maxSecond,
-                            ),
-                      icon: const Icon(Icons.replay_30_rounded),
-                      label: const Text('-5s'),
-                    ),
-                    FilledButton.tonalIcon(
-                      onPressed: maxSecond == 0
-                          ? null
-                          : () => playbackController.seekBy(
-                              delta: -1,
-                              maxSecond: maxSecond,
-                            ),
-                      icon: const Icon(Icons.replay_10_rounded),
-                      label: const Text('-1s'),
-                    ),
-                    FilledButton.icon(
-                      onPressed: maxSecond == 0
-                          ? null
-                          : () => playbackController.play(maxSecond: maxSecond),
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('Play'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: playbackState.isPlaying
-                          ? playbackController.pause
-                          : null,
-                      icon: const Icon(Icons.pause_rounded),
-                      label: const Text('Pause'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: playbackController.restart,
-                      icon: const Icon(Icons.restart_alt_rounded),
-                      label: const Text('Restart'),
-                    ),
-                    FilledButton.tonalIcon(
-                      onPressed: maxSecond == 0
-                          ? null
-                          : () => playbackController.seekBy(
-                              delta: 1,
-                              maxSecond: maxSecond,
-                            ),
-                      icon: const Icon(Icons.forward_10_rounded),
-                      label: const Text('+1s'),
-                    ),
-                    FilledButton.tonalIcon(
-                      key: const Key('seekForward5Button'),
-                      onPressed: maxSecond == 0
-                          ? null
-                          : () => playbackController.seekBy(
-                              delta: 5,
-                              maxSecond: maxSecond,
-                            ),
-                      icon: const Icon(Icons.forward_30_rounded),
-                      label: const Text('+5s'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: maxSecond == 0
-                          ? null
-                          : () => playbackController.jumpToEnd(
-                              maxSecond: maxSecond,
-                            ),
-                      icon: const Icon(Icons.skip_next_rounded),
-                      label: const Text('End'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        RepaintBoundary(
-          key: _previewBoundaryKey,
-          child: Card(
-            color: palette.surfaceColor,
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) {
+          return KeyEventResult.ignored;
+        }
+
+        if (event.logicalKey == LogicalKeyboardKey.space) {
+          if (maxSecond == 0) {
+            return KeyEventResult.handled;
+          }
+          if (playbackState.isPlaying) {
+            playbackController.pause();
+          } else {
+            playbackController.play(maxSecond: maxSecond);
+          }
+          return KeyEventResult.handled;
+        }
+
+        if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+          if (maxSecond == 0) {
+            return KeyEventResult.handled;
+          }
+          playbackController.seekBy(delta: 1, maxSecond: maxSecond);
+          return KeyEventResult.handled;
+        }
+
+        if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+          if (maxSecond == 0) {
+            return KeyEventResult.handled;
+          }
+          playbackController.seekBy(delta: -1, maxSecond: maxSecond);
+          return KeyEventResult.handled;
+        }
+
+        if (event.logicalKey == LogicalKeyboardKey.keyR) {
+          playbackController.restart();
+          return KeyEventResult.handled;
+        }
+
+        return KeyEventResult.ignored;
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Playback Timeline (read-only)',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    project.name,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Timeline preview follows timecode: queued messages stay dim until their cue time.',
-                  ),
-                  const SizedBox(height: 12),
-                  if (sortedMessages.isEmpty)
-                    const Text('No messages available for playback.')
-                  else
-                    for (final message in sortedMessages) ...[
-                      if (_showTypingIndicator(
-                        message: message,
-                        currentSecond: playbackState.currentSecond,
-                      )) ...[
-                        _TypingIndicatorItem(
-                          speakerName: _resolveSpeakerName(
-                            characterId: message.characterId,
-                            speakerNameById: speakerNameById,
-                          ),
-                          palette: palette,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      _TimelineItem(
-                        message: message,
-                        palette: palette,
-                        speakerName: _resolveSpeakerName(
-                          characterId: message.characterId,
-                          speakerNameById: speakerNameById,
-                        ),
-                        isVisibleAtCurrentTime:
-                            message.timestampSeconds <=
-                            playbackState.currentSecond,
+                  Text('Scene: ${scene?.title ?? 'No scene'}'),
+                  const SizedBox(height: 4),
+                  Text('Messages: ${sortedMessages.length}'),
+                  if (project.scenes.length > 1) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: scene?.id,
+                      decoration: const InputDecoration(
+                        labelText: 'Selected Scene',
                       ),
-                      const SizedBox(height: 8),
-                    ],
+                      items: [
+                        for (final item in project.scenes)
+                          DropdownMenuItem(
+                            value: item.id,
+                            child: Text(item.title),
+                          ),
+                      ],
+                      onChanged: (sceneId) {
+                        if (sceneId != null) {
+                          widget.onSceneSelected(sceneId);
+                        }
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          children: [
-            FilledButton.icon(
-              onPressed: () => context.goNamed(
-                'editorProject',
-                pathParameters: {'projectId': project.id},
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Preview Options',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    key: const Key('playbackDeviceFrameSwitch'),
+                    value: _showDeviceFrame,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Show Device Frame'),
+                    onChanged: (value) {
+                      setState(() {
+                        _showDeviceFrame = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile(
+                    key: const Key('playbackCleanPreviewSwitch'),
+                    value: _cleanPreview,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Clean Preview Mode'),
+                    onChanged: (value) {
+                      setState(() {
+                        _cleanPreview = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'} • Export: ${_exportStateLabel(_lastExportState)}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    key: const Key('exportReadinessLabel'),
+                    'Export readiness: $exportReadiness',
+                  ),
+                  const SizedBox(height: 8),
+                  if (scene != null) ...[
+                    Text(
+                      'Scene ratio: ${_aspectRatioLabel(scene.aspectRatio)}',
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          key: const Key('aspectRatioPortraitChip'),
+                          label: const Text('9:16'),
+                          selected:
+                              scene.aspectRatio ==
+                              SceneAspectRatio.portrait9x16,
+                          onSelected: (selected) async {
+                            if (!selected) {
+                              return;
+                            }
+                            await _setSceneAspectRatio(
+                              project: project,
+                              scene: scene,
+                              aspectRatio: SceneAspectRatio.portrait9x16,
+                            );
+                          },
+                        ),
+                        ChoiceChip(
+                          key: const Key('aspectRatioLandscapeChip'),
+                          label: const Text('16:9'),
+                          selected:
+                              scene.aspectRatio ==
+                              SceneAspectRatio.landscape16x9,
+                          onSelected: (selected) async {
+                            if (!selected) {
+                              return;
+                            }
+                            await _setSceneAspectRatio(
+                              project: project,
+                              scene: scene,
+                              aspectRatio: SceneAspectRatio.landscape16x9,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        key: const Key('exportScreenshotButton'),
+                        onPressed: sortedMessages.isEmpty || _isExporting
+                            ? null
+                            : () async => _exportScreenshot(
+                                project: project,
+                                scene: scene,
+                              ),
+                        icon: const Icon(Icons.photo_camera_outlined),
+                        label: const Text('Export Screenshot'),
+                      ),
+                      OutlinedButton.icon(
+                        key: const Key('exportVideoButton'),
+                        onPressed: sortedMessages.isEmpty || _isExporting
+                            ? null
+                            : () async => _exportVideoFallback(
+                                project: project,
+                                scene: scene,
+                              ),
+                        icon: const Icon(Icons.videocam_outlined),
+                        label: const Text('Export Video'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              icon: const Icon(Icons.chat_bubble_outline_rounded),
-              label: const Text('Open Chat Editor'),
             ),
-            OutlinedButton.icon(
-              onPressed: () => context.goNamed('projects'),
-              icon: const Icon(Icons.list_alt_rounded),
-              label: const Text('Back to Projects'),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Playback Controls',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Status: ${playbackState.status.name} • '
+                    't=${playbackState.currentSecond}s / $maxSecond s '
+                    '(${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)})',
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    key: const Key('playbackProgressSummary'),
+                    'Progress: $progressPercent% • Visible messages: $visibleMessagesCount/${sortedMessages.length}',
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Keyboard: Space play/pause • ←/→ seek • R restart',
+                  ),
+                  const SizedBox(height: 12),
+                  Slider(
+                    value: sliderValue,
+                    max: sliderMax,
+                    onChanged: (value) {
+                      playbackController.scrubTo(
+                        second: value.round(),
+                        maxSecond: maxSecond,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        key: const Key('prevCueButton'),
+                        onPressed: previousCue == null
+                            ? null
+                            : () => playbackController.scrubTo(
+                                second: previousCue,
+                                maxSecond: maxSecond,
+                              ),
+                        icon: const Icon(Icons.skip_previous_rounded),
+                        label: const Text('Prev Cue'),
+                      ),
+                      OutlinedButton.icon(
+                        key: const Key('nextCueButton'),
+                        onPressed: nextCue == null
+                            ? null
+                            : () => playbackController.scrubTo(
+                                second: nextCue,
+                                maxSecond: maxSecond,
+                              ),
+                        icon: const Icon(Icons.skip_next_rounded),
+                        label: const Text('Next Cue'),
+                      ),
+                      FilledButton.tonalIcon(
+                        key: const Key('seekBackward5Button'),
+                        onPressed: maxSecond == 0
+                            ? null
+                            : () => playbackController.seekBy(
+                                delta: -5,
+                                maxSecond: maxSecond,
+                              ),
+                        icon: const Icon(Icons.replay_30_rounded),
+                        label: const Text('-5s'),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: maxSecond == 0
+                            ? null
+                            : () => playbackController.seekBy(
+                                delta: -1,
+                                maxSecond: maxSecond,
+                              ),
+                        icon: const Icon(Icons.replay_10_rounded),
+                        label: const Text('-1s'),
+                      ),
+                      FilledButton.icon(
+                        onPressed: maxSecond == 0
+                            ? null
+                            : () =>
+                                  playbackController.play(maxSecond: maxSecond),
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: const Text('Play'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: playbackState.isPlaying
+                            ? playbackController.pause
+                            : null,
+                        icon: const Icon(Icons.pause_rounded),
+                        label: const Text('Pause'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: playbackController.restart,
+                        icon: const Icon(Icons.restart_alt_rounded),
+                        label: const Text('Restart'),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: maxSecond == 0
+                            ? null
+                            : () => playbackController.seekBy(
+                                delta: 1,
+                                maxSecond: maxSecond,
+                              ),
+                        icon: const Icon(Icons.forward_10_rounded),
+                        label: const Text('+1s'),
+                      ),
+                      FilledButton.tonalIcon(
+                        key: const Key('seekForward5Button'),
+                        onPressed: maxSecond == 0
+                            ? null
+                            : () => playbackController.seekBy(
+                                delta: 5,
+                                maxSecond: maxSecond,
+                              ),
+                        icon: const Icon(Icons.forward_30_rounded),
+                        label: const Text('+5s'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: maxSecond == 0
+                            ? null
+                            : () => playbackController.jumpToEnd(
+                                maxSecond: maxSecond,
+                              ),
+                        icon: const Icon(Icons.skip_next_rounded),
+                        label: const Text('End'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ],
+          ),
+          const SizedBox(height: 12),
+          RepaintBoundary(
+            key: _previewBoundaryKey,
+            child: Card(
+              color: palette.surfaceColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Playback Timeline (read-only)',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Timeline preview follows timecode: queued messages stay dim until their cue time.',
+                    ),
+                    const SizedBox(height: 12),
+                    if (sortedMessages.isEmpty)
+                      const Text('No messages available for playback.')
+                    else
+                      for (final message in sortedMessages) ...[
+                        if (_showTypingIndicator(
+                          message: message,
+                          currentSecond: playbackState.currentSecond,
+                        )) ...[
+                          _TypingIndicatorItem(
+                            speakerName: _resolveSpeakerName(
+                              characterId: message.characterId,
+                              speakerNameById: speakerNameById,
+                            ),
+                            palette: palette,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        _TimelineItem(
+                          message: message,
+                          palette: palette,
+                          speakerName: _resolveSpeakerName(
+                            characterId: message.characterId,
+                            speakerNameById: speakerNameById,
+                          ),
+                          isVisibleAtCurrentTime:
+                              message.timestampSeconds <=
+                              playbackState.currentSecond,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              FilledButton.icon(
+                onPressed: () => context.goNamed(
+                  'editorProject',
+                  pathParameters: {'projectId': project.id},
+                ),
+                icon: const Icon(Icons.chat_bubble_outline_rounded),
+                label: const Text('Open Chat Editor'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => context.goNamed('projects'),
+                icon: const Icon(Icons.list_alt_rounded),
+                label: const Text('Back to Projects'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
