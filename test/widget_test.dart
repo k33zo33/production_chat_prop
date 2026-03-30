@@ -980,6 +980,10 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(
+      find.textContaining('Export: Screenshot Error'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('video export button shows fallback package feedback', (
@@ -1005,6 +1009,10 @@ void main() {
       find.textContaining(
         'Video export failed: download is not available on this platform.',
       ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Export: Video Error'),
       findsOneWidget,
     );
   });

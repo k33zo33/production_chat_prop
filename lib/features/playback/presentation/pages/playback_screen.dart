@@ -114,7 +114,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   bool _showDeviceFrame = true;
   bool _cleanPreview = false;
   bool _isExporting = false;
-  String _lastExportStateLabel = 'idle';
+  _ExportState _lastExportState = _ExportState.idle;
   final GlobalKey _previewBoundaryKey = GlobalKey();
   final ScreenshotExportService _screenshotExportService =
       ScreenshotExportService();
@@ -248,7 +248,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'} • Export: ${_isExporting ? 'running' : _lastExportStateLabel}',
+                  'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'} • Export: ${_exportStateLabel(_lastExportState)}',
                 ),
                 const SizedBox(height: 8),
                 if (scene != null) ...[
@@ -529,7 +529,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 
     setState(() {
       _isExporting = true;
-      _lastExportStateLabel = 'running';
+      _lastExportState = _ExportState.running;
     });
     final result = await _screenshotExportService.exportBoundaryAsPng(
       boundaryKey: _previewBoundaryKey,
@@ -542,7 +542,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 
     if (result.isSuccess) {
       setState(() {
-        _lastExportStateLabel = 'screenshot_ok';
+        _lastExportState = _ExportState.screenshotOk;
         _isExporting = false;
       });
       _showSnackBar('Screenshot exported as ${result.filename}.');
@@ -558,7 +558,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     };
 
     setState(() {
-      _lastExportStateLabel = 'screenshot_error';
+      _lastExportState = _ExportState.screenshotError;
       _isExporting = false;
     });
     _showSnackBar('Screenshot export failed: $failureLabel.');
@@ -578,7 +578,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 
     setState(() {
       _isExporting = true;
-      _lastExportStateLabel = 'running';
+      _lastExportState = _ExportState.running;
     });
     final result = await _videoExportFallbackService.exportFallbackPackage(
       project: project,
@@ -592,7 +592,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 
     if (result.isSuccess) {
       setState(() {
-        _lastExportStateLabel = 'video_ok';
+        _lastExportState = _ExportState.videoOk;
         _isExporting = false;
       });
       _showSnackBar(
@@ -607,7 +607,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       null => 'unknown error',
     };
     setState(() {
-      _lastExportStateLabel = 'video_error';
+      _lastExportState = _ExportState.videoError;
       _isExporting = false;
     });
     _showSnackBar('Video export failed: $failureLabel.');
@@ -643,6 +643,17 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     return switch (value) {
       SceneAspectRatio.portrait9x16 => '9:16',
       SceneAspectRatio.landscape16x9 => '16:9',
+    };
+  }
+
+  String _exportStateLabel(_ExportState value) {
+    return switch (value) {
+      _ExportState.idle => 'Idle',
+      _ExportState.running => 'Running',
+      _ExportState.screenshotOk => 'Screenshot OK',
+      _ExportState.screenshotError => 'Screenshot Error',
+      _ExportState.videoOk => 'Video OK',
+      _ExportState.videoError => 'Video Error',
     };
   }
 
@@ -743,6 +754,15 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       );
     }
   }
+}
+
+enum _ExportState {
+  idle,
+  running,
+  screenshotOk,
+  screenshotError,
+  videoOk,
+  videoError,
 }
 
 class _TypingIndicatorItem extends StatelessWidget {
