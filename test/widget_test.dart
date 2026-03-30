@@ -147,6 +147,47 @@ void main() {
     expect(find.text('New Project 1'), findsOneWidget);
   });
 
+  testWidgets('project popup copy json writes clipboard and shows feedback', (
+    tester,
+  ) async {
+    String? clipboardText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, (
+            methodCall,
+          ) async {
+            if (methodCall.method == 'Clipboard.setData') {
+              final arguments = methodCall.arguments;
+              if (arguments is Map) {
+                clipboardText = arguments['text'] as String?;
+              }
+            }
+            return null;
+          });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Copy JSON'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Project JSON copied to clipboard.'), findsOneWidget);
+    expect(clipboardText, isNotNull);
+    expect(clipboardText, contains('"name": "New Project 1"'));
+  });
+
   testWidgets('rename project from popup menu', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),

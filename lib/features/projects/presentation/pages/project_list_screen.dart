@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -346,6 +349,9 @@ class _ProjectCard extends ConsumerWidget {
                       case _ProjectMenuAction.duplicate:
                         await controller.duplicateProject(project.id);
                         return;
+                      case _ProjectMenuAction.copyJson:
+                        await _copyProjectJson(context, project);
+                        return;
                       case _ProjectMenuAction.setTypeAd:
                         await controller.setProjectType(
                           projectId: project.id,
@@ -377,6 +383,10 @@ class _ProjectCard extends ConsumerWidget {
                     PopupMenuItem(
                       value: _ProjectMenuAction.duplicate,
                       child: Text('Duplicate'),
+                    ),
+                    PopupMenuItem(
+                      value: _ProjectMenuAction.copyJson,
+                      child: Text('Copy JSON'),
                     ),
                     PopupMenuItem(
                       value: _ProjectMenuAction.setTypeAd,
@@ -475,6 +485,18 @@ class _ProjectCard extends ConsumerWidget {
     );
     return result;
   }
+
+  Future<void> _copyProjectJson(BuildContext context, Project project) async {
+    const encoder = JsonEncoder.withIndent('  ');
+    final jsonText = encoder.convert(project.toJson());
+    await Clipboard.setData(ClipboardData(text: jsonText));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Project JSON copied to clipboard.')),
+    );
+  }
 }
 
 class _EmptyProjectState extends StatelessWidget {
@@ -536,6 +558,7 @@ class _EmptyProjectState extends StatelessWidget {
 enum _ProjectMenuAction {
   rename,
   duplicate,
+  copyJson,
   setTypeAd,
   setTypeSeries,
   setTypeOther,
