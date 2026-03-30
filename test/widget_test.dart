@@ -254,6 +254,27 @@ void main() {
     expect(find.text('New Project 2'), findsOneWidget);
   });
 
+  testWidgets('project list shows result summary count', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('projectSearchField')), '2');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
+  });
+
   testWidgets('create project and navigate to playback from project card', (
     tester,
   ) async {

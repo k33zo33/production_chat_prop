@@ -169,6 +169,16 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     ],
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Showing ${filteredProjects.length} of ${projects.length} projects',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: filteredProjects.isEmpty
                       ? const Center(
