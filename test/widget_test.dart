@@ -278,6 +278,46 @@ void main() {
     );
   });
 
+  testWidgets('scene settings preset selection updates style id', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Edit Scene Settings'));
+    await tester.pumpAndSettle();
+
+    final dialogFinder = find.byType(AlertDialog);
+    final presetDropdown = find.descendant(
+      of: dialogFinder,
+      matching: find.byType(DropdownButtonFormField<String>).first,
+    );
+    await tester.tap(presetDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Night Shift (night_shift)').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(of: dialogFinder, matching: find.text('Save')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Style: night_shift'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('scene add rename delete flow in chat editor', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
