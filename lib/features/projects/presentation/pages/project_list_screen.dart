@@ -257,6 +257,7 @@ String _typeLabel(ProjectType type) {
 
 enum _ProjectSortMode {
   updatedNewest,
+  updatedOldest,
   nameAscending,
   nameDescending,
 }
@@ -264,6 +265,7 @@ enum _ProjectSortMode {
 String _projectSortLabel(_ProjectSortMode mode) {
   return switch (mode) {
     _ProjectSortMode.updatedNewest => 'Updated (Newest)',
+    _ProjectSortMode.updatedOldest => 'Updated (Oldest)',
     _ProjectSortMode.nameAscending => 'Name (A-Z)',
     _ProjectSortMode.nameDescending => 'Name (Z-A)',
   };
@@ -273,6 +275,9 @@ int Function(Project, Project) _projectSortComparator(_ProjectSortMode mode) {
   return switch (mode) {
     _ProjectSortMode.updatedNewest => (a, b) => b.updatedAt.compareTo(
       a.updatedAt,
+    ),
+    _ProjectSortMode.updatedOldest => (a, b) => a.updatedAt.compareTo(
+      b.updatedAt,
     ),
     _ProjectSortMode.nameAscending => (a, b) => a.name.toLowerCase().compareTo(
       b.name.toLowerCase(),

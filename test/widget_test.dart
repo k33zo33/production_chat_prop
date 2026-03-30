@@ -255,6 +255,34 @@ void main() {
     expect(yNewProject1Asc, lessThan(yNewProject2Asc));
   });
 
+  testWidgets('project sort dropdown supports updated oldest ordering', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final sortDropdown = find.byKey(const Key('projectSortDropdown'));
+    await tester.ensureVisible(sortDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(sortDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Updated (Oldest)').last);
+    await tester.pumpAndSettle();
+
+    final yNewProject1 = tester.getTopLeft(find.text('New Project 1')).dy;
+    final yNewProject2 = tester.getTopLeft(find.text('New Project 2')).dy;
+    expect(yNewProject1, lessThan(yNewProject2));
+  });
+
   testWidgets('project reset button clears search and filter state', (
     tester,
   ) async {
