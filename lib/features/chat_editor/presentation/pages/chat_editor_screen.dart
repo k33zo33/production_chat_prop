@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -415,6 +416,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
           _MessageTimelineCard(
             projectId: project.id,
             sceneId: selectedScene.id,
+            sceneStyleId: selectedScene.styleId,
             sceneMessages: selectedScene.messages,
             sceneCharacters: selectedScene.characters,
             sceneProject: project,
@@ -508,6 +510,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
   }) async {
     final titleController = TextEditingController(text: scene.title);
     final styleIdController = TextEditingController(text: scene.styleId);
+    var selectedStyleId = scene.styleId;
     var selectedAspectRatio = scene.aspectRatio;
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -533,6 +536,35 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     TextField(
                       controller: styleIdController,
                       decoration: const InputDecoration(labelText: 'Style ID'),
+                      onChanged: (value) {
+                        selectedStyleId = value.trim();
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: kChatStylePalettes.any(
+                            (style) => style.id == selectedStyleId,
+                          )
+                          ? selectedStyleId
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Style Preset',
+                      ),
+                      items: [
+                        for (final style in kChatStylePalettes)
+                          DropdownMenuItem(
+                            value: style.id,
+                            child: Text('${style.name} (${style.id})'),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedStyleId = value;
+                            styleIdController.text = value;
+                          });
+                        }
+                      },
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<SceneAspectRatio>(
@@ -614,6 +646,7 @@ class _MessageTimelineCard extends ConsumerStatefulWidget {
   const _MessageTimelineCard({
     required this.projectId,
     required this.sceneId,
+    required this.sceneStyleId,
     required this.sceneMessages,
     required this.sceneCharacters,
     required this.sceneProject,
@@ -621,6 +654,7 @@ class _MessageTimelineCard extends ConsumerStatefulWidget {
 
   final String projectId;
   final String sceneId;
+  final String sceneStyleId;
   final List<Message> sceneMessages;
   final List<Character> sceneCharacters;
   final Project sceneProject;
@@ -648,6 +682,8 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = resolveChatStylePalette(widget.sceneStyleId);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -769,6 +805,7 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                   projectId: widget.projectId,
                   sceneId: widget.sceneId,
                   message: widget.sceneMessages[i],
+                  palette: palette,
                   characters: widget.sceneCharacters,
                   speakerName: _resolveSpeakerName(
                     characterId: widget.sceneMessages[i].characterId,
@@ -841,6 +878,7 @@ class _MessageRow extends StatelessWidget {
     required this.projectId,
     required this.sceneId,
     required this.message,
+    required this.palette,
     required this.characters,
     required this.speakerName,
     required this.canMoveEarlier,
@@ -853,6 +891,7 @@ class _MessageRow extends StatelessWidget {
   final String projectId;
   final String sceneId;
   final Message message;
+  final ChatStylePalette palette;
   final List<Character> characters;
   final String speakerName;
   final bool canMoveEarlier;
@@ -867,8 +906,8 @@ class _MessageRow extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: message.isIncoming
-            ? const Color(0xFFEFF4FF)
-            : const Color(0xFFEFFAF4),
+            ? palette.incomingBubbleColor
+            : palette.outgoingBubbleColor,
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(12),
@@ -880,7 +919,9 @@ class _MessageRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
-                  style: Theme.of(context).textTheme.labelMedium,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelMedium?.copyWith(color: palette.textColor),
                 ),
               ),
               if (selectionMode)
@@ -900,7 +941,12 @@ class _MessageRow extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(message.text),
+          Text(
+            message.text,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: palette.textColor),
+          ),
         ],
       ),
     );

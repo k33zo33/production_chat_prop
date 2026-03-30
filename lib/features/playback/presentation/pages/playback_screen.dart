@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/data/services/video_export_fallback_service.dart';
@@ -144,6 +145,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final scene = widget.snapshot.scene;
     final sortedMessages = scene == null ? <Message>[] : [...scene.messages]
       ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
+    final palette = resolveChatStylePalette(scene?.styleId ?? 'studio_default');
     final speakerNameById = _buildSpeakerNameById(project);
     final maxSecond = sortedMessages.isEmpty
         ? 0
@@ -437,6 +439,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
         RepaintBoundary(
           key: _previewBoundaryKey,
           child: Card(
+            color: palette.surfaceColor,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -464,11 +467,13 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                             characterId: message.characterId,
                             speakerNameById: speakerNameById,
                           ),
+                          palette: palette,
                         ),
                         const SizedBox(height: 8),
                       ],
                       _TimelineItem(
                         message: message,
+                        palette: palette,
                         speakerName: _resolveSpeakerName(
                           characterId: message.characterId,
                           speakerNameById: speakerNameById,
@@ -709,9 +714,13 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 }
 
 class _TypingIndicatorItem extends StatelessWidget {
-  const _TypingIndicatorItem({required this.speakerName});
+  const _TypingIndicatorItem({
+    required this.speakerName,
+    required this.palette,
+  });
 
   final String speakerName;
+  final ChatStylePalette palette;
 
   @override
   Widget build(BuildContext context) {
@@ -719,14 +728,17 @@ class _TypingIndicatorItem extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: palette.typingColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.more_horiz_rounded, size: 18),
+          Icon(Icons.more_horiz_rounded, size: 18, color: palette.textColor),
           const SizedBox(width: 8),
-          Text('$speakerName is typing...'),
+          Text(
+            '$speakerName is typing...',
+            style: TextStyle(color: palette.textColor),
+          ),
         ],
       ),
     );
@@ -736,11 +748,13 @@ class _TypingIndicatorItem extends StatelessWidget {
 class _TimelineItem extends StatelessWidget {
   const _TimelineItem({
     required this.message,
+    required this.palette,
     required this.speakerName,
     required this.isVisibleAtCurrentTime,
   });
 
   final Message message;
+  final ChatStylePalette palette;
   final String speakerName;
   final bool isVisibleAtCurrentTime;
 
@@ -760,44 +774,69 @@ class _TimelineItem extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           color: message.isIncoming
-              ? const Color(0xFFEFF4FF)
-              : const Color(0xFFEFFAF4),
+              ? palette.incomingBubbleColor
+              : palette.outgoingBubbleColor,
           borderRadius: BorderRadius.circular(12),
         ),
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('t=${message.timestampSeconds}s'),
+            Text(
+              't=${message.timestampSeconds}s',
+              style: TextStyle(color: palette.textColor),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(speakerName),
+                  Text(
+                    speakerName,
+                    style: TextStyle(color: palette.textColor),
+                  ),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 8,
                     runSpacing: 6,
                     children: [
                       Chip(
+                        backgroundColor: palette.chipColor,
                         visualDensity: VisualDensity.compact,
-                        avatar: Icon(statusIcon, size: 14),
-                        label: Text(statusLabel),
+                        avatar: Icon(
+                          statusIcon,
+                          size: 14,
+                          color: palette.textColor,
+                        ),
+                        label: Text(
+                          statusLabel,
+                          style: TextStyle(color: palette.textColor),
+                        ),
                       ),
                       Chip(
+                        backgroundColor: palette.chipColor,
                         visualDensity: VisualDensity.compact,
-                        label: Text(directionLabel),
+                        label: Text(
+                          directionLabel,
+                          style: TextStyle(color: palette.textColor),
+                        ),
                       ),
                       if (message.showTypingBefore)
-                        const Chip(
+                        Chip(
+                          backgroundColor: palette.chipColor,
                           visualDensity: VisualDensity.compact,
-                          label: Text('TYPING BEFORE'),
+                          label: Text(
+                            'TYPING BEFORE',
+                            style: TextStyle(color: palette.textColor),
+                          ),
                         ),
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text(message.text),
+                  Text(
+                    message.text,
+                    style: TextStyle(color: palette.textColor),
+                  ),
                 ],
               ),
             ),
