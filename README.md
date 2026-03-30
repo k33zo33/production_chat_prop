@@ -63,3 +63,4 @@ Izvor istine za scope i arhitekturu nalazi se u `docs/`:
 - `01-product-spec-mvp.md`
 - `02-technical-architecture-flutter.md`
 - `03-roadmap-and-sprints.md`
+- `04-export-qa-checklist.md`

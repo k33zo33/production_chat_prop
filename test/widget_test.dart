@@ -738,7 +738,10 @@ void main() {
     await tester.tap(find.text('Open Playback'));
     await tester.pumpAndSettle();
 
-    final nextCueButton = find.byKey(const Key('nextCueButton'));
+    final nextCueButton = find.byKey(
+      const Key('nextCueButton'),
+      skipOffstage: false,
+    );
     await tester.ensureVisible(nextCueButton);
     await tester.pumpAndSettle();
     await tester.tap(nextCueButton);
@@ -912,6 +915,161 @@ void main() {
 
     expect(
       find.textContaining('Scene ratio: 16:9', skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('playback export buttons are disabled for empty scenes', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    final clearSceneButton = find.byKey(const Key('clearSceneMessagesButton'));
+    await tester.ensureVisible(clearSceneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(clearSceneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Clear').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Back to Projects').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    final screenshotButton = tester.widget<FilledButton>(
+      find.byKey(const Key('exportScreenshotButton')),
+    );
+    final videoButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('exportVideoButton')),
+    );
+
+    expect(screenshotButton.onPressed, isNull);
+    expect(videoButton.onPressed, isNull);
+  });
+
+  testWidgets('long chat scene keeps playback controls and export available', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+    await _ensureMessageComposerVisible(tester);
+
+    final addMessageButton = find.widgetWithText(FilledButton, 'Add Message');
+    for (var i = 0; i < 12; i++) {
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Message Text'),
+        'Load test message $i',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Timestamp (seconds)'),
+        '${20 + i}',
+      );
+      await tester.ensureVisible(addMessageButton);
+      await tester.pumpAndSettle();
+      await tester.tap(addMessageButton);
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Back to Projects').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Messages: 15'), findsOneWidget);
+
+    final screenshotButton = tester.widget<FilledButton>(
+      find.byKey(const Key('exportScreenshotButton')),
+    );
+    final videoButton = tester.widget<OutlinedButton>(
+      find.byKey(const Key('exportVideoButton')),
+    );
+    expect(screenshotButton.onPressed, isNotNull);
+    expect(videoButton.onPressed, isNotNull);
+
+    final nextCueButton = find.byKey(const Key('nextCueButton'));
+    await tester.ensureVisible(nextCueButton);
+    await tester.pumpAndSettle();
+    await tester.tap(nextCueButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('t=4s /', skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('changing aspect ratio keeps playback progress stable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Playback'));
+    await tester.pumpAndSettle();
+
+    final plusOneButton = find.widgetWithText(FilledButton, '+1s');
+    await tester.ensureVisible(plusOneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(plusOneButton);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(plusOneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(plusOneButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('t=2s / 9 s', skipOffstage: false),
+      findsOneWidget,
+    );
+
+    final aspectRatioLandscapeChip = find.byKey(
+      const Key('aspectRatioLandscapeChip'),
+      skipOffstage: false,
+    );
+    await tester.ensureVisible(aspectRatioLandscapeChip);
+    await tester.pumpAndSettle();
+    await tester.tap(aspectRatioLandscapeChip);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Scene ratio: 16:9', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('t=2s / 9 s', skipOffstage: false),
       findsOneWidget,
     );
   });
