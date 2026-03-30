@@ -62,7 +62,13 @@ void main() {
 
     expect(find.text('New Project 1 Copy'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_vert).last);
+    final copyTitle = find.text('New Project 1 Copy');
+    final copyCard = find.ancestor(of: copyTitle, matching: find.byType(Card));
+    final copyMenuButton = find.descendant(
+      of: copyCard,
+      matching: find.byIcon(Icons.more_vert),
+    );
+    await tester.tap(copyMenuButton);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pump();
@@ -165,6 +171,43 @@ void main() {
     await tester.tap(find.byKey(const Key('projectTypeFilter_all')));
     await tester.pumpAndSettle();
     expect(find.text('New Project 1'), findsOneWidget);
+  });
+
+  testWidgets('project sort dropdown changes card ordering by name', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final sortDropdown = find.byKey(const Key('projectSortDropdown'));
+    await tester.ensureVisible(sortDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(sortDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Name (Z-A)').last);
+    await tester.pumpAndSettle();
+
+    final yNewProject2Desc = tester.getTopLeft(find.text('New Project 2')).dy;
+    final yNewProject1Desc = tester.getTopLeft(find.text('New Project 1')).dy;
+    expect(yNewProject2Desc, lessThan(yNewProject1Desc));
+
+    await tester.tap(sortDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Name (A-Z)').last);
+    await tester.pumpAndSettle();
+
+    final yNewProject2Asc = tester.getTopLeft(find.text('New Project 2')).dy;
+    final yNewProject1Asc = tester.getTopLeft(find.text('New Project 1')).dy;
+    expect(yNewProject1Asc, lessThan(yNewProject2Asc));
   });
 
   testWidgets('create project and navigate to playback from project card', (

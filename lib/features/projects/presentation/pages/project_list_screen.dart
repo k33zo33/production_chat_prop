@@ -15,6 +15,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   late final TextEditingController _searchController;
   String _searchQuery = '';
   ProjectType? _selectedTypeFilter;
+  _ProjectSortMode _selectedSortMode = _ProjectSortMode.updatedNewest;
 
   @override
   void initState() {
@@ -64,7 +65,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               final matchesType =
                   _selectedTypeFilter == null || project.type == _selectedTypeFilter;
               return matchesQuery && matchesType;
-            }).toList(growable: false);
+            }).toList(growable: false)
+              ..sort(_projectSortComparator(_selectedSortMode));
 
             return Column(
               children: [
@@ -121,6 +123,29 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                           ),
                       ],
                     ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: DropdownButtonFormField<_ProjectSortMode>(
+                    key: const Key('projectSortDropdown'),
+                    initialValue: _selectedSortMode,
+                    decoration: const InputDecoration(labelText: 'Sort Projects'),
+                    items: [
+                      for (final sort in _ProjectSortMode.values)
+                        DropdownMenuItem(
+                          value: sort,
+                          child: Text(_projectSortLabel(sort)),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setState(() {
+                        _selectedSortMode = value;
+                      });
+                    },
                   ),
                 ),
                 Expanded(
@@ -184,6 +209,31 @@ String _typeLabel(ProjectType type) {
     ProjectType.ad => 'Ad',
     ProjectType.series => 'Series',
     ProjectType.other => 'Other',
+  };
+}
+
+enum _ProjectSortMode {
+  updatedNewest,
+  nameAscending,
+  nameDescending,
+}
+
+String _projectSortLabel(_ProjectSortMode mode) {
+  return switch (mode) {
+    _ProjectSortMode.updatedNewest => 'Updated (Newest)',
+    _ProjectSortMode.nameAscending => 'Name (A-Z)',
+    _ProjectSortMode.nameDescending => 'Name (Z-A)',
+  };
+}
+
+int Function(Project, Project) _projectSortComparator(_ProjectSortMode mode) {
+  return switch (mode) {
+    _ProjectSortMode.updatedNewest =>
+      (a, b) => b.updatedAt.compareTo(a.updatedAt),
+    _ProjectSortMode.nameAscending =>
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    _ProjectSortMode.nameDescending =>
+      (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
   };
 }
 
