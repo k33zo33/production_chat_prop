@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
@@ -16,6 +18,40 @@ final projectsControllerProvider =
     AsyncNotifierProvider<ProjectsController, List<Project>>(
       ProjectsController.new,
     );
+
+enum ProjectJsonImportStatus {
+  success,
+  emptyInput,
+  invalidJson,
+  invalidProjectPayload,
+}
+
+class ProjectJsonImportResult {
+  const ProjectJsonImportResult._({
+    required this.status,
+    this.importedProjectName,
+  });
+
+  const ProjectJsonImportResult.success(String projectName)
+    : this._(
+        status: ProjectJsonImportStatus.success,
+        importedProjectName: projectName,
+      );
+
+  const ProjectJsonImportResult.emptyInput()
+    : this._(status: ProjectJsonImportStatus.emptyInput);
+
+  const ProjectJsonImportResult.invalidJson()
+    : this._(status: ProjectJsonImportStatus.invalidJson);
+
+  const ProjectJsonImportResult.invalidProjectPayload()
+    : this._(status: ProjectJsonImportStatus.invalidProjectPayload);
+
+  final ProjectJsonImportStatus status;
+  final String? importedProjectName;
+
+  bool get isSuccess => status == ProjectJsonImportStatus.success;
+}
 
 class ProjectsController extends AsyncNotifier<List<Project>> {
   static const _uuid = Uuid();
@@ -153,6 +189,54 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
 
     final next = [...current, duplicate];
     await _persist(next);
+  }
+
+  Future<ProjectJsonImportResult> importProjectFromJson(String rawJson) async {
+    final trimmed = rawJson.trim();
+    if (trimmed.isEmpty) {
+      return const ProjectJsonImportResult.emptyInput();
+    }
+
+    Object? decodedPayload;
+    try {
+      decodedPayload = jsonDecode(trimmed);
+    } on FormatException {
+      return const ProjectJsonImportResult.invalidJson();
+    }
+
+    final projectJson = _extractProjectJsonMap(decodedPayload);
+    if (projectJson == null) {
+      return const ProjectJsonImportResult.invalidProjectPayload();
+    }
+
+    Project importedSource;
+    try {
+      importedSource = Project.fromJson(projectJson);
+    } catch (error) {
+      final isRecoverableDataError =
+          error is FormatException || error is TypeError;
+      if (isRecoverableDataError) {
+        return const ProjectJsonImportResult.invalidProjectPayload();
+      }
+      rethrow;
+    }
+
+    final current = await future;
+    final now = DateTime.now();
+    final importedProject = Project(
+      id: _uuid.v4(),
+      name: _buildImportedProjectName(current, importedSource.name),
+      type: importedSource.type,
+      createdAt: now,
+      updatedAt: now,
+      scenes: importedSource.scenes.isEmpty
+          ? [_buildEmptyScene(title: 'Scene 1')]
+          : importedSource.scenes,
+    );
+
+    final next = [...current, importedProject];
+    await _persist(next);
+    return ProjectJsonImportResult.success(importedProject.name);
   }
 
   Future<void> addMessage({
@@ -1086,6 +1170,66 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
 
     await _persist(next);
     return true;
+  }
+
+  Map<String, dynamic>? _extractProjectJsonMap(Object? decodedPayload) {
+    final directMap = _asJsonMap(decodedPayload);
+    if (directMap != null) {
+      final nestedProject = _asJsonMap(directMap['project']);
+      if (nestedProject != null) {
+        return nestedProject;
+      }
+      return directMap;
+    }
+
+    if (decodedPayload is List && decodedPayload.length == 1) {
+      return _asJsonMap(decodedPayload.first);
+    }
+
+    return null;
+  }
+
+  Map<String, dynamic>? _asJsonMap(Object? value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is! Map) {
+      return null;
+    }
+
+    final casted = <String, dynamic>{};
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String) {
+        return null;
+      }
+      casted[key] = entry.value;
+    }
+    return casted;
+  }
+
+  String _buildImportedProjectName(List<Project> current, String sourceName) {
+    final normalizedBaseName = sourceName.trim().isEmpty
+        ? 'Imported Project'
+        : sourceName.trim();
+    final existingNames = current
+        .map((project) => project.name.toLowerCase())
+        .toSet();
+
+    if (!existingNames.contains(normalizedBaseName.toLowerCase())) {
+      return normalizedBaseName;
+    }
+
+    var suffix = 1;
+    while (true) {
+      final candidate = suffix == 1
+          ? '$normalizedBaseName (Imported)'
+          : '$normalizedBaseName (Imported $suffix)';
+      if (!existingNames.contains(candidate.toLowerCase())) {
+        return candidate;
+      }
+      suffix++;
+    }
   }
 
   Future<void> _persist(List<Project> projects) async {

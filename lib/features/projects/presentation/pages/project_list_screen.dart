@@ -32,6 +32,77 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     super.dispose();
   }
 
+  Future<void> _onImportProjectJsonPressed() async {
+    final rawJson = await _showImportDialog();
+    if (rawJson == null) {
+      return;
+    }
+
+    final result = await ref
+        .read(projectsControllerProvider.notifier)
+        .importProjectFromJson(rawJson);
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_importResultMessage(result))),
+    );
+  }
+
+  Future<String?> _showImportDialog() async {
+    var draftJson = '';
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Import Project JSON'),
+          content: SizedBox(
+            width: 560,
+            child: TextField(
+              key: const Key('importProjectJsonField'),
+              autofocus: true,
+              minLines: 10,
+              maxLines: 18,
+              onChanged: (value) {
+                draftJson = value;
+              },
+              decoration: const InputDecoration(
+                labelText: 'Project JSON',
+                alignLabelWithHint: true,
+                hintText: '{\n  "name": "My project",\n  ...\n}',
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(draftJson),
+              child: const Text('Import'),
+            ),
+          ],
+        );
+      },
+    );
+    return result;
+  }
+
+  String _importResultMessage(ProjectJsonImportResult result) {
+    return switch (result.status) {
+      ProjectJsonImportStatus.success =>
+        'Imported project: ${result.importedProjectName}.',
+      ProjectJsonImportStatus.emptyInput =>
+        'Paste project JSON before importing.',
+      ProjectJsonImportStatus.invalidJson =>
+        'Invalid JSON format. Please paste valid JSON.',
+      ProjectJsonImportStatus.invalidProjectPayload =>
+        'JSON does not match the expected Project structure.',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final projectsState = ref.watch(projectsControllerProvider);
@@ -40,6 +111,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       appBar: AppBar(
         title: const Text('Project List'),
         actions: [
+          IconButton(
+            key: const Key('importProjectJsonButton'),
+            tooltip: 'Import Project JSON',
+            onPressed: _onImportProjectJsonPressed,
+            icon: const Icon(Icons.file_upload_outlined),
+          ),
           IconButton(
             tooltip: 'Add Demo Project',
             onPressed: () => ref

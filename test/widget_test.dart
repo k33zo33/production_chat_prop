@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -186,6 +188,91 @@ void main() {
     expect(find.text('Project JSON copied to clipboard.'), findsOneWidget);
     expect(clipboardText, isNotNull);
     expect(clipboardText, contains('"name": "New Project 1"'));
+  });
+
+  testWidgets('import project json dialog adds new project card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    final payload = jsonEncode({
+      'id': 'import-source-id',
+      'name': 'Imported Via JSON',
+      'type': 'ad',
+      'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'scenes': [
+        {
+          'id': 'scene-1',
+          'title': 'Scene A',
+          'styleId': 'studio_slate',
+          'aspectRatio': 'portrait9x16',
+          'characters': [
+            {
+              'id': 'char-1',
+              'displayName': 'Jordan',
+              'avatarPath': null,
+              'bubbleColor': '#2E90FA',
+            },
+          ],
+          'messages': [
+            {
+              'id': 'msg-1',
+              'characterId': 'char-1',
+              'text': 'Imported hello',
+              'timestampSeconds': 0,
+              'status': 'sent',
+              'isIncoming': false,
+              'showTypingBefore': false,
+            },
+          ],
+        },
+      ],
+    });
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Imported Via JSON'), findsOneWidget);
+    expect(find.text('Type: ad'), findsOneWidget);
+    expect(find.text('Imported project: Imported Via JSON.'), findsOneWidget);
+  });
+
+  testWidgets('import project json shows validation for malformed json', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      '{broken',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.text('Invalid JSON format. Please paste valid JSON.'),
+      findsOneWidget,
+    );
+    expect(find.text('No projects yet'), findsOneWidget);
   });
 
   testWidgets('rename project from popup menu', (tester) async {

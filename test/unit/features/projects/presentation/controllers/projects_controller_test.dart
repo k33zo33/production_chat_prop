@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
@@ -523,6 +525,75 @@ void main() {
           ),
           isTrue,
         );
+      },
+    );
+
+    test(
+      'importProjectFromJson appends imported project with unique name',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode(_sampleProject().toJson());
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson(payload);
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final imported = projects.last;
+
+        expect(result.status, ProjectJsonImportStatus.success);
+        expect(imported.id, isNot('p1'));
+        expect(imported.name, 'Project One (Imported)');
+        expect(imported.scenes, isNotEmpty);
+      },
+    );
+
+    test(
+      'importProjectFromJson returns invalidJson for malformed payload',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson('{broken');
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        expect(result.status, ProjectJsonImportStatus.invalidJson);
+        expect(projects, hasLength(1));
+      },
+    );
+
+    test(
+      'importProjectFromJson adds fallback scene when payload has none',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'id': 'incoming-id',
+          'name': 'Imported Empty',
+          'type': 'other',
+          'createdAt': DateTime.utc(2026).toIso8601String(),
+          'updatedAt': DateTime.utc(2026).toIso8601String(),
+          'scenes': <Object>[],
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson(payload);
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final imported = projects.last;
+
+        expect(result.status, ProjectJsonImportStatus.success);
+        expect(imported.name, 'Imported Empty');
+        expect(imported.scenes, hasLength(1));
+        expect(imported.scenes.first.title, 'Scene 1');
       },
     );
   });
