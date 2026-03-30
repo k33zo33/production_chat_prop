@@ -89,13 +89,57 @@ void main() {
     await tester.tap(find.text('Rename'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'Renamed Project');
+    final dialogFinder = find.byType(AlertDialog);
+    await tester.enterText(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Project Name'),
+      ),
+      'Renamed Project',
+    );
     await tester.tap(find.text('Save'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Renamed Project'), findsOneWidget);
     expect(find.text('New Project 1'), findsNothing);
+  });
+
+  testWidgets('project list search filters cards by name', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('New Project 1'), findsOneWidget);
+    expect(find.text('New Project 2'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('projectSearchField')), '2');
+    await tester.pumpAndSettle();
+
+    expect(find.text('New Project 2'), findsOneWidget);
+    expect(find.text('New Project 1'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('projectSearchField')),
+      'not-found',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('No projects match your search.'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('projectSearchField')), '');
+    await tester.pumpAndSettle();
+
+    expect(find.text('New Project 1'), findsOneWidget);
+    expect(find.text('New Project 2'), findsOneWidget);
   });
 
   testWidgets('create project and navigate to playback from project card', (

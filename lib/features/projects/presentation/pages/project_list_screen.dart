@@ -4,11 +4,31 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
-class ProjectListScreen extends ConsumerWidget {
+class ProjectListScreen extends ConsumerStatefulWidget {
   const ProjectListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProjectListScreen> createState() => _ProjectListScreenState();
+}
+
+class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
+  late final TextEditingController _searchController;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final projectsState = ref.watch(projectsControllerProvider);
 
     return Scaffold(
@@ -35,14 +55,54 @@ class ProjectListScreen extends ConsumerWidget {
               return const _EmptyProjectState();
             }
 
-            return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemBuilder: (context, index) {
-                final project = projects[index];
-                return _ProjectCard(project: project);
-              },
-              separatorBuilder: (_, index) => const SizedBox(height: 12),
-              itemCount: projects.length,
+            final normalizedQuery = _searchQuery.trim().toLowerCase();
+            final filteredProjects = normalizedQuery.isEmpty
+                ? projects
+                : projects
+                      .where(
+                        (project) =>
+                            project.name.toLowerCase().contains(normalizedQuery),
+                      )
+                      .toList(growable: false);
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: TextField(
+                    key: const Key('projectSearchField'),
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      labelText: 'Search Projects',
+                      prefixIcon: Icon(Icons.search_rounded),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: filteredProjects.isEmpty
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text('No projects match your search.'),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                          itemBuilder: (context, index) {
+                            final project = filteredProjects[index];
+                            return _ProjectCard(project: project);
+                          },
+                          separatorBuilder: (_, index) =>
+                              const SizedBox(height: 12),
+                          itemCount: filteredProjects.length,
+                        ),
+                ),
+              ],
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
