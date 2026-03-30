@@ -12,6 +12,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 - [ ] Uključiti/isključiti `Clean Preview Mode`
 - [ ] Kliknuti `Export Screenshot`
 - [ ] Provjeriti:
+  - [ ] labela `Export readiness` pokazuje očekivano stanje prije exporta (`Ready` kad scena ima poruke)
   - [ ] na webu se pokreće download `.png` datoteke
   - [ ] naziv datoteke sadrži projekt + scenu + timestamp
   - [ ] sadržaj odgovara trenutnom previewu (timeline, status chipovi, typing)
@@ -33,6 +34,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 
 ## 5) Edge-case provjere
 - [ ] Prazna scena:
+  - [ ] `Export readiness` prikazuje `No messages in scene`
   - [ ] `Export Screenshot` je disabled
   - [ ] `Export Video` je disabled
 - [ ] Duga scena (15+ poruka):

@@ -26,6 +26,16 @@ Production Chat Prop je Flutter web-first MVP za kreiranje i reprodukciju simuli
   - scene style presetovi (`studio_default`, `cleanroom_day`, `night_shift`, `warm_paper`)
   - style preset izbor u Scene Settings dijalogu
   - primjena style paleta na poruke u editoru i playbacku
+  - Project list quality-of-life:
+    - scene/message/max-duration summary po kartici
+    - quick type akcije (`Set Type: Ad/Series/Other`)
+    - dodatni sort `Updated (Oldest)`
+  - Playback quality-of-life:
+    - progress summary (`Progress %` + `Visible messages`)
+    - export readiness status (`Ready` / `No messages in scene` / `Export in progress`)
+    - quick seek kontrole `-5s` i `+5s`
+  - Chat editor feedback:
+    - validacijski snackbari za neispravan timestamp, negativan timestamp i prazan tekst poruke
 
 ## Lokalno pokretanje
 
