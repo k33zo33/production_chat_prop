@@ -52,6 +52,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        key: const Key('newProjectFab'),
         onPressed: () =>
             ref.read(projectsControllerProvider.notifier).createProject(),
         icon: const Icon(Icons.add_rounded),
@@ -61,7 +62,14 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         child: projectsState.when(
           data: (projects) {
             if (projects.isEmpty) {
-              return const _EmptyProjectState();
+              return _EmptyProjectState(
+                onCreateProject: () => ref
+                    .read(projectsControllerProvider.notifier)
+                    .createProject(),
+                onCreateDemoProject: () => ref
+                    .read(projectsControllerProvider.notifier)
+                    .createDemoProject(),
+              );
             }
 
             final normalizedQuery = _searchQuery.trim().toLowerCase();
@@ -462,7 +470,13 @@ class _ProjectCard extends ConsumerWidget {
 }
 
 class _EmptyProjectState extends StatelessWidget {
-  const _EmptyProjectState();
+  const _EmptyProjectState({
+    required this.onCreateProject,
+    required this.onCreateDemoProject,
+  });
+
+  final VoidCallback onCreateProject;
+  final VoidCallback onCreateDemoProject;
 
   @override
   Widget build(BuildContext context) {
@@ -483,6 +497,26 @@ class _EmptyProjectState extends StatelessWidget {
             const Text(
               'Create your first project to start editing a chat scene.',
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                FilledButton.icon(
+                  key: const Key('emptyCreateProjectButton'),
+                  onPressed: onCreateProject,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Create Project'),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('emptyCreateDemoButton'),
+                  onPressed: onCreateDemoProject,
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  label: const Text('Load Demo Project'),
+                ),
+              ],
             ),
           ],
         ),

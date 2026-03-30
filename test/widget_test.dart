@@ -40,6 +40,33 @@ void main() {
     );
   });
 
+  testWidgets('empty state shows quick start action buttons', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    expect(find.text('No projects yet'), findsOneWidget);
+    expect(find.byKey(const Key('emptyCreateProjectButton')), findsOneWidget);
+    expect(find.byKey(const Key('emptyCreateDemoButton')), findsOneWidget);
+  });
+
+  testWidgets('empty state demo button seeds demo project card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('emptyCreateDemoButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Demo Project 1'), findsOneWidget);
+    expect(find.text('Type: ad'), findsOneWidget);
+  });
+
   testWidgets('create project and navigate to chat editor from project card', (
     tester,
   ) async {
@@ -50,7 +77,7 @@ void main() {
 
     expect(find.text('No projects yet'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -72,7 +99,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -108,7 +135,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -141,10 +168,10 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -178,7 +205,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -203,10 +230,10 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -224,7 +251,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -250,10 +277,10 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -287,10 +314,10 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -315,10 +342,10 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -357,10 +384,10 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -380,7 +407,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -398,7 +425,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -428,7 +455,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -476,7 +503,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -534,7 +561,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -580,7 +607,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -628,7 +655,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -675,7 +702,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -722,7 +749,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -744,7 +771,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -776,7 +803,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -835,7 +862,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -872,7 +899,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -923,7 +950,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -961,7 +988,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1009,7 +1036,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1045,7 +1072,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1094,7 +1121,7 @@ void main() {
       );
       await _ensureOnProjectList(tester);
 
-      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.tap(find.byKey(const Key('newProjectFab')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
@@ -1126,7 +1153,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1151,7 +1178,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1191,7 +1218,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1230,7 +1257,7 @@ void main() {
       );
       await _ensureOnProjectList(tester);
 
-      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.tap(find.byKey(const Key('newProjectFab')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
@@ -1291,7 +1318,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1325,7 +1352,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1357,7 +1384,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1386,7 +1413,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1433,7 +1460,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1492,7 +1519,7 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
