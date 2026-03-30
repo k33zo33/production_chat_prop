@@ -326,6 +326,24 @@ class _ProjectCard extends ConsumerWidget {
                       case _ProjectMenuAction.duplicate:
                         await controller.duplicateProject(project.id);
                         return;
+                      case _ProjectMenuAction.setTypeAd:
+                        await controller.setProjectType(
+                          projectId: project.id,
+                          type: ProjectType.ad,
+                        );
+                        return;
+                      case _ProjectMenuAction.setTypeSeries:
+                        await controller.setProjectType(
+                          projectId: project.id,
+                          type: ProjectType.series,
+                        );
+                        return;
+                      case _ProjectMenuAction.setTypeOther:
+                        await controller.setProjectType(
+                          projectId: project.id,
+                          type: ProjectType.other,
+                        );
+                        return;
                       case _ProjectMenuAction.delete:
                         await controller.deleteProject(project.id);
                         return;
@@ -339,6 +357,18 @@ class _ProjectCard extends ConsumerWidget {
                     PopupMenuItem(
                       value: _ProjectMenuAction.duplicate,
                       child: Text('Duplicate'),
+                    ),
+                    PopupMenuItem(
+                      value: _ProjectMenuAction.setTypeAd,
+                      child: Text('Set Type: Ad'),
+                    ),
+                    PopupMenuItem(
+                      value: _ProjectMenuAction.setTypeSeries,
+                      child: Text('Set Type: Series'),
+                    ),
+                    PopupMenuItem(
+                      value: _ProjectMenuAction.setTypeOther,
+                      child: Text('Set Type: Other'),
                     ),
                     PopupMenuItem(
                       value: _ProjectMenuAction.delete,
@@ -449,7 +479,14 @@ class _EmptyProjectState extends StatelessWidget {
   }
 }
 
-enum _ProjectMenuAction { rename, duplicate, delete }
+enum _ProjectMenuAction {
+  rename,
+  duplicate,
+  setTypeAd,
+  setTypeSeries,
+  setTypeOther,
+  delete,
+}
 
 String _formatDateTime(DateTime value) {
   final month = value.month.toString().padLeft(2, '0');

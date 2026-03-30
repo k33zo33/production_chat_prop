@@ -192,6 +192,32 @@ void main() {
     expect(find.text('Series (0)'), findsOneWidget);
   });
 
+  testWidgets('project popup type actions update card and chip counts', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Type: other'), findsOneWidget);
+    expect(find.text('Ad (0)'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Set Type: Ad'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Type: ad'), findsOneWidget);
+    expect(find.text('Ad (1)'), findsOneWidget);
+    expect(find.text('Other (0)'), findsOneWidget);
+  });
+
   testWidgets('project sort dropdown changes card ordering by name', (
     tester,
   ) async {

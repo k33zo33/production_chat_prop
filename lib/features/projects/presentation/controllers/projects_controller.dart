@@ -74,6 +74,35 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<void> setProjectType({
+    required String projectId,
+    required ProjectType type,
+  }) async {
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          if (project.type == type) {
+            return project;
+          }
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: project.scenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
   Future<void> deleteProject(String projectId) async {
     final current = await future;
     final next = current
