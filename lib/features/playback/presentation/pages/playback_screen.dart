@@ -113,6 +113,8 @@ class _PlaybackTimeline extends ConsumerStatefulWidget {
 class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   bool _showDeviceFrame = true;
   bool _cleanPreview = false;
+  bool _isExporting = false;
+  String _lastExportStateLabel = 'idle';
   final GlobalKey _previewBoundaryKey = GlobalKey();
   final ScreenshotExportService _screenshotExportService =
       ScreenshotExportService();
@@ -246,7 +248,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'}',
+                  'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'} • Export: ${_isExporting ? 'running' : _lastExportStateLabel}',
                 ),
                 const SizedBox(height: 8),
                 if (scene != null) ...[
@@ -300,7 +302,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   children: [
                     FilledButton.icon(
                       key: const Key('exportScreenshotButton'),
-                      onPressed: sortedMessages.isEmpty
+                      onPressed: sortedMessages.isEmpty || _isExporting
                           ? null
                           : () async => _exportScreenshot(
                               project: project,
@@ -311,7 +313,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     ),
                     OutlinedButton.icon(
                       key: const Key('exportVideoButton'),
-                      onPressed: sortedMessages.isEmpty
+                      onPressed: sortedMessages.isEmpty || _isExporting
                           ? null
                           : () async => _exportVideoFallback(
                               project: project,
@@ -517,11 +519,18 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     required Project project,
     required Scene? scene,
   }) async {
+    if (_isExporting) {
+      return;
+    }
     if (scene == null) {
       _showSnackBar('Screenshot export failed: no scene selected.');
       return;
     }
 
+    setState(() {
+      _isExporting = true;
+      _lastExportStateLabel = 'running';
+    });
     final result = await _screenshotExportService.exportBoundaryAsPng(
       boundaryKey: _previewBoundaryKey,
       projectName: project.name,
@@ -532,6 +541,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     }
 
     if (result.isSuccess) {
+      setState(() {
+        _lastExportStateLabel = 'screenshot_ok';
+        _isExporting = false;
+      });
       _showSnackBar('Screenshot exported as ${result.filename}.');
       return;
     }
@@ -544,6 +557,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       null => 'unknown error',
     };
 
+    setState(() {
+      _lastExportStateLabel = 'screenshot_error';
+      _isExporting = false;
+    });
     _showSnackBar('Screenshot export failed: $failureLabel.');
   }
 
@@ -551,11 +568,18 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     required Project project,
     required Scene? scene,
   }) async {
+    if (_isExporting) {
+      return;
+    }
     if (scene == null) {
       _showSnackBar('Video export failed: no scene selected.');
       return;
     }
 
+    setState(() {
+      _isExporting = true;
+      _lastExportStateLabel = 'running';
+    });
     final result = await _videoExportFallbackService.exportFallbackPackage(
       project: project,
       scene: scene,
@@ -567,6 +591,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     }
 
     if (result.isSuccess) {
+      setState(() {
+        _lastExportStateLabel = 'video_ok';
+        _isExporting = false;
+      });
       _showSnackBar(
         'Video fallback package exported as ${result.filename}.',
       );
@@ -578,6 +606,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
         'download is not available on this platform',
       null => 'unknown error',
     };
+    setState(() {
+      _lastExportStateLabel = 'video_error';
+      _isExporting = false;
+    });
     _showSnackBar('Video export failed: $failureLabel.');
   }
 
