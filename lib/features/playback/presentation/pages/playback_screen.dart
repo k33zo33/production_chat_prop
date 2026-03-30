@@ -157,6 +157,17 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final playbackController = ref.read(
       playbackControllerProvider(project.id).notifier,
     );
+    final visibleMessagesCount = sortedMessages
+        .where(
+          (message) => message.timestampSeconds <= playbackState.currentSecond,
+        )
+        .length;
+    final progressPercent = maxSecond == 0
+        ? 0
+        : ((playbackState.currentSecond / maxSecond) * 100).round().clamp(
+            0,
+            100,
+          );
     final sliderMax = maxSecond > 0 ? maxSecond.toDouble() : 1.0;
     final sliderValue = playbackState.currentSecond > maxSecond
         ? maxSecond.toDouble()
@@ -344,6 +355,11 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   'Status: ${playbackState.status.name} • '
                   't=${playbackState.currentSecond}s / $maxSecond s '
                   '(${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)})',
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  key: const Key('playbackProgressSummary'),
+                  'Progress: $progressPercent% • Visible messages: $visibleMessagesCount/${sortedMessages.length}',
                 ),
                 const SizedBox(height: 12),
                 Slider(

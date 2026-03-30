@@ -948,6 +948,40 @@ void main() {
     );
   });
 
+  testWidgets(
+    'playback progress summary reflects current time and visibility',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openPlaybackFromProjectList(tester);
+
+      expect(
+        find.textContaining('Progress: 0% • Visible messages: 1/3'),
+        findsOneWidget,
+      );
+
+      final plusFiveButton = find.byKey(const Key('seekForward5Button'));
+      await tester.ensureVisible(plusFiveButton);
+      await tester.pumpAndSettle();
+      await tester.tap(plusFiveButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Progress: 56% • Visible messages: 2/3'),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('playback timeline shows polished status and direction chips', (
     tester,
   ) async {
