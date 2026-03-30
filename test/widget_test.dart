@@ -822,6 +822,60 @@ void main() {
     );
   });
 
+  testWidgets('shows add-message validation snackbars for invalid input', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.text('Open Chat Editor'));
+    await tester.pumpAndSettle();
+    await _ensureMessageComposerVisible(tester);
+
+    final messageTextField = find.widgetWithText(TextField, 'Message Text');
+    final timestampField = find.widgetWithText(
+      TextField,
+      'Timestamp (seconds)',
+    );
+    final addMessageButton = find.widgetWithText(FilledButton, 'Add Message');
+
+    await tester.enterText(messageTextField, 'Validation case');
+    await tester.enterText(timestampField, 'abc');
+    await tester.ensureVisible(addMessageButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMessageButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Timestamp must be a valid number.'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(timestampField, '-1');
+    await tester.ensureVisible(addMessageButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMessageButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Timestamp cannot be negative.'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(messageTextField, '');
+    await tester.enterText(timestampField, '12');
+    await tester.ensureVisible(addMessageButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addMessageButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Message text cannot be empty.'), findsOneWidget);
+  });
+
   testWidgets('message move up reorders visible timeline rows', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),

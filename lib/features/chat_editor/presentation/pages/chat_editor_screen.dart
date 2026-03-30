@@ -543,7 +543,8 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      initialValue: kChatStylePalettes.any(
+                      initialValue:
+                          kChatStylePalettes.any(
                             (style) => style.id == selectedStyleId,
                           )
                           ? selectedStyleId
@@ -591,7 +592,9 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               selectedPalette.name,
-                              style: TextStyle(color: selectedPalette.textColor),
+                              style: TextStyle(
+                                color: selectedPalette.textColor,
+                              ),
                             ),
                           ),
                         ],
@@ -1165,7 +1168,38 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
 
   Future<void> _addMessage() async {
     final timestamp = int.tryParse(_timestampController.text.trim());
-    if (timestamp == null || _selectedCharacterId == null) {
+    if (timestamp == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Timestamp must be a valid number.')),
+        );
+      }
+      return;
+    }
+    if (timestamp < 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Timestamp cannot be negative.')),
+        );
+      }
+      return;
+    }
+    if (_selectedCharacterId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Select a character before adding a message.'),
+          ),
+        );
+      }
+      return;
+    }
+    if (_textController.text.trim().isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Message text cannot be empty.')),
+        );
+      }
       return;
     }
 
