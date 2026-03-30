@@ -34,8 +34,7 @@ void main() {
 
     expect(find.text('New Project 1'), findsOneWidget);
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     expect(find.text('Chat Editor'), findsOneWidget);
     expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
@@ -411,8 +410,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
     await _ensureMessageComposerVisible(tester);
 
     await tester.enterText(
@@ -460,8 +458,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     final addCharacterButton = find
         .widgetWithText(FilledButton, 'Add', skipOffstage: false)
@@ -519,8 +516,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     await tester.tap(find.text('Edit Scene Settings'));
     await tester.pumpAndSettle();
@@ -566,8 +562,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     await tester.tap(find.text('Edit Scene Settings'));
     await tester.pumpAndSettle();
@@ -615,8 +610,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     await tester.tap(find.widgetWithText(FilledButton, 'Add Scene'));
     await tester.pumpAndSettle();
@@ -663,8 +657,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     Future<void> addSceneNamed(String name) async {
       await tester.tap(find.widgetWithText(FilledButton, 'Add Scene'));
@@ -711,8 +704,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     final duplicateSceneButton = find.byKey(const Key('duplicateSceneButton'));
     await tester.ensureVisible(duplicateSceneButton);
@@ -734,8 +726,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     final templateButton = find.byKey(const Key('applyTemplateBriefingButton'));
     await tester.ensureVisible(templateButton);
@@ -767,8 +758,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     for (var i = 0; i < 4; i++) {
       await tester.drag(find.byType(ListView).first, const Offset(0, -250));
@@ -827,8 +817,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
     await _ensureMessageComposerVisible(tester);
 
     await tester.enterText(
@@ -865,8 +854,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
     await _ensureMessageComposerVisible(tester);
 
     final messageTextField = find.widgetWithText(TextField, 'Message Text');
@@ -917,8 +905,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     for (var i = 0; i < 4; i++) {
       await tester.drag(find.byType(ListView).first, const Offset(0, -250));
@@ -956,8 +943,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     for (var i = 0; i < 4; i++) {
       await tester.drag(find.byType(ListView).first, const Offset(0, -220));
@@ -1005,8 +991,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     for (var i = 0; i < 4; i++) {
       await tester.drag(find.byType(ListView).first, const Offset(0, -220));
@@ -1243,8 +1228,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Back to Projects').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Open Chat Editor'));
-      await tester.pumpAndSettle();
+      await _openChatEditorFromProjectList(tester);
 
       for (var i = 0; i < 4; i++) {
         await tester.drag(find.byType(ListView).first, const Offset(0, -220));
@@ -1384,8 +1368,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
 
     for (var i = 0; i < 4; i++) {
       await tester.drag(find.byType(ListView).first, const Offset(0, -220));
@@ -1414,6 +1397,10 @@ void main() {
 
     expect(screenshotButton.onPressed, isNull);
     expect(videoButton.onPressed, isNull);
+    expect(
+      find.textContaining('Export readiness: No messages in scene'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('long chat scene keeps playback controls and export available', (
@@ -1428,8 +1415,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.text('Open Chat Editor'));
-    await tester.pumpAndSettle();
+    await _openChatEditorFromProjectList(tester);
     await _ensureMessageComposerVisible(tester);
 
     final addMessageButton = find.widgetWithText(FilledButton, 'Add Message');
@@ -1463,6 +1449,7 @@ void main() {
     );
     expect(screenshotButton.onPressed, isNotNull);
     expect(videoButton.onPressed, isNotNull);
+    expect(find.textContaining('Export readiness: Ready'), findsOneWidget);
 
     final nextCueButton = find.byKey(const Key('nextCueButton'));
     await tester.ensureVisible(nextCueButton);
@@ -1539,11 +1526,49 @@ Future<void> _ensureOnProjectList(WidgetTester tester) async {
 }
 
 Future<void> _ensureMessageComposerVisible(WidgetTester tester) async {
-  final messageTextField = find
-      .widgetWithText(TextField, 'Message Text', skipOffstage: false)
-      .first;
+  var messageTextFinder = find.widgetWithText(
+    TextField,
+    'Message Text',
+    skipOffstage: false,
+  );
+  if (messageTextFinder.evaluate().isEmpty) {
+    final scrollable = find.byType(ListView).first;
+    for (var i = 0; i < 6; i++) {
+      await tester.drag(scrollable, const Offset(0, -220));
+      await tester.pumpAndSettle();
+      messageTextFinder = find.widgetWithText(
+        TextField,
+        'Message Text',
+        skipOffstage: false,
+      );
+      if (messageTextFinder.evaluate().isNotEmpty) {
+        break;
+      }
+    }
+  }
+
+  final messageTextField = messageTextFinder.first;
   await tester.ensureVisible(messageTextField);
   await tester.pumpAndSettle();
+}
+
+Future<void> _openChatEditorFromProjectList(WidgetTester tester) async {
+  final openEditorButton = find.text('Open Chat Editor').first;
+  await tester.ensureVisible(openEditorButton);
+  await tester.pumpAndSettle();
+  await tester.tap(openEditorButton);
+  await tester.pumpAndSettle();
+  if (find.text('Chat Editor').evaluate().isNotEmpty) {
+    return;
+  }
+
+  final retryButton = find.text('Open Chat Editor');
+  if (retryButton.evaluate().isNotEmpty) {
+    await tester.ensureVisible(retryButton.first);
+    await tester.pumpAndSettle();
+    await tester.tap(retryButton.first);
+    await tester.pumpAndSettle();
+  }
 }
 
 Future<void> _openPlaybackFromProjectList(WidgetTester tester) async {

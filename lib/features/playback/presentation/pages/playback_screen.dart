@@ -157,6 +157,11 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final playbackController = ref.read(
       playbackControllerProvider(project.id).notifier,
     );
+    final exportReadiness = sortedMessages.isEmpty
+        ? 'No messages in scene'
+        : _isExporting
+        ? 'Export in progress'
+        : 'Ready';
     final visibleMessagesCount = sortedMessages
         .where(
           (message) => message.timestampSeconds <= playbackState.currentSecond,
@@ -260,6 +265,11 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                 const SizedBox(height: 4),
                 Text(
                   'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'} • Export: ${_exportStateLabel(_lastExportState)}',
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  key: const Key('exportReadinessLabel'),
+                  'Export readiness: $exportReadiness',
                 ),
                 const SizedBox(height: 8),
                 if (scene != null) ...[
