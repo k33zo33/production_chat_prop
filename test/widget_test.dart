@@ -189,6 +189,110 @@ void main() {
     expect(find.text('New Project 1'), findsOneWidget);
   });
 
+  testWidgets('bulk project selection exports selected projects payload', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('exportSelectedProjectsJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.text(
+        'Selected project export failed: download is not available on this platform.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('bulk project selection deletes multiple projects', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('New Project 1'), findsOneWidget);
+    expect(find.text('New Project 2'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Checkbox).at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Checkbox).at(1));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('deleteSelectedProjectsButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.textContaining('Deleted 2 selected projects.'), findsOneWidget);
+    expect(find.text('No projects yet'), findsOneWidget);
+  });
+
+  testWidgets('bulk project selection sets type for selected projects', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Type: other'), findsNWidgets(2));
+
+    await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Checkbox).at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Checkbox).at(1));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('setSelectedProjectsTypeButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Set Type: Ad').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.textContaining('Updated 2 selected projects to type ad.'),
+      findsOneWidget,
+    );
+    expect(find.text('Type: ad'), findsNWidgets(2));
+  });
+
   testWidgets('project popup copy json writes clipboard and shows feedback', (
     tester,
   ) async {

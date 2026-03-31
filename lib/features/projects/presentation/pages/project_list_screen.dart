@@ -26,6 +26,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   String _searchQuery = '';
   ProjectType? _selectedTypeFilter;
   _ProjectSortMode _selectedSortMode = _ProjectSortMode.updatedNewest;
+  bool _isSelectionMode = false;
+  Set<String> _selectedProjectIds = <String>{};
 
   @override
   void initState() {
@@ -37,6 +39,60 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Set<String> _selectedIdsForProjects(List<Project> projects) {
+    final availableIds = projects.map((project) => project.id).toSet();
+    return _selectedProjectIds.where(availableIds.contains).toSet();
+  }
+
+  void _toggleSelectionMode(List<Project> projects) {
+    if (projects.isEmpty) {
+      return;
+    }
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      if (!_isSelectionMode) {
+        _selectedProjectIds = <String>{};
+      }
+    });
+  }
+
+  void _clearProjectSelection({required bool exitMode}) {
+    setState(() {
+      _selectedProjectIds = <String>{};
+      if (exitMode) {
+        _isSelectionMode = false;
+      }
+    });
+  }
+
+  void _selectAllProjects(List<Project> projects) {
+    if (projects.isEmpty) {
+      return;
+    }
+    setState(() {
+      _isSelectionMode = true;
+      _selectedProjectIds = projects.map((project) => project.id).toSet();
+    });
+  }
+
+  void _setProjectSelected({
+    required String projectId,
+    required bool isSelected,
+  }) {
+    setState(() {
+      final nextSelection = <String>{..._selectedProjectIds};
+      if (isSelected) {
+        nextSelection.add(projectId);
+      } else {
+        nextSelection.remove(projectId);
+      }
+      _selectedProjectIds = nextSelection;
+      if (_selectedProjectIds.isEmpty) {
+        _isSelectionMode = false;
+      }
+    });
   }
 
   Future<void> _onImportProjectJsonPressed() async {
@@ -75,6 +131,133 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_portfolioExportResultMessage(result))),
+    );
+  }
+
+  Future<void> _onExportSelectedProjectsPressed(List<Project> projects) async {
+    final selectedIds = _selectedIdsForProjects(projects);
+    final selectedProjects = projects
+        .where((project) => selectedIds.contains(project.id))
+        .toList(growable: false);
+    if (selectedProjects.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No selected projects to export.')),
+      );
+      return;
+    }
+
+    final service = ProjectPortfolioExportService();
+    final result = await service.exportPortfolio(projects: selectedProjects);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_selectedPortfolioExportResultMessage(result))),
+    );
+  }
+
+  Future<void> _onDeleteSelectedProjectsPressed(List<Project> projects) async {
+    final selectedIds = _selectedIdsForProjects(projects);
+    if (selectedIds.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No selected projects to delete.')),
+      );
+      return;
+    }
+
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Delete ${selectedIds.length} selected project${selectedIds.length == 1 ? '' : 's'}?',
+          ),
+          content: const Text(
+            'This action removes selected projects from local storage.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted || shouldDelete != true) {
+      return;
+    }
+
+    final removedCount = await ref
+        .read(projectsControllerProvider.notifier)
+        .deleteProjectsByIds(selectedIds);
+    if (!mounted) {
+      return;
+    }
+
+    _clearProjectSelection(exitMode: true);
+    if (removedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No selected projects were deleted.')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Deleted $removedCount selected project${removedCount == 1 ? '' : 's'}.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onSetSelectedProjectsType({
+    required List<Project> projects,
+    required ProjectType type,
+  }) async {
+    final selectedIds = _selectedIdsForProjects(projects);
+    if (selectedIds.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No selected projects to update.')),
+      );
+      return;
+    }
+
+    final updatedCount = await ref
+        .read(projectsControllerProvider.notifier)
+        .setProjectTypeByIds(projectIds: selectedIds, type: type);
+    if (!mounted) {
+      return;
+    }
+    if (updatedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selected projects are already type ${type.name}.'),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Updated $updatedCount selected project${updatedCount == 1 ? '' : 's'} to type ${type.name}.',
+        ),
+      ),
     );
   }
 
@@ -255,53 +438,162 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     };
   }
 
+  String _selectedPortfolioExportResultMessage(
+    ProjectPortfolioExportResult result,
+  ) {
+    if (result.isSuccess) {
+      return 'Selected projects exported: ${result.filename}.';
+    }
+
+    return switch (result.failure) {
+      ProjectPortfolioExportFailure.noProjects =>
+        'No selected projects to export.',
+      ProjectPortfolioExportFailure.downloadUnavailable =>
+        'Selected project export failed: download is not available on this platform.',
+      null => 'Selected project export failed.',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final projectsState = ref.watch(projectsControllerProvider);
+    final loadedProjects = projectsState.when(
+      data: (projects) => projects,
+      loading: () => const <Project>[],
+      error: (_, _) => const <Project>[],
+    );
+    final selectedIds = _selectedIdsForProjects(loadedProjects);
+    final selectedCount = selectedIds.length;
+    final showSelectionMode = _isSelectionMode && loadedProjects.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Project List'),
-        actions: [
-          IconButton(
-            key: const Key('exportAllProjectsJsonButton'),
-            tooltip: 'Export All Projects JSON',
-            onPressed: _onExportAllProjectsPressed,
-            icon: const Icon(Icons.download_for_offline_outlined),
-          ),
-          IconButton(
-            key: const Key('importProjectJsonFileButton'),
-            tooltip: 'Import JSON File',
-            onPressed: _onImportProjectJsonFilePressed,
-            icon: const Icon(Icons.upload_file_rounded),
-          ),
-          IconButton(
-            key: const Key('importProjectJsonButton'),
-            tooltip: 'Import Project JSON',
-            onPressed: _onImportProjectJsonPressed,
-            icon: const Icon(Icons.file_upload_outlined),
-          ),
-          IconButton(
-            tooltip: 'Add Demo Project',
-            onPressed: () => ref
-                .read(projectsControllerProvider.notifier)
-                .createDemoProject(),
-            icon: const Icon(Icons.auto_awesome_rounded),
-          ),
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: () => ref.invalidate(projectsControllerProvider),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
+        leading: showSelectionMode
+            ? IconButton(
+                key: const Key('exitProjectSelectionModeButton'),
+                tooltip: 'Exit Selection',
+                onPressed: () => _clearProjectSelection(exitMode: true),
+                icon: const Icon(Icons.close_rounded),
+              )
+            : null,
+        title: Text(
+          showSelectionMode
+              ? selectedCount == 0
+                    ? 'Select Projects'
+                    : '$selectedCount selected'
+              : 'Project List',
+        ),
+        actions: showSelectionMode
+            ? [
+                IconButton(
+                  key: const Key('selectAllProjectsButton'),
+                  tooltip: 'Select All Projects',
+                  onPressed: selectedCount == loadedProjects.length
+                      ? null
+                      : () => _selectAllProjects(loadedProjects),
+                  icon: const Icon(Icons.select_all_rounded),
+                ),
+                IconButton(
+                  key: const Key('clearProjectSelectionButton'),
+                  tooltip: 'Clear Selection',
+                  onPressed: selectedCount == 0
+                      ? null
+                      : () => _clearProjectSelection(exitMode: false),
+                  icon: const Icon(Icons.deselect_rounded),
+                ),
+                PopupMenuButton<ProjectType>(
+                  key: const Key('setSelectedProjectsTypeButton'),
+                  tooltip: 'Set Selected Type',
+                  enabled: selectedCount > 0,
+                  onSelected: (type) async {
+                    await _onSetSelectedProjectsType(
+                      projects: loadedProjects,
+                      type: type,
+                    );
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: ProjectType.ad,
+                      child: Text('Set Type: Ad'),
+                    ),
+                    PopupMenuItem(
+                      value: ProjectType.series,
+                      child: Text('Set Type: Series'),
+                    ),
+                    PopupMenuItem(
+                      value: ProjectType.other,
+                      child: Text('Set Type: Other'),
+                    ),
+                  ],
+                  icon: const Icon(Icons.label_rounded),
+                ),
+                IconButton(
+                  key: const Key('exportSelectedProjectsJsonButton'),
+                  tooltip: 'Export Selected Projects JSON',
+                  onPressed: selectedCount == 0
+                      ? null
+                      : () => _onExportSelectedProjectsPressed(loadedProjects),
+                  icon: const Icon(Icons.download_rounded),
+                ),
+                IconButton(
+                  key: const Key('deleteSelectedProjectsButton'),
+                  tooltip: 'Delete Selected Projects',
+                  onPressed: selectedCount == 0
+                      ? null
+                      : () => _onDeleteSelectedProjectsPressed(loadedProjects),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                ),
+              ]
+            : [
+                IconButton(
+                  key: const Key('toggleProjectSelectionModeButton'),
+                  tooltip: 'Select Projects',
+                  onPressed: loadedProjects.isEmpty
+                      ? null
+                      : () => _toggleSelectionMode(loadedProjects),
+                  icon: const Icon(Icons.checklist_rounded),
+                ),
+                IconButton(
+                  key: const Key('exportAllProjectsJsonButton'),
+                  tooltip: 'Export All Projects JSON',
+                  onPressed: _onExportAllProjectsPressed,
+                  icon: const Icon(Icons.download_for_offline_outlined),
+                ),
+                IconButton(
+                  key: const Key('importProjectJsonFileButton'),
+                  tooltip: 'Import JSON File',
+                  onPressed: _onImportProjectJsonFilePressed,
+                  icon: const Icon(Icons.upload_file_rounded),
+                ),
+                IconButton(
+                  key: const Key('importProjectJsonButton'),
+                  tooltip: 'Import Project JSON',
+                  onPressed: _onImportProjectJsonPressed,
+                  icon: const Icon(Icons.file_upload_outlined),
+                ),
+                IconButton(
+                  tooltip: 'Add Demo Project',
+                  onPressed: () => ref
+                      .read(projectsControllerProvider.notifier)
+                      .createDemoProject(),
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                ),
+                IconButton(
+                  tooltip: 'Refresh',
+                  onPressed: () => ref.invalidate(projectsControllerProvider),
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const Key('newProjectFab'),
-        onPressed: () =>
-            ref.read(projectsControllerProvider.notifier).createProject(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Project'),
-      ),
+      floatingActionButton: showSelectionMode
+          ? null
+          : FloatingActionButton.extended(
+              key: const Key('newProjectFab'),
+              onPressed: () =>
+                  ref.read(projectsControllerProvider.notifier).createProject(),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('New Project'),
+            ),
       body: SafeArea(
         child: projectsState.when(
           data: (projects) {
@@ -336,6 +628,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     })
                     .toList(growable: false)
                   ..sort(_projectSortComparator(_selectedSortMode));
+            final selectedIdsForCurrentProjects = _selectedIdsForProjects(
+              projects,
+            );
 
             return Column(
               children: [
@@ -445,7 +740,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Showing ${filteredProjects.length} of ${projects.length} projects',
+                      _isSelectionMode
+                          ? 'Selected ${selectedIdsForCurrentProjects.length} of ${projects.length} projects'
+                          : 'Showing ${filteredProjects.length} of ${projects.length} projects',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
@@ -462,7 +759,18 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                           itemBuilder: (context, index) {
                             final project = filteredProjects[index];
-                            return _ProjectCard(project: project);
+                            return _ProjectCard(
+                              project: project,
+                              selectionMode: _isSelectionMode,
+                              isSelected: selectedIdsForCurrentProjects
+                                  .contains(project.id),
+                              onSelectionChanged: (isSelected) {
+                                _setProjectSelected(
+                                  projectId: project.id,
+                                  isSelected: isSelected,
+                                );
+                              },
+                            );
                           },
                           separatorBuilder: (_, index) =>
                               const SizedBox(height: 12),
@@ -548,9 +856,17 @@ int Function(Project, Project) _projectSortComparator(_ProjectSortMode mode) {
 }
 
 class _ProjectCard extends ConsumerWidget {
-  const _ProjectCard({required this.project});
+  const _ProjectCard({
+    required this.project,
+    required this.selectionMode,
+    required this.isSelected,
+    required this.onSelectionChanged,
+  });
 
   final Project project;
+  final bool selectionMode;
+  final bool isSelected;
+  final ValueChanged<bool> onSelectionChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -564,96 +880,107 @@ class _ProjectCard extends ConsumerWidget {
           children: [
             Row(
               children: [
+                if (selectionMode) ...[
+                  Checkbox(
+                    key: Key('projectSelectionCheckbox_${project.id}'),
+                    value: isSelected,
+                    onChanged: (value) {
+                      onSelectionChanged(value ?? false);
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                ],
                 Expanded(
                   child: Text(
                     project.name,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
-                PopupMenuButton<_ProjectMenuAction>(
-                  onSelected: (action) async {
-                    switch (action) {
-                      case _ProjectMenuAction.rename:
-                        final newName = await _showRenameDialog(
-                          context,
-                          project,
-                        );
-                        if (newName == null) {
-                          return;
-                        }
+                if (!selectionMode)
+                  PopupMenuButton<_ProjectMenuAction>(
+                    onSelected: (action) async {
+                      switch (action) {
+                        case _ProjectMenuAction.rename:
+                          final newName = await _showRenameDialog(
+                            context,
+                            project,
+                          );
+                          if (newName == null) {
+                            return;
+                          }
 
-                        await controller.renameProject(
-                          projectId: project.id,
-                          newName: newName,
-                        );
-                        return;
-                      case _ProjectMenuAction.duplicate:
-                        await controller.duplicateProject(project.id);
-                        return;
-                      case _ProjectMenuAction.copyJson:
-                        await _copyProjectJson(context, project);
-                        return;
-                      case _ProjectMenuAction.downloadJson:
-                        await _downloadProjectJson(context, project);
-                        return;
-                      case _ProjectMenuAction.setTypeAd:
-                        await controller.setProjectType(
-                          projectId: project.id,
-                          type: ProjectType.ad,
-                        );
-                        return;
-                      case _ProjectMenuAction.setTypeSeries:
-                        await controller.setProjectType(
-                          projectId: project.id,
-                          type: ProjectType.series,
-                        );
-                        return;
-                      case _ProjectMenuAction.setTypeOther:
-                        await controller.setProjectType(
-                          projectId: project.id,
-                          type: ProjectType.other,
-                        );
-                        return;
-                      case _ProjectMenuAction.delete:
-                        await controller.deleteProject(project.id);
-                        return;
-                    }
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.rename,
-                      child: Text('Rename'),
-                    ),
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.duplicate,
-                      child: Text('Duplicate'),
-                    ),
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.copyJson,
-                      child: Text('Copy JSON'),
-                    ),
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.downloadJson,
-                      child: Text('Download JSON'),
-                    ),
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.setTypeAd,
-                      child: Text('Set Type: Ad'),
-                    ),
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.setTypeSeries,
-                      child: Text('Set Type: Series'),
-                    ),
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.setTypeOther,
-                      child: Text('Set Type: Other'),
-                    ),
-                    PopupMenuItem(
-                      value: _ProjectMenuAction.delete,
-                      child: Text('Delete'),
-                    ),
-                  ],
-                ),
+                          await controller.renameProject(
+                            projectId: project.id,
+                            newName: newName,
+                          );
+                          return;
+                        case _ProjectMenuAction.duplicate:
+                          await controller.duplicateProject(project.id);
+                          return;
+                        case _ProjectMenuAction.copyJson:
+                          await _copyProjectJson(context, project);
+                          return;
+                        case _ProjectMenuAction.downloadJson:
+                          await _downloadProjectJson(context, project);
+                          return;
+                        case _ProjectMenuAction.setTypeAd:
+                          await controller.setProjectType(
+                            projectId: project.id,
+                            type: ProjectType.ad,
+                          );
+                          return;
+                        case _ProjectMenuAction.setTypeSeries:
+                          await controller.setProjectType(
+                            projectId: project.id,
+                            type: ProjectType.series,
+                          );
+                          return;
+                        case _ProjectMenuAction.setTypeOther:
+                          await controller.setProjectType(
+                            projectId: project.id,
+                            type: ProjectType.other,
+                          );
+                          return;
+                        case _ProjectMenuAction.delete:
+                          await controller.deleteProject(project.id);
+                          return;
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.rename,
+                        child: Text('Rename'),
+                      ),
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.duplicate,
+                        child: Text('Duplicate'),
+                      ),
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.copyJson,
+                        child: Text('Copy JSON'),
+                      ),
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.downloadJson,
+                        child: Text('Download JSON'),
+                      ),
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.setTypeAd,
+                        child: Text('Set Type: Ad'),
+                      ),
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.setTypeSeries,
+                        child: Text('Set Type: Series'),
+                      ),
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.setTypeOther,
+                        child: Text('Set Type: Other'),
+                      ),
+                      PopupMenuItem(
+                        value: _ProjectMenuAction.delete,
+                        child: Text('Delete'),
+                      ),
+                    ],
+                  ),
               ],
             ),
             if (_isDemoProject(project)) ...[
@@ -680,18 +1007,22 @@ class _ProjectCard extends ConsumerWidget {
               runSpacing: 8,
               children: [
                 FilledButton.icon(
-                  onPressed: () => context.goNamed(
-                    'editorProject',
-                    pathParameters: {'projectId': project.id},
-                  ),
+                  onPressed: selectionMode
+                      ? null
+                      : () => context.goNamed(
+                          'editorProject',
+                          pathParameters: {'projectId': project.id},
+                        ),
                   icon: const Icon(Icons.edit_note_rounded),
                   label: const Text('Open Chat Editor'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: () => context.goNamed(
-                    'playbackProject',
-                    pathParameters: {'projectId': project.id},
-                  ),
+                  onPressed: selectionMode
+                      ? null
+                      : () => context.goNamed(
+                          'playbackProject',
+                          pathParameters: {'projectId': project.id},
+                        ),
                   icon: const Icon(Icons.play_circle_outline_rounded),
                   label: const Text('Open Playback'),
                 ),

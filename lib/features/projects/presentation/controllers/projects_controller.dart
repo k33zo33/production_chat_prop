@@ -203,6 +203,46 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<int> setProjectTypeByIds({
+    required Set<String> projectIds,
+    required ProjectType type,
+  }) async {
+    if (projectIds.isEmpty) {
+      return 0;
+    }
+
+    final current = await future;
+    var updatedCount = 0;
+    final now = DateTime.now();
+    final next = current
+        .map((project) {
+          if (!projectIds.contains(project.id)) {
+            return project;
+          }
+          if (project.type == type) {
+            return project;
+          }
+
+          updatedCount++;
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: type,
+            createdAt: project.createdAt,
+            updatedAt: now,
+            scenes: project.scenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (updatedCount == 0) {
+      return 0;
+    }
+
+    await _persist(next);
+    return updatedCount;
+  }
+
   Future<void> deleteProject(String projectId) async {
     final current = await future;
     final next = current
@@ -210,6 +250,24 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
         .toList(growable: false);
 
     await _persist(next);
+  }
+
+  Future<int> deleteProjectsByIds(Set<String> projectIds) async {
+    if (projectIds.isEmpty) {
+      return 0;
+    }
+
+    final current = await future;
+    final next = current
+        .where((project) => !projectIds.contains(project.id))
+        .toList(growable: false);
+    final removedCount = current.length - next.length;
+    if (removedCount == 0) {
+      return 0;
+    }
+
+    await _persist(next);
+    return removedCount;
   }
 
   Future<void> duplicateProject(String projectId) async {

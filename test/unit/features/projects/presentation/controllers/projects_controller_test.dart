@@ -465,6 +465,91 @@ void main() {
       expect(projects.first.type, ProjectType.ad);
     });
 
+    test(
+      'setProjectTypeByIds updates selected projects and returns count',
+      () async {
+        await container.read(projectsControllerProvider.future);
+        final notifier = container.read(projectsControllerProvider.notifier);
+
+        await notifier.createProject();
+        final projectsBeforeUpdate = await container.read(
+          projectsControllerProvider.future,
+        );
+        final secondProjectId = projectsBeforeUpdate.last.id;
+
+        final updatedCount = await notifier.setProjectTypeByIds(
+          projectIds: {'p1', secondProjectId},
+          type: ProjectType.series,
+        );
+
+        final projectsAfterUpdate = await container.read(
+          projectsControllerProvider.future,
+        );
+        expect(updatedCount, 2);
+        expect(
+          projectsAfterUpdate
+              .map((project) => project.type)
+              .every((type) => type == ProjectType.series),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'setProjectTypeByIds returns zero when selected type is unchanged',
+      () async {
+        await container.read(projectsControllerProvider.future);
+        final notifier = container.read(projectsControllerProvider.notifier);
+
+        final updatedCount = await notifier.setProjectTypeByIds(
+          projectIds: {'p1'},
+          type: ProjectType.other,
+        );
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        expect(updatedCount, 0);
+        expect(projects.first.type, ProjectType.other);
+      },
+    );
+
+    test(
+      'deleteProjectsByIds removes selected projects and returns count',
+      () async {
+        await container.read(projectsControllerProvider.future);
+        final notifier = container.read(projectsControllerProvider.notifier);
+
+        await notifier.createProject();
+        final projectsBeforeDelete = await container.read(
+          projectsControllerProvider.future,
+        );
+        final secondProjectId = projectsBeforeDelete.last.id;
+
+        final removedCount = await notifier.deleteProjectsByIds({
+          'p1',
+          secondProjectId,
+        });
+
+        final projectsAfterDelete = await container.read(
+          projectsControllerProvider.future,
+        );
+        expect(removedCount, 2);
+        expect(projectsAfterDelete, isEmpty);
+      },
+    );
+
+    test('deleteProjectsByIds returns zero when selection is empty', () async {
+      await container.read(projectsControllerProvider.future);
+      final notifier = container.read(projectsControllerProvider.notifier);
+
+      final removedCount = await notifier.deleteProjectsByIds(<String>{});
+      final projects = await container.read(projectsControllerProvider.future);
+
+      expect(removedCount, 0);
+      expect(projects, hasLength(1));
+    });
+
     test('setProjectType keeps scenes and messages unchanged', () async {
       await container.read(projectsControllerProvider.future);
       final before = await container.read(projectsControllerProvider.future);
