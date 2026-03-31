@@ -302,6 +302,24 @@ void main() {
     expect(find.text('No projects yet'), findsOneWidget);
   });
 
+  testWidgets(
+    'import json file button shows fallback when no file is selected',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('importProjectJsonFileButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('No JSON file selected.'), findsOneWidget);
+    },
+  );
+
   testWidgets('rename project from popup menu', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),

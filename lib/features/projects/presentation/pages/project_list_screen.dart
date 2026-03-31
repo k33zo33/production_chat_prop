@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
@@ -36,6 +37,30 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   Future<void> _onImportProjectJsonPressed() async {
     final rawJson = await _showImportDialog();
     if (rawJson == null) {
+      return;
+    }
+
+    final result = await ref
+        .read(projectsControllerProvider.notifier)
+        .importProjectFromJson(rawJson);
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_importResultMessage(result))),
+    );
+  }
+
+  Future<void> _onImportProjectJsonFilePressed() async {
+    final rawJson = await pickTextFile();
+    if (!mounted) {
+      return;
+    }
+    if (rawJson == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No JSON file selected.')));
       return;
     }
 
@@ -112,6 +137,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       appBar: AppBar(
         title: const Text('Project List'),
         actions: [
+          IconButton(
+            key: const Key('importProjectJsonFileButton'),
+            tooltip: 'Import JSON File',
+            onPressed: _onImportProjectJsonFilePressed,
+            icon: const Icon(Icons.upload_file_rounded),
+          ),
           IconButton(
             key: const Key('importProjectJsonButton'),
             tooltip: 'Import Project JSON',
