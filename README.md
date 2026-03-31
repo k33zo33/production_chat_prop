@@ -32,7 +32,7 @@ Production Chat Prop je Flutter web-first MVP za kreiranje i reprodukciju simuli
     - scene/message/max-duration summary po kartici
     - quick type akcije (`Set Type: Ad/Series/Other`)
     - dodatni sort `Updated (Oldest)`
-    - JSON handoff flow (`Copy JSON` + `Download JSON` po kartici, `Import Project JSON` iz top bara ili `.json` file pickera, single i batch payload)
+    - JSON handoff flow (`Copy JSON` + `Download JSON` po kartici, `Export All Projects JSON` iz top bara, `Import Project JSON` iz top bara ili `.json` file pickera, single i batch payload)
   - Playback quality-of-life:
     - progress summary (`Progress %` + `Visible messages`)
     - export readiness status (`Ready` / `No messages in scene` / `Export in progress`)

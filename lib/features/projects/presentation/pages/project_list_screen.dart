@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
+import 'package:production_chat_prop/features/projects/data/services/project_portfolio_export_service.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
@@ -80,6 +81,23 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     );
   }
 
+  Future<void> _onExportAllProjectsPressed() async {
+    final projects = await ref.read(projectsControllerProvider.future);
+    if (!mounted) {
+      return;
+    }
+
+    final service = ProjectPortfolioExportService();
+    final result = await service.exportPortfolio(projects: projects);
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_portfolioExportResultMessage(result))),
+    );
+  }
+
   Future<String?> _showImportDialog() async {
     var draftJson = '';
     final result = await showDialog<String>(
@@ -147,6 +165,20 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     return 'Imported $importedCount projects and skipped $skippedCount invalid entr${skippedCount == 1 ? 'y' : 'ies'}.';
   }
 
+  String _portfolioExportResultMessage(ProjectPortfolioExportResult result) {
+    if (result.isSuccess) {
+      return 'Project portfolio exported: ${result.filename}.';
+    }
+
+    return switch (result.failure) {
+      ProjectPortfolioExportFailure.noProjects =>
+        'No projects available to export.',
+      ProjectPortfolioExportFailure.downloadUnavailable =>
+        'Project portfolio export failed: download is not available on this platform.',
+      null => 'Project portfolio export failed.',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final projectsState = ref.watch(projectsControllerProvider);
@@ -155,6 +187,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       appBar: AppBar(
         title: const Text('Project List'),
         actions: [
+          IconButton(
+            key: const Key('exportAllProjectsJsonButton'),
+            tooltip: 'Export All Projects JSON',
+            onPressed: _onExportAllProjectsPressed,
+            icon: const Icon(Icons.download_for_offline_outlined),
+          ),
           IconButton(
             key: const Key('importProjectJsonFileButton'),
             tooltip: 'Import JSON File',

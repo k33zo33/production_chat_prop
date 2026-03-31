@@ -88,6 +88,45 @@ void main() {
     expect(find.text('Type: other'), findsOneWidget);
   });
 
+  testWidgets('export all projects action shows empty portfolio feedback', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('exportAllProjectsJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('No projects available to export.'), findsOneWidget);
+  });
+
+  testWidgets('export all projects action shows download fallback feedback', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('exportAllProjectsJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.text(
+        'Project portfolio export failed: download is not available on this platform.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('create project and navigate to chat editor from project card', (
     tester,
   ) async {
