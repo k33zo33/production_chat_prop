@@ -122,5 +122,20 @@ void main() {
       expect(container.read(provider).currentSecond, 0);
       expect(container.read(provider).status, PlaybackStatus.idle);
     });
+
+    test('playback remains stable across long max timeline', () {
+      fakeAsync((async) {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final provider = playbackControllerProvider('project-large');
+
+        container.read(provider.notifier).play(maxSecond: 520);
+        async.elapse(const Duration(seconds: 520));
+
+        final state = container.read(provider);
+        expect(state.currentSecond, 520);
+        expect(state.status, PlaybackStatus.finished);
+      });
+    });
   });
 }

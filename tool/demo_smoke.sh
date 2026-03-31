@@ -27,6 +27,7 @@ echo "[demo-smoke] targeted widget tests"
 "$FLUTTER_BIN" test --plain-name "import project json dialog supports batch payload"
 "$FLUTTER_BIN" test --plain-name "import json file button shows fallback when no file is selected"
 "$FLUTTER_BIN" test --plain-name "import json file button imports project from picker payload"
+"$FLUTTER_BIN" test --plain-name "playback stays responsive with imported 500+ messages"
 "$FLUTTER_BIN" test --plain-name "video export button shows fallback package feedback"
 
 echo
@@ -37,7 +38,8 @@ echo "3) Open Chat Editor, tweak one message, return to Projects"
 echo "4) Try Export All Projects JSON from top bar"
 echo "5) Toggle Select Projects mode, bulk-select cards, then test Duplicate + Set Type + Export Selected + Delete Selected"
 echo "6) Import payload with Import Project JSON (paste or file picker), batch payload + preview confirmation are supported"
-echo "7) Open Playback, verify controls + export feedback"
-echo "8) Optional: follow docs/04-export-qa-checklist.md"
+echo "7) Optionally stress-test with 500+ messages and verify playback stays responsive"
+echo "8) Open Playback, verify controls + export feedback"
+echo "9) Optional: follow docs/04-export-qa-checklist.md"
 
 echo "[demo-smoke] done"

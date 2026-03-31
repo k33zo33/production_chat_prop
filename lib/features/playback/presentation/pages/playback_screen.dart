@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/data/services/video_export_fallback_service.dart';
@@ -146,8 +147,9 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   Widget build(BuildContext context) {
     final project = widget.snapshot.project;
     final scene = widget.snapshot.scene;
-    final sortedMessages = scene == null ? <Message>[] : [...scene.messages]
-      ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
+    final sortedMessages = scene == null
+        ? <Message>[]
+        : sortMessagesByTimeline(scene.messages);
     final palette = resolveChatStylePalette(scene?.styleId ?? 'studio_default');
     final speakerNameById = _buildSpeakerNameById(project);
     final maxSecond = sortedMessages.isEmpty
@@ -163,11 +165,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
         : _isExporting
         ? 'Export in progress'
         : 'Ready';
-    final visibleMessagesCount = sortedMessages
-        .where(
-          (message) => message.timestampSeconds <= playbackState.currentSecond,
-        )
-        .length;
+    final visibleMessagesCount = _countVisibleMessages(
+      messages: sortedMessages,
+      currentSecond: playbackState.currentSecond,
+    );
     final progressPercent = maxSecond == 0
         ? 0
         : ((playbackState.currentSecond / maxSecond) * 100).round().clamp(
@@ -798,9 +799,29 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     if (scene == null || scene.messages.isEmpty) {
       return 0;
     }
-    final sortedMessages = [...scene.messages]
-      ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
+    final sortedMessages = sortMessagesByTimeline(scene.messages);
     return sortedMessages.last.timestampSeconds;
+  }
+
+  int _countVisibleMessages({
+    required List<Message> messages,
+    required int currentSecond,
+  }) {
+    if (messages.isEmpty) {
+      return 0;
+    }
+
+    var low = 0;
+    var high = messages.length;
+    while (low < high) {
+      final mid = low + ((high - low) >> 1);
+      if (messages[mid].timestampSeconds <= currentSecond) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    return low;
   }
 
   int? _findNextCue({

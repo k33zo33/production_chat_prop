@@ -15,16 +15,17 @@ void main() {
       String? capturedMimeType;
 
       final service = VideoExportFallbackService(
-        downloader: ({
-          required bytes,
-          required filename,
-          required mimeType,
-        }) async {
-          capturedBytes = bytes;
-          capturedFilename = filename;
-          capturedMimeType = mimeType;
-          return true;
-        },
+        downloader:
+            ({
+              required bytes,
+              required filename,
+              required mimeType,
+            }) async {
+              capturedBytes = bytes;
+              capturedFilename = filename;
+              capturedMimeType = mimeType;
+              return true;
+            },
       );
 
       const scene = Scene(
@@ -84,9 +85,11 @@ void main() {
       expect(capturedMimeType, equals('application/json'));
       expect(capturedBytes, isNotNull);
 
-      final payload = jsonDecode(
-        utf8.decode(capturedBytes!),
-      ) as Map<String, dynamic>;
+      final payload =
+          jsonDecode(
+                utf8.decode(capturedBytes!),
+              )
+              as Map<String, dynamic>;
       final selectedScene = payload['selectedScene'] as Map<String, dynamic>;
       final messages = selectedScene['messages'] as List<dynamic>;
       expect((messages.first as Map<String, dynamic>)['timestampSeconds'], 1);
@@ -99,12 +102,12 @@ void main() {
 
     test('returns failure when downloader is unavailable', () async {
       final service = VideoExportFallbackService(
-        downloader: ({
-          required bytes,
-          required filename,
-          required mimeType,
-        }) async =>
-            false,
+        downloader:
+            ({
+              required bytes,
+              required filename,
+              required mimeType,
+            }) async => false,
       );
 
       const scene = Scene(
@@ -133,6 +136,85 @@ void main() {
 
       expect(result.isSuccess, isFalse);
       expect(result.failure, VideoFallbackExportFailure.downloadUnavailable);
+    });
+
+    test('exports package with 500+ scene messages intact', () async {
+      List<int>? capturedBytes;
+      final service = VideoExportFallbackService(
+        downloader:
+            ({
+              required bytes,
+              required filename,
+              required mimeType,
+            }) async {
+              capturedBytes = bytes;
+              return true;
+            },
+      );
+
+      final messages = List<Message>.generate(
+        520,
+        (index) => Message(
+          id: 'm${520 - index}',
+          characterId: 'c1',
+          text: 'Message $index',
+          timestampSeconds: index,
+          status: MessageStatus.sent,
+          isIncoming: index.isOdd,
+          showTypingBefore: index.isEven,
+        ),
+        growable: false,
+      );
+      final scene = Scene(
+        id: 's-large',
+        title: 'Large Scene',
+        styleId: 'studio_default',
+        aspectRatio: SceneAspectRatio.portrait9x16,
+        characters: const [
+          Character(
+            id: 'c1',
+            displayName: 'Lead',
+            avatarPath: null,
+            bubbleColor: '#00AA88',
+          ),
+        ],
+        messages: messages,
+      );
+      final project = Project(
+        id: 'p-large',
+        name: 'Large Project',
+        type: ProjectType.series,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        scenes: [scene],
+      );
+
+      final result = await service.exportFallbackPackage(
+        project: project,
+        scene: scene,
+        includeDeviceFrame: true,
+        cleanPreview: false,
+      );
+
+      expect(result.isSuccess, isTrue);
+      expect(capturedBytes, isNotNull);
+
+      final payload =
+          jsonDecode(
+                utf8.decode(capturedBytes!),
+              )
+              as Map<String, dynamic>;
+      final selectedScene = payload['selectedScene'] as Map<String, dynamic>;
+      final exportedMessages = selectedScene['messages'] as List<dynamic>;
+      expect(exportedMessages, hasLength(520));
+      expect(
+        (exportedMessages.first as Map<String, dynamic>)['timestampSeconds'],
+        0,
+      );
+      expect(
+        (exportedMessages.last as Map<String, dynamic>)['timestampSeconds'],
+        519,
+      );
     });
   });
 }

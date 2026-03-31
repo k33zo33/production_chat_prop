@@ -2158,6 +2158,53 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('playback stays responsive with imported 500+ messages', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    final payload = _buildLargeProjectImportPayload(messageCount: 520);
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.text('Import'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Stress Playback Project'), findsOneWidget);
+
+    await _openPlaybackFromProjectList(tester);
+
+    expect(
+      find.textContaining('Messages: 520', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Progress: 0% • Visible messages: 1/520'),
+      findsOneWidget,
+    );
+
+    final plusFiveButton = find.byKey(const Key('seekForward5Button'));
+    await tester.ensureVisible(plusFiveButton);
+    await tester.pumpAndSettle();
+    await tester.tap(plusFiveButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Visible messages: 6/520'),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
@@ -2225,4 +2272,57 @@ Future<void> _openPlaybackFromProjectList(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(openPlaybackButton);
   await tester.pumpAndSettle();
+}
+
+String _buildLargeProjectImportPayload({required int messageCount}) {
+  final messages = List<Map<String, Object?>>.generate(
+    messageCount,
+    (index) => {
+      'id': 'm_$index',
+      'characterId': index.isEven ? 'c_alex' : 'c_mia',
+      'text': 'Stress message $index',
+      'timestampSeconds': index,
+      'status': index % 3 == 0
+          ? 'sent'
+          : index % 3 == 1
+          ? 'delivered'
+          : 'seen',
+      'isIncoming': index.isOdd,
+      'showTypingBefore': index % 5 == 0,
+    },
+    growable: false,
+  );
+
+  final payload = {
+    'id': 'stress-project-source',
+    'name': 'Stress Playback Project',
+    'type': 'series',
+    'createdAt': DateTime.utc(2026, 3, 31, 12).toIso8601String(),
+    'updatedAt': DateTime.utc(2026, 3, 31, 12).toIso8601String(),
+    'scenes': [
+      {
+        'id': 'scene-stress',
+        'title': 'Stress Scene',
+        'styleId': 'studio_default',
+        'aspectRatio': 'portrait9x16',
+        'characters': [
+          {
+            'id': 'c_alex',
+            'displayName': 'Alex',
+            'avatarPath': null,
+            'bubbleColor': '#2E90FA',
+          },
+          {
+            'id': 'c_mia',
+            'displayName': 'Mia',
+            'avatarPath': null,
+            'bubbleColor': '#12B76A',
+          },
+        ],
+        'messages': messages,
+      },
+    ],
+  };
+
+  return jsonEncode(payload);
 }

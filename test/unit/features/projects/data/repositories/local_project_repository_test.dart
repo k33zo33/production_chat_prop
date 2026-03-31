@@ -68,6 +68,23 @@ void main() {
       expect(loaded, hasLength(1));
       expect(loaded.first.id, project.id);
     });
+
+    test('persists and loads project with 500+ messages', () async {
+      final project = _sampleProjectWithMessageCount(520);
+
+      await repository.saveAll([project]);
+      final loaded = await repository.getAll();
+
+      expect(loaded, hasLength(1));
+      expect(loaded.first.scenes, hasLength(1));
+      expect(loaded.first.scenes.first.messages, hasLength(520));
+      expect(loaded.first.scenes.first.messages.first.text, 'Message 0');
+      expect(loaded.first.scenes.first.messages.last.text, 'Message 519');
+      expect(
+        loaded.first.scenes.first.messages.last.timestampSeconds,
+        519,
+      );
+    });
   });
 }
 
@@ -120,6 +137,54 @@ Project _sampleProject() {
             showTypingBefore: true,
           ),
         ],
+      ),
+    ],
+  );
+}
+
+Project _sampleProjectWithMessageCount(int messageCount) {
+  final createdAt = DateTime.utc(2026, 3, 29, 12);
+  final messages = List<Message>.generate(
+    messageCount,
+    (index) => Message(
+      id: 'm$index',
+      characterId: index.isEven ? 'c1' : 'c2',
+      text: 'Message $index',
+      timestampSeconds: index,
+      status: MessageStatus.values[index % MessageStatus.values.length],
+      isIncoming: index.isOdd,
+      showTypingBefore: index % 3 == 0,
+    ),
+    growable: false,
+  );
+
+  return Project(
+    id: 'project-large',
+    name: 'Large Project',
+    type: ProjectType.series,
+    createdAt: createdAt,
+    updatedAt: createdAt,
+    scenes: [
+      Scene(
+        id: 'scene-large',
+        title: 'Large Scene',
+        styleId: 'studio_slate',
+        aspectRatio: SceneAspectRatio.portrait9x16,
+        characters: const [
+          Character(
+            id: 'c1',
+            displayName: 'Alex',
+            avatarPath: null,
+            bubbleColor: '#2E90FA',
+          ),
+          Character(
+            id: 'c2',
+            displayName: 'Mia',
+            avatarPath: null,
+            bubbleColor: '#12B76A',
+          ),
+        ],
+        messages: messages,
       ),
     ],
   );

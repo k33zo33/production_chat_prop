@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:production_chat_prop/core/utils/file_download/file_downloader.dart';
+import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 
@@ -73,8 +74,7 @@ class VideoExportFallbackService {
     required bool includeDeviceFrame,
     required bool cleanPreview,
   }) {
-    final sortedMessages = [...scene.messages]
-      ..sort((a, b) => a.timestampSeconds.compareTo(b.timestampSeconds));
+    final sortedMessages = sortMessagesByTimeline(scene.messages);
 
     return {
       'meta': {
