@@ -550,6 +550,48 @@ void main() {
       expect(projects, hasLength(1));
     });
 
+    test(
+      'duplicateProjectsByIds creates copies for selected projects',
+      () async {
+        await container.read(projectsControllerProvider.future);
+        final notifier = container.read(projectsControllerProvider.notifier);
+
+        await notifier.createProject();
+        final projectsBeforeDuplicate = await container.read(
+          projectsControllerProvider.future,
+        );
+        final secondProjectId = projectsBeforeDuplicate.last.id;
+
+        final duplicatedCount = await notifier.duplicateProjectsByIds({
+          'p1',
+          secondProjectId,
+        });
+
+        final projectsAfterDuplicate = await container.read(
+          projectsControllerProvider.future,
+        );
+        final names = projectsAfterDuplicate
+            .map((project) => project.name)
+            .toList(growable: false);
+        expect(duplicatedCount, 2);
+        expect(projectsAfterDuplicate, hasLength(4));
+        expect(names, contains('Project One Copy'));
+        expect(names, contains('New Project 2 Copy'));
+      },
+    );
+
+    test('duplicateProjectsByIds returns zero for empty selection', () async {
+      await container.read(projectsControllerProvider.future);
+      final notifier = container.read(projectsControllerProvider.notifier);
+
+      final duplicatedCount = await notifier.duplicateProjectsByIds(
+        <String>{},
+      );
+      final projects = await container.read(projectsControllerProvider.future);
+      expect(duplicatedCount, 0);
+      expect(projects, hasLength(1));
+    });
+
     test('setProjectType keeps scenes and messages unchanged', () async {
       await container.read(projectsControllerProvider.future);
       final before = await container.read(projectsControllerProvider.future);

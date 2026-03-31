@@ -222,6 +222,41 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     );
   }
 
+  Future<void> _onDuplicateSelectedProjectsPressed(
+    List<Project> projects,
+  ) async {
+    final selectedIds = _selectedIdsForProjects(projects);
+    if (selectedIds.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No selected projects to duplicate.')),
+      );
+      return;
+    }
+
+    final duplicatedCount = await ref
+        .read(projectsControllerProvider.notifier)
+        .duplicateProjectsByIds(selectedIds);
+    if (!mounted) {
+      return;
+    }
+    if (duplicatedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No selected projects were duplicated.')),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Duplicated $duplicatedCount selected project${duplicatedCount == 1 ? '' : 's'}.',
+        ),
+      ),
+    );
+  }
+
   Future<void> _onSetSelectedProjectsType({
     required List<Project> projects,
     required ProjectType type,
@@ -500,6 +535,16 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       ? null
                       : () => _clearProjectSelection(exitMode: false),
                   icon: const Icon(Icons.deselect_rounded),
+                ),
+                IconButton(
+                  key: const Key('duplicateSelectedProjectsButton'),
+                  tooltip: 'Duplicate Selected Projects',
+                  onPressed: selectedCount == 0
+                      ? null
+                      : () => _onDuplicateSelectedProjectsPressed(
+                          loadedProjects,
+                        ),
+                  icon: const Icon(Icons.copy_all_rounded),
                 ),
                 PopupMenuButton<ProjectType>(
                   key: const Key('setSelectedProjectsTypeButton'),

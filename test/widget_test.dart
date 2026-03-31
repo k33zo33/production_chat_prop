@@ -293,6 +293,44 @@ void main() {
     expect(find.text('Type: ad'), findsNWidgets(2));
   });
 
+  testWidgets('bulk project selection duplicates selected projects', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('New Project 1'), findsOneWidget);
+    expect(find.text('New Project 2'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Checkbox).at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Checkbox).at(1));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('duplicateSelectedProjectsButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.textContaining('Duplicated 2 selected projects.'),
+      findsOneWidget,
+    );
+    expect(find.text('New Project 1 Copy'), findsOneWidget);
+    expect(find.text('New Project 2 Copy'), findsOneWidget);
+  });
+
   testWidgets('project popup copy json writes clipboard and shows feedback', (
     tester,
   ) async {

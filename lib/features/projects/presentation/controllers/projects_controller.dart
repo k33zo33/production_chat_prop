@@ -270,6 +270,48 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return removedCount;
   }
 
+  Future<int> duplicateProjectsByIds(Set<String> projectIds) async {
+    if (projectIds.isEmpty) {
+      return 0;
+    }
+
+    final current = await future;
+    final now = DateTime.now();
+    final existingNames = current
+        .map((project) => project.name.toLowerCase())
+        .toSet();
+    final duplicates = <Project>[];
+
+    for (final project in current) {
+      if (!projectIds.contains(project.id)) {
+        continue;
+      }
+      final duplicateName = _buildDuplicateProjectName(
+        existingNames: existingNames,
+        sourceName: project.name,
+      );
+      existingNames.add(duplicateName.toLowerCase());
+      duplicates.add(
+        Project(
+          id: _uuid.v4(),
+          name: duplicateName,
+          type: project.type,
+          createdAt: now,
+          updatedAt: now,
+          scenes: project.scenes,
+        ),
+      );
+    }
+
+    if (duplicates.isEmpty) {
+      return 0;
+    }
+
+    final next = [...current, ...duplicates];
+    await _persist(next);
+    return duplicates.length;
+  }
+
   Future<void> duplicateProject(String projectId) async {
     final current = await future;
     Project? source;
@@ -1436,6 +1478,29 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       final candidate = suffix == 1
           ? '$normalizedBaseName (Imported)'
           : '$normalizedBaseName (Imported $suffix)';
+      if (!existingNames.contains(candidate.toLowerCase())) {
+        return candidate;
+      }
+      suffix++;
+    }
+  }
+
+  String _buildDuplicateProjectName({
+    required Set<String> existingNames,
+    required String sourceName,
+  }) {
+    final normalizedBaseName = sourceName.trim().isEmpty
+        ? 'Project'
+        : sourceName.trim();
+    final copyBase = '$normalizedBaseName Copy';
+
+    if (!existingNames.contains(copyBase.toLowerCase())) {
+      return copyBase;
+    }
+
+    var suffix = 2;
+    while (true) {
+      final candidate = '$copyBase $suffix';
       if (!existingNames.contains(candidate.toLowerCase())) {
         return candidate;
       }
