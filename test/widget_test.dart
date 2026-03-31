@@ -310,6 +310,9 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Import'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Imported Via JSON'), findsOneWidget);
     expect(find.text('Type: ad'), findsOneWidget);
@@ -386,6 +389,9 @@ void main() {
       payload,
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -497,6 +503,9 @@ void main() {
       await _ensureOnProjectList(tester);
 
       await tester.tap(find.byKey(const Key('importProjectJsonFileButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 

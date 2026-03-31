@@ -26,6 +26,45 @@ enum ProjectJsonImportStatus {
   invalidProjectPayload,
 }
 
+enum ProjectJsonImportPreviewStatus {
+  ready,
+  emptyInput,
+  invalidJson,
+  invalidProjectPayload,
+}
+
+class ProjectJsonImportPreviewResult {
+  const ProjectJsonImportPreviewResult._({
+    required this.status,
+    this.projectedNames = const [],
+    this.invalidCount = 0,
+  });
+
+  const ProjectJsonImportPreviewResult.ready({
+    required List<String> projectedNames,
+    required int invalidCount,
+  }) : this._(
+         status: ProjectJsonImportPreviewStatus.ready,
+         projectedNames: projectedNames,
+         invalidCount: invalidCount,
+       );
+
+  const ProjectJsonImportPreviewResult.emptyInput()
+    : this._(status: ProjectJsonImportPreviewStatus.emptyInput);
+
+  const ProjectJsonImportPreviewResult.invalidJson()
+    : this._(status: ProjectJsonImportPreviewStatus.invalidJson);
+
+  const ProjectJsonImportPreviewResult.invalidProjectPayload()
+    : this._(status: ProjectJsonImportPreviewStatus.invalidProjectPayload);
+
+  final ProjectJsonImportPreviewStatus status;
+  final List<String> projectedNames;
+  final int invalidCount;
+
+  int get importableCount => projectedNames.length;
+}
+
 class ProjectJsonImportResult {
   const ProjectJsonImportResult._({
     required this.status,
@@ -198,6 +237,65 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
 
     final next = [...current, duplicate];
     await _persist(next);
+  }
+
+  Future<ProjectJsonImportPreviewResult> previewProjectImportFromJson(
+    String rawJson,
+  ) async {
+    final trimmed = rawJson.trim();
+    if (trimmed.isEmpty) {
+      return const ProjectJsonImportPreviewResult.emptyInput();
+    }
+
+    Object? decodedPayload;
+    try {
+      decodedPayload = jsonDecode(trimmed);
+    } on FormatException {
+      return const ProjectJsonImportPreviewResult.invalidJson();
+    }
+
+    final projectJsonList = _extractProjectJsonList(decodedPayload);
+    if (projectJsonList.isEmpty) {
+      return const ProjectJsonImportPreviewResult.invalidProjectPayload();
+    }
+
+    final current = await future;
+    final existingNames = current
+        .map((project) => project.name.toLowerCase())
+        .toSet();
+    final projectedNames = <String>[];
+    var invalidCount = 0;
+
+    for (final projectJson in projectJsonList) {
+      Project importedSource;
+      try {
+        importedSource = Project.fromJson(projectJson);
+      } catch (error) {
+        final isRecoverableDataError =
+            error is FormatException || error is TypeError;
+        if (!isRecoverableDataError) {
+          rethrow;
+        }
+        invalidCount++;
+        continue;
+      }
+
+      final importedName = _buildImportedProjectName(
+        existingNames: existingNames,
+        sourceName: importedSource.name,
+      );
+      existingNames.add(importedName.toLowerCase());
+      projectedNames.add(importedName);
+    }
+
+    if (projectedNames.isEmpty) {
+      return const ProjectJsonImportPreviewResult.invalidProjectPayload();
+    }
+
+    return ProjectJsonImportPreviewResult.ready(
+      projectedNames: projectedNames,
+      invalidCount: invalidCount,
+    );
   }
 
   Future<ProjectJsonImportResult> importProjectFromJson(String rawJson) async {

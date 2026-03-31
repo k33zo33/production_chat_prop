@@ -31,7 +31,7 @@ echo "1) Run app: $FLUTTER_BIN run -d web-server"
 echo "2) Create or load demo project from empty state"
 echo "3) Open Chat Editor, tweak one message, return to Projects"
 echo "4) Try Export All Projects JSON from top bar"
-echo "5) Import that payload with Import Project JSON (paste or file picker), batch payload is also supported"
+echo "5) Import that payload with Import Project JSON (paste or file picker), batch payload + preview confirmation are supported"
 echo "6) Open Playback, verify controls + export feedback"
 echo "7) Optional: follow docs/04-export-qa-checklist.md"
 

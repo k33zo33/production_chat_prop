@@ -44,17 +44,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     if (rawJson == null) {
       return;
     }
-
-    final result = await ref
-        .read(projectsControllerProvider.notifier)
-        .importProjectFromJson(rawJson);
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_importResultMessage(result))),
-    );
+    await _runJsonImportFlow(rawJson);
   }
 
   Future<void> _onImportProjectJsonFilePressed() async {
@@ -68,17 +58,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       ).showSnackBar(const SnackBar(content: Text('No JSON file selected.')));
       return;
     }
-
-    final result = await ref
-        .read(projectsControllerProvider.notifier)
-        .importProjectFromJson(rawJson);
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_importResultMessage(result))),
-    );
+    await _runJsonImportFlow(rawJson);
   }
 
   Future<void> _onExportAllProjectsPressed() async {
@@ -136,6 +116,102 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       },
     );
     return result;
+  }
+
+  Future<void> _runJsonImportFlow(String rawJson) async {
+    final controller = ref.read(projectsControllerProvider.notifier);
+    final preview = await controller.previewProjectImportFromJson(rawJson);
+    if (!mounted) {
+      return;
+    }
+    if (preview.status != ProjectJsonImportPreviewStatus.ready) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_importPreviewErrorMessage(preview))),
+      );
+      return;
+    }
+
+    final shouldImport = await _showImportPreviewDialog(preview);
+    if (!mounted || !shouldImport) {
+      return;
+    }
+
+    final result = await controller.importProjectFromJson(rawJson);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_importResultMessage(result))),
+    );
+  }
+
+  Future<bool> _showImportPreviewDialog(
+    ProjectJsonImportPreviewResult preview,
+  ) async {
+    final projectedNames = preview.projectedNames;
+    final previewNames = projectedNames.take(5).toList(growable: false);
+    final hasMore = projectedNames.length > previewNames.length;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Import ${preview.importableCount} project${preview.importableCount == 1 ? '' : 's'}?',
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Projects that will be imported:'),
+                const SizedBox(height: 8),
+                for (final name in previewNames)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text('• $name'),
+                  ),
+                if (hasMore)
+                  Text(
+                    '• +${projectedNames.length - previewNames.length} more',
+                  ),
+                if (preview.invalidCount > 0) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Invalid entries to skip: ${preview.invalidCount}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const Key('confirmImportFromJsonButton'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Import'),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  String _importPreviewErrorMessage(ProjectJsonImportPreviewResult preview) {
+    return switch (preview.status) {
+      ProjectJsonImportPreviewStatus.emptyInput =>
+        'Paste project JSON before importing.',
+      ProjectJsonImportPreviewStatus.invalidJson =>
+        'Invalid JSON format. Please paste valid JSON.',
+      ProjectJsonImportPreviewStatus.invalidProjectPayload =>
+        'JSON does not match the expected Project structure.',
+      ProjectJsonImportPreviewStatus.ready => '',
+    };
   }
 
   String _importResultMessage(ProjectJsonImportResult result) {

@@ -529,6 +529,48 @@ void main() {
     );
 
     test(
+      'previewProjectImportFromJson returns projected names for batch payload',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'projects': [
+            _sampleProject().toJson(),
+            {
+              ..._sampleProject().toJson(),
+              'id': 'p2',
+              'name': 'Project Two',
+            },
+            {'invalid': true},
+          ],
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .previewProjectImportFromJson(payload);
+
+        expect(result.status, ProjectJsonImportPreviewStatus.ready);
+        expect(result.importableCount, 2);
+        expect(result.invalidCount, 1);
+        expect(result.projectedNames, contains('Project One (Imported)'));
+        expect(result.projectedNames, contains('Project Two'));
+      },
+    );
+
+    test(
+      'previewProjectImportFromJson returns invalidJson for malformed payload',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .previewProjectImportFromJson('{broken');
+
+        expect(result.status, ProjectJsonImportPreviewStatus.invalidJson);
+      },
+    );
+
+    test(
       'importProjectFromJson appends imported project with unique name',
       () async {
         await container.read(projectsControllerProvider.future);
