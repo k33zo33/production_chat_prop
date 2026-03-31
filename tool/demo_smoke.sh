@@ -20,6 +20,7 @@ echo "[demo-smoke] targeted widget tests"
 "$FLUTTER_BIN" test --plain-name "project popup download json shows fallback feedback on unsupported platform"
 "$FLUTTER_BIN" test --plain-name "import project json dialog adds new project card"
 "$FLUTTER_BIN" test --plain-name "import json file button shows fallback when no file is selected"
+"$FLUTTER_BIN" test --plain-name "import json file button imports project from picker payload"
 "$FLUTTER_BIN" test --plain-name "video export button shows fallback package feedback"
 
 echo

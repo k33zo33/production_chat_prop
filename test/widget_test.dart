@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/app/app.dart';
+import 'package:production_chat_prop/features/projects/presentation/pages/project_list_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -317,6 +318,74 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('No JSON file selected.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'import json file button imports project from picker payload',
+    (
+      tester,
+    ) async {
+      final payload = jsonEncode({
+        'id': 'import-file-source-id',
+        'name': 'Imported From File',
+        'type': 'series',
+        'createdAt': DateTime.utc(2026, 1, 3).toIso8601String(),
+        'updatedAt': DateTime.utc(2026, 1, 3).toIso8601String(),
+        'scenes': [
+          {
+            'id': 'scene-file-1',
+            'title': 'Scene File',
+            'styleId': 'studio_slate',
+            'aspectRatio': 'portrait9x16',
+            'characters': [
+              {
+                'id': 'char-file-1',
+                'displayName': 'Casey',
+                'avatarPath': null,
+                'bubbleColor': '#12B76A',
+              },
+            ],
+            'messages': [
+              {
+                'id': 'msg-file-1',
+                'characterId': 'char-file-1',
+                'text': 'Loaded from file picker',
+                'timestampSeconds': 1,
+                'status': 'delivered',
+                'isIncoming': true,
+                'showTypingBefore': true,
+              },
+            ],
+          },
+        ],
+      });
+      Future<String?> picker({
+        String accept = '.json,application/json',
+      }) async {
+        return payload;
+      }
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            projectJsonFilePickerProvider.overrideWithValue(picker),
+          ],
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('importProjectJsonFileButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Imported From File'), findsOneWidget);
+      expect(find.text('Type: series'), findsOneWidget);
+      expect(
+        find.text('Imported project: Imported From File.'),
+        findsOneWidget,
+      );
     },
   );
 

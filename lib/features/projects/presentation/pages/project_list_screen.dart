@@ -9,6 +9,10 @@ import 'package:production_chat_prop/features/projects/data/services/project_pac
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
+final projectJsonFilePickerProvider = Provider<TextFilePicker>((ref) {
+  return pickTextFile;
+});
+
 class ProjectListScreen extends ConsumerStatefulWidget {
   const ProjectListScreen({super.key});
 
@@ -53,7 +57,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   }
 
   Future<void> _onImportProjectJsonFilePressed() async {
-    final rawJson = await pickTextFile();
+    final rawJson = await ref.read(projectJsonFilePickerProvider)();
     if (!mounted) {
       return;
     }
