@@ -61,6 +61,21 @@ void main() {
     expect(downloaderCalled, isFalse);
   });
 
+  test('buildPortfolioJson returns encoded payload without downloader', () {
+    final service = ProjectPortfolioExportService();
+
+    final jsonText = service.buildPortfolioJson(
+      projects: [_sampleProject('One'), _sampleProject('Two')],
+    );
+    final decoded = jsonDecode(jsonText) as Map<String, dynamic>;
+    final projects = decoded['projects'] as List<dynamic>;
+
+    expect(decoded['meta'], isA<Map<String, dynamic>>());
+    expect(projects, hasLength(2));
+    expect((projects.first as Map<String, dynamic>)['name'], 'Project One');
+    expect((projects.last as Map<String, dynamic>)['name'], 'Project Two');
+  });
+
   test(
     'exportPortfolio reports downloadUnavailable when downloader fails',
     () async {

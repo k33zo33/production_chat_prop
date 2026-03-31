@@ -33,6 +33,12 @@ class ProjectPortfolioExportService {
 
   final BytesDownloader _downloader;
 
+  String buildPortfolioJson({required List<Project> projects}) {
+    return const JsonEncoder.withIndent('  ').convert(
+      _buildPayload(projects: projects),
+    );
+  }
+
   Future<ProjectPortfolioExportResult> exportPortfolio({
     required List<Project> projects,
   }) async {
@@ -42,10 +48,7 @@ class ProjectPortfolioExportService {
       );
     }
 
-    final payload = _buildPayload(projects: projects);
-    final encoded = utf8.encode(
-      const JsonEncoder.withIndent('  ').convert(payload),
-    );
+    final encoded = utf8.encode(buildPortfolioJson(projects: projects));
     final filename = _buildFileName();
 
     final isDownloaded = await _downloader(

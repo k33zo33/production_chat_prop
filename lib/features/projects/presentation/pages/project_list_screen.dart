@@ -128,6 +128,24 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     if (!mounted) {
       return;
     }
+    if (result.failure == ProjectPortfolioExportFailure.downloadUnavailable) {
+      final copied = await _copyTextToClipboard(
+        service.buildPortfolioJson(projects: projects),
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            copied
+                ? 'Download unavailable. Project portfolio JSON copied to clipboard.'
+                : _portfolioExportResultMessage(result),
+          ),
+        ),
+      );
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_portfolioExportResultMessage(result))),
@@ -154,9 +172,36 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     if (!mounted) {
       return;
     }
+    if (result.failure == ProjectPortfolioExportFailure.downloadUnavailable) {
+      final copied = await _copyTextToClipboard(
+        service.buildPortfolioJson(projects: selectedProjects),
+      );
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            copied
+                ? 'Download unavailable. Selected project JSON copied to clipboard.'
+                : _selectedPortfolioExportResultMessage(result),
+          ),
+        ),
+      );
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(_selectedPortfolioExportResultMessage(result))),
     );
+  }
+
+  Future<bool> _copyTextToClipboard(String text) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      return true;
+    } on PlatformException {
+      return false;
+    }
   }
 
   Future<void> _onDeleteSelectedProjectsPressed(List<Project> projects) async {

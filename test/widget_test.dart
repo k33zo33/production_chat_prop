@@ -106,6 +106,20 @@ void main() {
   testWidgets('export all projects action shows download fallback feedback', (
     tester,
   ) async {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, (
+            methodCall,
+          ) async {
+            if (methodCall.method == 'Clipboard.setData') {
+              return null;
+            }
+            return null;
+          });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
     );
@@ -121,7 +135,7 @@ void main() {
 
     expect(
       find.text(
-        'Project portfolio export failed: download is not available on this platform.',
+        'Download unavailable. Project portfolio JSON copied to clipboard.',
       ),
       findsOneWidget,
     );
@@ -192,6 +206,20 @@ void main() {
   testWidgets('bulk project selection exports selected projects payload', (
     tester,
   ) async {
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, (
+            methodCall,
+          ) async {
+            if (methodCall.method == 'Clipboard.setData') {
+              return null;
+            }
+            return null;
+          });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
     );
@@ -213,7 +241,7 @@ void main() {
 
     expect(
       find.text(
-        'Selected project export failed: download is not available on this platform.',
+        'Download unavailable. Selected project JSON copied to clipboard.',
       ),
       findsOneWidget,
     );
