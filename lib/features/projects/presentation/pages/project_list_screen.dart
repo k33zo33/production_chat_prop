@@ -122,8 +122,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
   String _importResultMessage(ProjectJsonImportResult result) {
     return switch (result.status) {
-      ProjectJsonImportStatus.success =>
-        'Imported project: ${result.importedProjectName}.',
+      ProjectJsonImportStatus.success => _buildImportSuccessMessage(result),
       ProjectJsonImportStatus.emptyInput =>
         'Paste project JSON before importing.',
       ProjectJsonImportStatus.invalidJson =>
@@ -131,6 +130,21 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       ProjectJsonImportStatus.invalidProjectPayload =>
         'JSON does not match the expected Project structure.',
     };
+  }
+
+  String _buildImportSuccessMessage(ProjectJsonImportResult result) {
+    final importedCount = result.importedCount;
+    final skippedCount = result.skippedCount;
+    if (importedCount == 1 && result.importedProjectName != null) {
+      if (skippedCount == 0) {
+        return 'Imported project: ${result.importedProjectName}.';
+      }
+      return 'Imported project: ${result.importedProjectName}. Skipped $skippedCount invalid entr${skippedCount == 1 ? 'y' : 'ies'}.';
+    }
+    if (skippedCount == 0) {
+      return 'Imported $importedCount projects.';
+    }
+    return 'Imported $importedCount projects and skipped $skippedCount invalid entr${skippedCount == 1 ? 'y' : 'ies'}.';
   }
 
   @override

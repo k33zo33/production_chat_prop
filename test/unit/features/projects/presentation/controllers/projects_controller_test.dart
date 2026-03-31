@@ -544,6 +544,9 @@ void main() {
         final imported = projects.last;
 
         expect(result.status, ProjectJsonImportStatus.success);
+        expect(result.importedCount, 1);
+        expect(result.skippedCount, 0);
+        expect(result.importedProjectName, 'Project One (Imported)');
         expect(imported.id, isNot('p1'));
         expect(imported.name, 'Project One (Imported)');
         expect(imported.scenes, isNotEmpty);
@@ -591,6 +594,7 @@ void main() {
         final imported = projects.last;
 
         expect(result.status, ProjectJsonImportStatus.success);
+        expect(result.importedCount, 1);
         expect(imported.name, 'Imported Empty');
         expect(imported.scenes, hasLength(1));
         expect(imported.scenes.first.title, 'Scene 1');
@@ -615,8 +619,45 @@ void main() {
           projectsControllerProvider.future,
         );
         expect(result.status, ProjectJsonImportStatus.success);
+        expect(result.importedCount, 1);
         expect(projects, hasLength(2));
         expect(projects.last.name, 'Project One (Imported)');
+      },
+    );
+
+    test(
+      'importProjectFromJson supports multi-project payload and reports skipped entries',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'meta': {'format': 'project_package_batch', 'version': 1},
+          'projects': [
+            _sampleProject().toJson(),
+            {
+              ..._sampleProject().toJson(),
+              'id': 'p2',
+              'name': 'Project Two',
+            },
+            {'invalid': true},
+          ],
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson(payload);
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final names = projects.map((project) => project.name).toList();
+
+        expect(result.status, ProjectJsonImportStatus.success);
+        expect(result.importedCount, 2);
+        expect(result.skippedCount, 1);
+        expect(projects, hasLength(3));
+        expect(names, contains('Project One (Imported)'));
+        expect(names, contains('Project Two'));
       },
     );
   });

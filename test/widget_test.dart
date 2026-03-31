@@ -277,6 +277,87 @@ void main() {
     expect(find.text('Imported project: Imported Via JSON.'), findsOneWidget);
   });
 
+  testWidgets('import project json dialog supports batch payload', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    final payload = jsonEncode({
+      'projects': [
+        {
+          'id': 'batch-import-1',
+          'name': 'Batch Import 1',
+          'type': 'other',
+          'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+          'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+          'scenes': [
+            {
+              'id': 'batch-scene-1',
+              'title': 'Scene Batch 1',
+              'styleId': 'studio_slate',
+              'aspectRatio': 'portrait9x16',
+              'characters': [
+                {
+                  'id': 'batch-char-1',
+                  'displayName': 'Taylor',
+                  'avatarPath': null,
+                  'bubbleColor': '#2E90FA',
+                },
+              ],
+              'messages': <Object>[],
+            },
+          ],
+        },
+        {
+          'id': 'batch-import-2',
+          'name': 'Batch Import 2',
+          'type': 'series',
+          'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+          'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+          'scenes': [
+            {
+              'id': 'batch-scene-2',
+              'title': 'Scene Batch 2',
+              'styleId': 'studio_slate',
+              'aspectRatio': 'portrait9x16',
+              'characters': [
+                {
+                  'id': 'batch-char-2',
+                  'displayName': 'Jordan',
+                  'avatarPath': null,
+                  'bubbleColor': '#12B76A',
+                },
+              ],
+              'messages': <Object>[],
+            },
+          ],
+        },
+        {'invalid': true},
+      ],
+    });
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Batch Import 1'), findsOneWidget);
+    expect(find.text('Batch Import 2'), findsOneWidget);
+    expect(
+      find.text('Imported 2 projects and skipped 1 invalid entry.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('import project json shows validation for malformed json', (
     tester,
   ) async {

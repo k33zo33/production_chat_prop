@@ -30,13 +30,20 @@ class ProjectJsonImportResult {
   const ProjectJsonImportResult._({
     required this.status,
     this.importedProjectName,
+    this.importedCount = 0,
+    this.skippedCount = 0,
   });
 
-  const ProjectJsonImportResult.success(String projectName)
-    : this._(
-        status: ProjectJsonImportStatus.success,
-        importedProjectName: projectName,
-      );
+  const ProjectJsonImportResult.success({
+    required int importedCount,
+    String? importedProjectName,
+    int skippedCount = 0,
+  }) : this._(
+         status: ProjectJsonImportStatus.success,
+         importedProjectName: importedProjectName,
+         importedCount: importedCount,
+         skippedCount: skippedCount,
+       );
 
   const ProjectJsonImportResult.emptyInput()
     : this._(status: ProjectJsonImportStatus.emptyInput);
@@ -49,6 +56,8 @@ class ProjectJsonImportResult {
 
   final ProjectJsonImportStatus status;
   final String? importedProjectName;
+  final int importedCount;
+  final int skippedCount;
 
   bool get isSuccess => status == ProjectJsonImportStatus.success;
 }
@@ -204,39 +213,64 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       return const ProjectJsonImportResult.invalidJson();
     }
 
-    final projectJson = _extractProjectJsonMap(decodedPayload);
-    if (projectJson == null) {
+    final projectJsonList = _extractProjectJsonList(decodedPayload);
+    if (projectJsonList.isEmpty) {
+      return const ProjectJsonImportResult.invalidProjectPayload();
+    }
+    final current = await future;
+    final now = DateTime.now();
+    final existingNames = current
+        .map((project) => project.name.toLowerCase())
+        .toSet();
+    final importedProjects = <Project>[];
+    var skippedCount = 0;
+
+    for (final projectJson in projectJsonList) {
+      Project importedSource;
+      try {
+        importedSource = Project.fromJson(projectJson);
+      } catch (error) {
+        final isRecoverableDataError =
+            error is FormatException || error is TypeError;
+        if (!isRecoverableDataError) {
+          rethrow;
+        }
+        skippedCount++;
+        continue;
+      }
+
+      final importedName = _buildImportedProjectName(
+        existingNames: existingNames,
+        sourceName: importedSource.name,
+      );
+      existingNames.add(importedName.toLowerCase());
+      importedProjects.add(
+        Project(
+          id: _uuid.v4(),
+          name: importedName,
+          type: importedSource.type,
+          createdAt: now,
+          updatedAt: now,
+          scenes: importedSource.scenes.isEmpty
+              ? [_buildEmptyScene(title: 'Scene 1')]
+              : importedSource.scenes,
+        ),
+      );
+    }
+
+    if (importedProjects.isEmpty) {
       return const ProjectJsonImportResult.invalidProjectPayload();
     }
 
-    Project importedSource;
-    try {
-      importedSource = Project.fromJson(projectJson);
-    } catch (error) {
-      final isRecoverableDataError =
-          error is FormatException || error is TypeError;
-      if (isRecoverableDataError) {
-        return const ProjectJsonImportResult.invalidProjectPayload();
-      }
-      rethrow;
-    }
-
-    final current = await future;
-    final now = DateTime.now();
-    final importedProject = Project(
-      id: _uuid.v4(),
-      name: _buildImportedProjectName(current, importedSource.name),
-      type: importedSource.type,
-      createdAt: now,
-      updatedAt: now,
-      scenes: importedSource.scenes.isEmpty
-          ? [_buildEmptyScene(title: 'Scene 1')]
-          : importedSource.scenes,
-    );
-
-    final next = [...current, importedProject];
+    final next = [...current, ...importedProjects];
     await _persist(next);
-    return ProjectJsonImportResult.success(importedProject.name);
+    return ProjectJsonImportResult.success(
+      importedCount: importedProjects.length,
+      importedProjectName: importedProjects.length == 1
+          ? importedProjects.first.name
+          : null,
+      skippedCount: skippedCount,
+    );
   }
 
   Future<void> addMessage({
@@ -1172,21 +1206,42 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return true;
   }
 
-  Map<String, dynamic>? _extractProjectJsonMap(Object? decodedPayload) {
+  List<Map<String, dynamic>> _extractProjectJsonList(Object? decodedPayload) {
+    final directList = _asJsonList(decodedPayload);
+    if (directList.isNotEmpty) {
+      return directList;
+    }
+
     final directMap = _asJsonMap(decodedPayload);
     if (directMap != null) {
+      final nestedProjects = _asJsonList(directMap['projects']);
+      if (nestedProjects.isNotEmpty) {
+        return nestedProjects;
+      }
       final nestedProject = _asJsonMap(directMap['project']);
       if (nestedProject != null) {
-        return nestedProject;
+        return [nestedProject];
       }
-      return directMap;
+      return [directMap];
     }
 
-    if (decodedPayload is List && decodedPayload.length == 1) {
-      return _asJsonMap(decodedPayload.first);
+    return const [];
+  }
+
+  List<Map<String, dynamic>> _asJsonList(Object? value) {
+    if (value is! List) {
+      return const [];
     }
 
-    return null;
+    final maps = <Map<String, dynamic>>[];
+    for (final item in value) {
+      final map = _asJsonMap(item);
+      if (map == null) {
+        continue;
+      }
+      maps.add(map);
+    }
+    return maps;
   }
 
   Map<String, dynamic>? _asJsonMap(Object? value) {
@@ -1208,13 +1263,13 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return casted;
   }
 
-  String _buildImportedProjectName(List<Project> current, String sourceName) {
+  String _buildImportedProjectName({
+    required Set<String> existingNames,
+    required String sourceName,
+  }) {
     final normalizedBaseName = sourceName.trim().isEmpty
         ? 'Imported Project'
         : sourceName.trim();
-    final existingNames = current
-        .map((project) => project.name.toLowerCase())
-        .toSet();
 
     if (!existingNames.contains(normalizedBaseName.toLowerCase())) {
       return normalizedBaseName;
