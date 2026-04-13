@@ -721,6 +721,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
             final selectedIdsForCurrentProjects = _selectedIdsForProjects(
               projects,
             );
+            final readinessSummary = _buildProjectPortfolioReadinessSummary(
+              filteredProjects,
+            );
 
             return Column(
               children: [
@@ -823,6 +826,104 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                         child: const Text('Reset'),
                       ),
                     ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Portfolio Readiness',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            key: const Key('projectPortfolioReadinessSummary'),
+                            'Projects: ${filteredProjects.length} • '
+                            'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
+                            'Empty scenes: ${readinessSummary.emptyScenes} • '
+                            'Messages: ${readinessSummary.totalMessages}',
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Chip(
+                                key: const Key('projectPortfolioReadyChip'),
+                                avatar: const Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  '${readinessSummary.readyProjectCount} ready projects',
+                                ),
+                              ),
+                              Chip(
+                                key: const Key('projectPortfolioNeedsAttentionChip'),
+                                avatar: const Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  '${readinessSummary.needsAttentionProjectCount} need attention',
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              OutlinedButton.icon(
+                                key: const Key('portfolioContinueEditingButton'),
+                                onPressed: readinessSummary.primaryProjectId == null
+                                    ? null
+                                    : () => context.goNamed(
+                                        'editorProject',
+                                        pathParameters: {
+                                          'projectId': readinessSummary.primaryProjectId!,
+                                        },
+                                      ),
+                                icon: const Icon(Icons.edit_note_rounded),
+                                label: const Text('Continue Editing'),
+                              ),
+                              OutlinedButton.icon(
+                                key: const Key('portfolioPreviewReadyButton'),
+                                onPressed: readinessSummary.firstReadyProjectId == null
+                                    ? null
+                                    : () => context.goNamed(
+                                        'playbackProject',
+                                        pathParameters: {
+                                          'projectId': readinessSummary.firstReadyProjectId!,
+                                        },
+                                      ),
+                                icon: const Icon(Icons.play_circle_outline_rounded),
+                                label: const Text('Preview Ready Project'),
+                              ),
+                              OutlinedButton.icon(
+                                key: const Key('portfolioReviewAttentionButton'),
+                                onPressed: readinessSummary.firstNeedsAttentionProjectId == null
+                                    ? null
+                                    : () => context.goNamed(
+                                        'editorProject',
+                                        pathParameters: {
+                                          'projectId': readinessSummary.firstNeedsAttentionProjectId!,
+                                        },
+                                      ),
+                                icon: const Icon(Icons.rule_folder_outlined),
+                                label: const Text('Review Attention Project'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Padding(
@@ -1091,6 +1192,32 @@ class _ProjectCard extends ConsumerWidget {
               'Messages: ${_projectMessageCount(project)} • '
               'Max: ${_projectMaxSecond(project)}s',
             ),
+            const SizedBox(height: 4),
+            Text(
+              key: Key('projectPlaybackSummary_${project.id}'),
+              'Playback: '
+              '${_projectReadySceneCount(project)}/${project.scenes.length} ready • '
+              '${_projectEmptySceneCount(project)} empty • '
+              '${_projectStyleCount(project)} style${_projectStyleCount(project) == 1 ? '' : 's'}',
+            ),
+            const SizedBox(height: 8),
+            Chip(
+              key: Key('projectAttentionReason_${project.id}'),
+              avatar: Icon(
+                _projectAttentionState(project).icon,
+                size: 18,
+              ),
+              label: Text(_projectAttentionState(project).label),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              key: Key('projectAttentionCta_${project.id}'),
+              onPressed: selectionMode
+                  ? null
+                  : () => _projectAttentionState(project).onPressed(context, project),
+              icon: Icon(_projectAttentionState(project).ctaIcon),
+              label: Text(_projectAttentionState(project).ctaLabel),
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
@@ -1283,4 +1410,183 @@ int _projectMaxSecond(Project project) {
     }
   }
   return maxSecond;
+}
+
+int _projectReadySceneCount(Project project) {
+  var count = 0;
+  for (final scene in project.scenes) {
+    if (scene.messages.isNotEmpty) {
+      count++;
+    }
+  }
+  return count;
+}
+
+int _projectEmptySceneCount(Project project) {
+  var count = 0;
+  for (final scene in project.scenes) {
+    if (scene.messages.isEmpty) {
+      count++;
+    }
+  }
+  return count;
+}
+
+int _projectStyleCount(Project project) {
+  final styleIds = <String>{};
+  for (final scene in project.scenes) {
+    styleIds.add(scene.styleId);
+  }
+  return styleIds.length;
+}
+
+_ProjectAttentionState _projectAttentionState(Project project) {
+  final totalMessages = _projectMessageCount(project);
+  final emptySceneCount = _projectEmptySceneCount(project);
+
+  if (totalMessages == 0) {
+    return const _ProjectAttentionState(
+      label: 'No messages yet',
+      icon: Icons.chat_bubble_outline_rounded,
+      ctaLabel: 'Add First Message',
+      ctaIcon: Icons.edit_note_rounded,
+      intent: _ProjectAttentionIntent.openEditor,
+    );
+  }
+
+  if (emptySceneCount > 0) {
+    return const _ProjectAttentionState(
+      label: 'Has empty scenes',
+      icon: Icons.error_outline_rounded,
+      ctaLabel: 'Finish Empty Scenes',
+      ctaIcon: Icons.build_circle_outlined,
+      intent: _ProjectAttentionIntent.openEditor,
+    );
+  }
+
+  return const _ProjectAttentionState(
+    label: 'Ready for playback',
+    icon: Icons.check_circle_outline_rounded,
+    ctaLabel: 'Open Playback',
+    ctaIcon: Icons.play_circle_outline_rounded,
+    intent: _ProjectAttentionIntent.openPlayback,
+  );
+}
+
+class _ProjectAttentionState {
+  const _ProjectAttentionState({
+    required this.label,
+    required this.icon,
+    required this.ctaLabel,
+    required this.ctaIcon,
+    required this.intent,
+  });
+
+  final String label;
+  final IconData icon;
+  final String ctaLabel;
+  final IconData ctaIcon;
+  final _ProjectAttentionIntent intent;
+
+  void onPressed(BuildContext context, Project project) {
+    switch (intent) {
+      case _ProjectAttentionIntent.openEditor:
+        context.goNamed(
+          'editorProject',
+          pathParameters: {'projectId': project.id},
+        );
+      case _ProjectAttentionIntent.openPlayback:
+        context.goNamed(
+          'playbackProject',
+          pathParameters: {'projectId': project.id},
+        );
+    }
+  }
+}
+
+enum _ProjectAttentionIntent {
+  openEditor,
+  openPlayback,
+}
+
+_ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
+  List<Project> projects,
+) {
+  var totalScenes = 0;
+  var readyScenes = 0;
+  var emptyScenes = 0;
+  var totalMessages = 0;
+  var readyProjectCount = 0;
+  var needsAttentionProjectCount = 0;
+  String? primaryProjectId;
+  String? firstReadyProjectId;
+  String? firstNeedsAttentionProjectId;
+
+  for (final project in projects) {
+    var projectHasEmptyScene = false;
+    var projectHasMessages = false;
+    totalScenes += project.scenes.length;
+    for (final scene in project.scenes) {
+      totalMessages += scene.messages.length;
+      if (scene.messages.isEmpty) {
+        emptyScenes++;
+        projectHasEmptyScene = true;
+      } else {
+        readyScenes++;
+        projectHasMessages = true;
+      }
+    }
+
+    if (projectHasMessages && !projectHasEmptyScene) {
+      readyProjectCount++;
+      firstReadyProjectId ??= project.id;
+    } else {
+      needsAttentionProjectCount++;
+      firstNeedsAttentionProjectId ??= project.id;
+    }
+
+    if (primaryProjectId == null) {
+      if (projectHasEmptyScene || !projectHasMessages) {
+        primaryProjectId = project.id;
+      } else {
+        primaryProjectId = project.id;
+      }
+    }
+  }
+
+  return _ProjectPortfolioReadinessSummary(
+    totalScenes: totalScenes,
+    readyScenes: readyScenes,
+    emptyScenes: emptyScenes,
+    totalMessages: totalMessages,
+    readyProjectCount: readyProjectCount,
+    needsAttentionProjectCount: needsAttentionProjectCount,
+    primaryProjectId: primaryProjectId,
+    firstReadyProjectId: firstReadyProjectId,
+    firstNeedsAttentionProjectId: firstNeedsAttentionProjectId,
+  );
+}
+
+class _ProjectPortfolioReadinessSummary {
+  const _ProjectPortfolioReadinessSummary({
+    required this.totalScenes,
+    required this.readyScenes,
+    required this.emptyScenes,
+    required this.totalMessages,
+    required this.readyProjectCount,
+    required this.needsAttentionProjectCount,
+    required this.primaryProjectId,
+    required this.firstReadyProjectId,
+    required this.firstNeedsAttentionProjectId,
+  });
+
+  final int totalScenes;
+  final int readyScenes;
+  final int emptyScenes;
+  final int totalMessages;
+  final int readyProjectCount;
+  final int needsAttentionProjectCount;
+  final String? primaryProjectId;
+  final String? firstReadyProjectId;
+  final String? firstNeedsAttentionProjectId;
 }

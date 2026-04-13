@@ -188,6 +188,14 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     '${selectedScene.messages.length} messages • '
                     'max ${selectedSceneMaxSecond}s',
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    key: const Key('scenePlaybackSummaryLine'),
+                    'Playback summary: '
+                    '${_sceneCueCount(selectedScene)} cues • '
+                    '${_sceneTypingCueCount(selectedScene)} typing cues • '
+                    '${_formatSceneDuration(selectedSceneMaxSecond)} total duration',
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
@@ -861,9 +869,60 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
               ],
             ),
             const SizedBox(height: 12),
-            if (widget.sceneMessages.isEmpty)
-              const Text('No messages in this scene yet.')
-            else
+            if (widget.sceneMessages.isEmpty) ...[
+              const Text('No messages in this scene yet.'),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    key: const Key('emptySceneTemplateBriefingButton'),
+                    onPressed: () async {
+                      final applied = await ref
+                          .read(projectsControllerProvider.notifier)
+                          .applySceneTemplate(
+                            projectId: widget.projectId,
+                            sceneId: widget.sceneId,
+                            templateId: 'briefing',
+                          );
+                      if (!context.mounted || !applied) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Applied template: Briefing'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    label: const Text('Load Briefing Template'),
+                  ),
+                  OutlinedButton.icon(
+                    key: const Key('emptySceneTemplateGroupAlertButton'),
+                    onPressed: () async {
+                      final applied = await ref
+                          .read(projectsControllerProvider.notifier)
+                          .applySceneTemplate(
+                            projectId: widget.projectId,
+                            sceneId: widget.sceneId,
+                            templateId: 'group_alert',
+                          );
+                      if (!context.mounted || !applied) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Applied template: Group Alert'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.groups_rounded),
+                    label: const Text('Load Group Alert Template'),
+                  ),
+                ],
+              ),
+            ] else
               for (var i = 0; i < widget.sceneMessages.length; i++) ...[
                 _MessageRow(
                   projectId: widget.projectId,
@@ -1716,6 +1775,34 @@ int _sceneMaxSecond(Scene scene) {
     }
   }
   return maxSecond;
+}
+
+int _sceneCueCount(Scene scene) {
+  if (scene.messages.isEmpty) {
+    return 0;
+  }
+
+  final cueSeconds = <int>{};
+  for (final message in scene.messages) {
+    cueSeconds.add(message.timestampSeconds);
+  }
+  return cueSeconds.length;
+}
+
+int _sceneTypingCueCount(Scene scene) {
+  var count = 0;
+  for (final message in scene.messages) {
+    if (message.showTypingBefore && message.timestampSeconds > 0) {
+      count++;
+    }
+  }
+  return count;
+}
+
+String _formatSceneDuration(int totalSeconds) {
+  final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+  final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+  return '$minutes:$seconds';
 }
 
 class _ProjectNotFoundState extends StatelessWidget {

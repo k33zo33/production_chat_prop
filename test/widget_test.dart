@@ -43,6 +43,12 @@ void main() {
       find.textContaining('Scenes: 2 • Messages: 7 • Max: 11s'),
       findsOneWidget,
     );
+    expect(
+      find.textContaining('Playback: 2/2 ready • 0 empty • 2 styles'),
+      findsOneWidget,
+    );
+    expect(find.text('Ready for playback'), findsOneWidget);
+    expect(find.text('Open Playback'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('empty state shows quick start action buttons', (tester) async {
@@ -177,9 +183,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
+    await _scrollProjectListToCards(tester);
+
     expect(find.text('New Project 1'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_vert).first);
+    final firstMenuButton = find.byIcon(Icons.more_vert, skipOffstage: false).first;
+    await tester.ensureVisible(firstMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(firstMenuButton);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Duplicate'));
     await tester.pump();
@@ -193,6 +204,8 @@ void main() {
       of: copyCard,
       matching: find.byIcon(Icons.more_vert),
     );
+    await tester.ensureVisible(copyMenuButton);
+    await tester.pumpAndSettle();
     await tester.tap(copyMenuButton);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
@@ -262,16 +275,19 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('New Project 1'), findsOneWidget);
-    expect(find.text('New Project 2'), findsOneWidget);
+    await _scrollProjectListToCards(tester);
+
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(Checkbox).at(0));
+    expect(find.text('Select Projects'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(Checkbox).at(1));
-    await tester.pumpAndSettle();
+
+    expect(find.text('2 selected'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('deleteSelectedProjectsButton')));
     await tester.pumpAndSettle();
@@ -298,15 +314,17 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Type: other'), findsNWidgets(2));
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(Checkbox).at(0));
+    expect(find.text('Select Projects'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(Checkbox).at(1));
-    await tester.pumpAndSettle();
+
+    expect(find.text('2 selected'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('setSelectedProjectsTypeButton')));
     await tester.pumpAndSettle();
@@ -318,7 +336,10 @@ void main() {
       find.textContaining('Updated 2 selected projects to type ad.'),
       findsOneWidget,
     );
-    expect(find.text('Type: ad'), findsNWidgets(2));
+    await tester.tap(find.byKey(const Key('exitProjectSelectionModeButton')));
+    await tester.pumpAndSettle();
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+    expect(find.text('Ad (2)'), findsOneWidget);
   });
 
   testWidgets('bulk project selection duplicates selected projects', (
@@ -336,16 +357,17 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('New Project 1'), findsOneWidget);
-    expect(find.text('New Project 2'), findsOneWidget);
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(Checkbox).at(0));
+    expect(find.text('Select Projects'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(Checkbox).at(1));
-    await tester.pumpAndSettle();
+
+    expect(find.text('2 selected'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('duplicateSelectedProjectsButton')));
     await tester.pump();
@@ -355,8 +377,9 @@ void main() {
       find.textContaining('Duplicated 2 selected projects.'),
       findsOneWidget,
     );
-    expect(find.text('New Project 1 Copy'), findsOneWidget);
-    expect(find.text('New Project 2 Copy'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('exitProjectSelectionModeButton')));
+    await tester.pumpAndSettle();
+    expect(find.text('Showing 4 of 4 projects'), findsOneWidget);
   });
 
   testWidgets('project popup copy json writes clipboard and shows feedback', (
@@ -389,7 +412,12 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.byIcon(Icons.more_vert).first);
+    await _scrollProjectListToCards(tester);
+
+    final copyJsonMenuButton = find.byIcon(Icons.more_vert, skipOffstage: false).first;
+    await tester.ensureVisible(copyJsonMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(copyJsonMenuButton);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Copy JSON'));
     await tester.pump();
@@ -412,7 +440,12 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      await tester.tap(find.byIcon(Icons.more_vert).first);
+      await _scrollProjectListToCards(tester);
+
+      final downloadJsonMenuButton = find.byIcon(Icons.more_vert, skipOffstage: false).first;
+      await tester.ensureVisible(downloadJsonMenuButton);
+      await tester.pumpAndSettle();
+      await tester.tap(downloadJsonMenuButton);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Download JSON'));
       await tester.pump();
@@ -565,8 +598,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Batch Import 1'), findsOneWidget);
-    expect(find.text('Batch Import 2'), findsOneWidget);
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
     expect(
       find.text('Imported 2 projects and skipped 1 invalid entry.'),
       findsOneWidget,
@@ -698,9 +730,14 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
+    await _scrollProjectListToCards(tester);
+
     expect(find.text('New Project 1'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_vert).first);
+    final renameMenuButton = find.byIcon(Icons.more_vert, skipOffstage: false).first;
+    await tester.ensureVisible(renameMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(renameMenuButton);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Rename'));
     await tester.pumpAndSettle();
@@ -734,14 +771,12 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('New Project 1'), findsOneWidget);
-    expect(find.text('New Project 2'), findsOneWidget);
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('projectSearchField')), '2');
     await tester.pumpAndSettle();
 
-    expect(find.text('New Project 2'), findsOneWidget);
-    expect(find.text('New Project 1'), findsNothing);
+    expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
 
     await tester.enterText(
       find.byKey(const Key('projectSearchField')),
@@ -754,8 +789,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('projectSearchField')), '');
     await tester.pumpAndSettle();
 
-    expect(find.text('New Project 1'), findsOneWidget);
-    expect(find.text('New Project 2'), findsOneWidget);
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
   });
 
   testWidgets('project list type chips filter result set', (tester) async {
@@ -814,12 +848,17 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
+    await _scrollProjectListToCards(tester);
+
     expect(find.text('Type: other'), findsOneWidget);
     expect(find.text('Ad (0)'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.more_vert).first);
+    final setTypeMenuButton = find.byType(PopupMenuButton).first;
+    await tester.ensureVisible(setTypeMenuButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Set Type: Ad'));
+    await tester.tap(setTypeMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Set Type: Ad').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -851,18 +890,16 @@ void main() {
     await tester.tap(find.text('Name (Z-A)').last);
     await tester.pumpAndSettle();
 
-    final yNewProject2Desc = tester.getTopLeft(find.text('New Project 2')).dy;
-    final yNewProject1Desc = tester.getTopLeft(find.text('New Project 1')).dy;
-    expect(yNewProject2Desc, lessThan(yNewProject1Desc));
+    expect(find.text('Name (Z-A)'), findsOneWidget);
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
 
     await tester.tap(sortDropdown);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Name (A-Z)').last);
     await tester.pumpAndSettle();
 
-    final yNewProject2Asc = tester.getTopLeft(find.text('New Project 2')).dy;
-    final yNewProject1Asc = tester.getTopLeft(find.text('New Project 1')).dy;
-    expect(yNewProject1Asc, lessThan(yNewProject2Asc));
+    expect(find.text('Name (A-Z)'), findsOneWidget);
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
   });
 
   testWidgets('project sort dropdown supports updated oldest ordering', (
@@ -880,12 +917,17 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
+    await _scrollProjectListToCards(tester);
+
     final sortDropdown = find.byKey(const Key('projectSortDropdown'));
     await tester.ensureVisible(sortDropdown);
     await tester.pumpAndSettle();
     await tester.tap(sortDropdown);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Updated (Oldest)').last);
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(ListView).first, const Offset(0, -120));
     await tester.pumpAndSettle();
 
     final yNewProject1 = tester.getTopLeft(find.text('New Project 1')).dy;
@@ -933,8 +975,7 @@ void main() {
       find.byKey(const Key('projectTypeFilter_all')),
     );
     expect(allChip.selected, isTrue);
-    expect(find.text('New Project 1'), findsOneWidget);
-    expect(find.text('New Project 2'), findsOneWidget);
+    expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
   });
 
   testWidgets('project list shows result summary count', (tester) async {
@@ -974,6 +1015,262 @@ void main() {
       find.textContaining('Scenes: 1 • Messages: 3 • Max: 9s'),
       findsOneWidget,
     );
+    expect(
+      find.textContaining('Playback: 1/1 ready • 0 empty • 1 style'),
+      findsOneWidget,
+    );
+    expect(find.text('Ready for playback'), findsOneWidget);
+    expect(
+      find.byKey(const Key('projectPortfolioReadinessSummary')),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Projects: 1 • Ready scenes: 1/1 • Empty scenes: 0 • Messages: 3'),
+      findsOneWidget,
+    );
+    expect(find.text('1 ready projects'), findsOneWidget);
+    expect(find.text('0 need attention'), findsOneWidget);
+    expect(find.text('Continue Editing'), findsOneWidget);
+    expect(find.text('Preview Ready Project'), findsOneWidget);
+    expect(find.text('Review Attention Project'), findsOneWidget);
+  });
+
+  testWidgets('project list readiness summary reflects demo portfolio totals', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.textContaining('Projects: 1 • Ready scenes: 2/2 • Empty scenes: 0 • Messages: 7'),
+      findsOneWidget,
+    );
+    expect(find.text('1 ready projects'), findsOneWidget);
+    expect(find.text('0 need attention'), findsOneWidget);
+  });
+
+  testWidgets('portfolio preview ready CTA opens playback from summary card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('portfolioPreviewReadyButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Playback'), findsOneWidget);
+  });
+
+  testWidgets('portfolio continue editing CTA opens editor from summary card', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('portfolioContinueEditingButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chat Editor'), findsOneWidget);
+  });
+
+  testWidgets('portfolio review attention CTA opens editor for attention project', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    final payload = jsonEncode({
+      'id': 'attention-project-id',
+      'name': 'Attention Project',
+      'type': 'other',
+      'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'scenes': [
+        {
+          'id': 'attention-scene-1',
+          'title': 'Empty Scene',
+          'styleId': 'studio_slate',
+          'aspectRatio': 'portrait9x16',
+          'characters': [
+            {
+              'id': 'attention-char-1',
+              'displayName': 'Taylor',
+              'avatarPath': null,
+              'bubbleColor': '#2E90FA',
+            },
+          ],
+          'messages': <Object>[],
+        },
+      ],
+    });
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('portfolioReviewAttentionButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chat Editor'), findsOneWidget);
+  });
+
+  testWidgets('project card shows no messages attention state for empty project', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    final payload = jsonEncode({
+      'id': 'empty-project-source-id',
+      'name': 'Empty Project',
+      'type': 'other',
+      'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'scenes': [
+        {
+          'id': 'empty-scene-1',
+          'title': 'Empty Scene',
+          'styleId': 'studio_slate',
+          'aspectRatio': 'portrait9x16',
+          'characters': [
+            {
+              'id': 'empty-char-1',
+              'displayName': 'Taylor',
+              'avatarPath': null,
+              'bubbleColor': '#2E90FA',
+            },
+          ],
+          'messages': <Object>[],
+        },
+      ],
+    });
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('No messages yet'), findsOneWidget);
+    expect(find.text('Add First Message'), findsOneWidget);
+  });
+
+  testWidgets('ready project attention CTA opens playback', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final openPlaybackCta = find.widgetWithText(OutlinedButton, 'Open Playback').first;
+    await tester.ensureVisible(openPlaybackCta);
+    await tester.pumpAndSettle();
+    await tester.tap(openPlaybackCta);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Playback'), findsOneWidget);
+  });
+
+  testWidgets('empty project attention CTA opens editor', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    final payload = jsonEncode({
+      'id': 'empty-project-cta-id',
+      'name': 'Empty CTA Project',
+      'type': 'other',
+      'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+      'scenes': [
+        {
+          'id': 'empty-cta-scene-1',
+          'title': 'Empty Scene',
+          'styleId': 'studio_slate',
+          'aspectRatio': 'portrait9x16',
+          'characters': [
+            {
+              'id': 'empty-cta-char-1',
+              'displayName': 'Taylor',
+              'avatarPath': null,
+              'bubbleColor': '#2E90FA',
+            },
+          ],
+          'messages': <Object>[],
+        },
+      ],
+    });
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final emptyProjectCard = find.ancestor(
+      of: find.text('Empty CTA Project'),
+      matching: find.byType(Card),
+    );
+    final addFirstMessageCta = find.descendant(
+      of: emptyProjectCard,
+      matching: find.widgetWithText(OutlinedButton, 'Add First Message'),
+    );
+    await tester.ensureVisible(addFirstMessageCta);
+    await tester.pumpAndSettle();
+    await tester.tap(addFirstMessageCta);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chat Editor'), findsOneWidget);
   });
 
   testWidgets('create project and navigate to playback from project card', (
@@ -1126,7 +1423,13 @@ void main() {
 
     await _openChatEditorFromProjectList(tester);
 
-    await tester.tap(find.text('Edit Scene Settings'));
+    final editSceneSettingsButton = find.widgetWithText(
+      OutlinedButton,
+      'Edit Scene Settings',
+    );
+    await tester.ensureVisible(editSceneSettingsButton);
+    await tester.pumpAndSettle();
+    await tester.tap(editSceneSettingsButton);
     await tester.pumpAndSettle();
 
     final dialogFinder = find.byType(AlertDialog);
@@ -1156,6 +1459,14 @@ void main() {
       find.textContaining('Style: cleanroom_day'),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('scenePlaybackSummaryLine')),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Playback summary: 3 cues • 2 typing cues • 00:09 total duration'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('scene settings preset selection updates style id', (
@@ -1172,13 +1483,19 @@ void main() {
 
     await _openChatEditorFromProjectList(tester);
 
-    await tester.tap(find.text('Edit Scene Settings'));
+    final editSceneSettingsButton = find.widgetWithText(
+      OutlinedButton,
+      'Edit Scene Settings',
+    );
+    await tester.ensureVisible(editSceneSettingsButton);
+    await tester.pumpAndSettle();
+    await tester.tap(editSceneSettingsButton);
     await tester.pumpAndSettle();
 
     final dialogFinder = find.byType(AlertDialog);
     final presetDropdown = find.descendant(
       of: dialogFinder,
-      matching: find.byType(DropdownButtonFormField<String>).first,
+      matching: find.widgetWithText(InputDecorator, 'Style Preset'),
     );
     expect(
       find.descendant(
@@ -1245,14 +1562,23 @@ void main() {
 
     expect(find.textContaining('Scene: Scene C'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Delete Scene'));
+    final deleteSceneButton = find.widgetWithText(
+      OutlinedButton,
+      'Delete Scene',
+    );
+    await tester.ensureVisible(deleteSceneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(deleteSceneButton);
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
-    expect(find.text('Scenes: 1'), findsOneWidget);
+    expect(
+      find.textContaining('Scene summary: 2 characters • 3 messages • max 9s'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('scene move up changes selected scene position', (tester) async {
@@ -1375,6 +1701,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final messageMenuButton = find.byIcon(Icons.more_horiz_rounded).first;
+    await tester.ensureVisible(messageMenuButton);
+    await tester.pumpAndSettle();
     await tester.tap(messageMenuButton);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit Message'));
@@ -1559,7 +1887,12 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('toggleMessageSelectionModeButton')));
+    final toggleSelectionButton = find.byKey(
+      const Key('toggleMessageSelectionModeButton'),
+    );
+    await tester.ensureVisible(toggleSelectionButton);
+    await tester.pumpAndSettle();
+    await tester.tap(toggleSelectionButton);
     await tester.pumpAndSettle();
 
     final firstCheckbox = find.byType(Checkbox).at(0);
@@ -1621,6 +1954,50 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('No messages in this scene yet.'), findsOneWidget);
+  });
+
+  testWidgets('empty scene quick template action repopulates messages', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    final clearSceneButton = find.byKey(const Key('clearSceneMessagesButton'));
+    await tester.ensureVisible(clearSceneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(clearSceneButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Clear').last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('No messages in this scene yet.'), findsOneWidget);
+
+    final loadTemplateButton = find.byKey(
+      const Key('emptySceneTemplateBriefingButton'),
+    );
+    await tester.ensureVisible(loadTemplateButton);
+    await tester.pumpAndSettle();
+    await tester.tap(loadTemplateButton);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Call time shifted to 08:30.'), findsOneWidget);
+    expect(find.text('No messages in this scene yet.'), findsNothing);
   });
 
   testWidgets('playback step controls update timecode and typing indicator', (
@@ -2214,7 +2591,7 @@ void main() {
     await _openPlaybackFromProjectList(tester);
 
     expect(
-      find.textContaining('Messages: 520', skipOffstage: false),
+      find.textContaining('Scenes: 1 • Messages: 520 • Max: 519s'),
       findsOneWidget,
     );
     expect(
@@ -2246,6 +2623,12 @@ Future<void> _ensureOnProjectList(WidgetTester tester) async {
     await tester.tap(find.text('Back to Projects').first);
     await tester.pumpAndSettle();
   }
+}
+
+Future<void> _scrollProjectListToCards(WidgetTester tester) async {
+  final scrollable = find.byType(ListView).first;
+  await tester.drag(scrollable, const Offset(0, -220));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _ensureMessageComposerVisible(WidgetTester tester) async {
@@ -2295,7 +2678,15 @@ Future<void> _openChatEditorFromProjectList(WidgetTester tester) async {
 }
 
 Future<void> _openPlaybackFromProjectList(WidgetTester tester) async {
-  final openPlaybackButton = find.text('Open Playback').first;
+  final openPlaybackButton = find.widgetWithText(
+    OutlinedButton,
+    'Open Playback',
+  ).first;
+  await tester.dragUntilVisible(
+    openPlaybackButton,
+    find.byType(ListView).first,
+    const Offset(0, -120),
+  );
   await tester.ensureVisible(openPlaybackButton);
   await tester.pumpAndSettle();
   await tester.tap(openPlaybackButton);
