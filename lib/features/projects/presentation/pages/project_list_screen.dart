@@ -1046,7 +1046,7 @@ int Function(Project, Project) _projectSortComparator(_ProjectSortMode mode) {
   };
 }
 
-class _ProjectCard extends ConsumerWidget {
+class _ProjectCard extends ConsumerStatefulWidget {
   const _ProjectCard({
     required this.project,
     required this.selectionMode,
@@ -1060,10 +1060,28 @@ class _ProjectCard extends ConsumerWidget {
   final ValueChanged<bool> onSelectionChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ProjectCard> createState() => _ProjectCardState();
+}
+
+class _ProjectCardState extends ConsumerState<_ProjectCard> {
+  late final GlobalKey _menuButtonKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _menuButtonKey = GlobalKey(debugLabel: 'projectMenuButton_${widget.project.id}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final project = widget.project;
+    final selectionMode = widget.selectionMode;
+    final isSelected = widget.isSelected;
+    final onSelectionChanged = widget.onSelectionChanged;
     final controller = ref.read(projectsControllerProvider.notifier);
 
     return Card(
+      key: Key('projectCard_${project.id}'),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1088,12 +1106,92 @@ class _ProjectCard extends ConsumerWidget {
                   ),
                 ),
                 if (!selectionMode)
-                  PopupMenuButton<_ProjectMenuAction>(
-                    onSelected: (action) async {
+                  IconButton(
+                    key: _menuButtonKey,
+                    tooltip: 'Project Menu',
+                    onPressed: () async {
+                      final buttonContext = _menuButtonKey.currentContext;
+                      final buttonRenderObject = buttonContext?.findRenderObject();
+                      if (buttonContext == null || buttonRenderObject is! RenderBox) {
+                        return;
+                      }
+                      final buttonBox = buttonRenderObject;
+
+                      final overlayRenderObject = Overlay.of(
+                        buttonContext,
+                      ).context.findRenderObject();
+                      if (overlayRenderObject is! RenderBox) {
+                        return;
+                      }
+                      final overlayBox = overlayRenderObject;
+                      final position = RelativeRect.fromRect(
+                        Rect.fromPoints(
+                          buttonBox.localToGlobal(
+                            Offset.zero,
+                            ancestor: overlayBox,
+                          ),
+                          buttonBox.localToGlobal(
+                            buttonBox.size.bottomRight(Offset.zero),
+                            ancestor: overlayBox,
+                          ),
+                        ),
+                        Offset.zero & overlayBox.size,
+                      );
+
+                      final action = await showMenu<_ProjectMenuAction>(
+                        context: buttonContext,
+                        position: position,
+                        items: [
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.rename,
+                            key: Key('projectMenuRename_${project.id}'),
+                            child: const Text('Rename'),
+                          ),
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.duplicate,
+                            key: Key('projectMenuDuplicate_${project.id}'),
+                            child: const Text('Duplicate'),
+                          ),
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.copyJson,
+                            key: Key('projectMenuCopyJson_${project.id}'),
+                            child: const Text('Copy JSON'),
+                          ),
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.downloadJson,
+                            key: Key('projectMenuDownloadJson_${project.id}'),
+                            child: const Text('Download JSON'),
+                          ),
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.setTypeAd,
+                            key: Key('projectMenuSetTypeAd_${project.id}'),
+                            child: const Text('Set Type: Ad'),
+                          ),
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.setTypeSeries,
+                            key: Key('projectMenuSetTypeSeries_${project.id}'),
+                            child: const Text('Set Type: Series'),
+                          ),
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.setTypeOther,
+                            key: Key('projectMenuSetTypeOther_${project.id}'),
+                            child: const Text('Set Type: Other'),
+                          ),
+                          PopupMenuItem(
+                            value: _ProjectMenuAction.delete,
+                            key: Key('projectMenuDelete_${project.id}'),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      );
+                      if (!mounted || !buttonContext.mounted) {
+                        return;
+                      }
+
                       switch (action) {
                         case _ProjectMenuAction.rename:
                           final newName = await _showRenameDialog(
-                            context,
+                            buttonContext,
                             project,
                           );
                           if (newName == null) {
@@ -1109,10 +1207,10 @@ class _ProjectCard extends ConsumerWidget {
                           await controller.duplicateProject(project.id);
                           return;
                         case _ProjectMenuAction.copyJson:
-                          await _copyProjectJson(context, project);
+                          await _copyProjectJson(buttonContext, project);
                           return;
                         case _ProjectMenuAction.downloadJson:
-                          await _downloadProjectJson(context, project);
+                          await _downloadProjectJson(buttonContext, project);
                           return;
                         case _ProjectMenuAction.setTypeAd:
                           await controller.setProjectType(
@@ -1135,42 +1233,11 @@ class _ProjectCard extends ConsumerWidget {
                         case _ProjectMenuAction.delete:
                           await controller.deleteProject(project.id);
                           return;
+                        case null:
+                          return;
                       }
                     },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.rename,
-                        child: Text('Rename'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.duplicate,
-                        child: Text('Duplicate'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.copyJson,
-                        child: Text('Copy JSON'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.downloadJson,
-                        child: Text('Download JSON'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.setTypeAd,
-                        child: Text('Set Type: Ad'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.setTypeSeries,
-                        child: Text('Set Type: Series'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.setTypeOther,
-                        child: Text('Set Type: Other'),
-                      ),
-                      PopupMenuItem(
-                        value: _ProjectMenuAction.delete,
-                        child: Text('Delete'),
-                      ),
-                    ],
+                    icon: const Icon(Icons.more_vert),
                   ),
               ],
             ),
