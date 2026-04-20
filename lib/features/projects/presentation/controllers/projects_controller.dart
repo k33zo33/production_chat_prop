@@ -444,7 +444,11 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       existingNames.add(importedName.toLowerCase());
       importedProjects.add(
         Project(
-          id: _uuid.v4(),
+          id: _buildImportedProjectId(
+            currentProjects: current,
+            importedProjects: importedProjects,
+            sourceId: importedSource.id,
+          ),
           name: importedName,
           type: importedSource.type,
           createdAt: now,
@@ -1483,6 +1487,23 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       }
       suffix++;
     }
+  }
+
+  String _buildImportedProjectId({
+    required List<Project> currentProjects,
+    required List<Project> importedProjects,
+    required String sourceId,
+  }) {
+    final normalizedSourceId = sourceId.trim();
+    if (normalizedSourceId.isEmpty) {
+      return _uuid.v4();
+    }
+
+    final idAlreadyUsed = currentProjects.any(
+          (project) => project.id == normalizedSourceId,
+        ) ||
+        importedProjects.any((project) => project.id == normalizedSourceId);
+    return idAlreadyUsed ? _uuid.v4() : normalizedSourceId;
   }
 
   String _buildDuplicateProjectName({

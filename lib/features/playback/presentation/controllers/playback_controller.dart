@@ -87,6 +87,15 @@ class PlaybackController extends Notifier<PlaybackState> {
   }
 
   void scrubTo({required int second, required int maxSecond}) {
+    if (maxSecond <= 0) {
+      _disposeTimer();
+      state = const PlaybackState(
+        status: PlaybackStatus.idle,
+        currentSecond: 0,
+      );
+      return;
+    }
+
     final clamped = second.clamp(0, maxSecond);
     _disposeTimer();
     state = state.copyWith(

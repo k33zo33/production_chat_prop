@@ -11,6 +11,9 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(seedColor: seedColor),
       scaffoldBackgroundColor: const Color(0xFFF7F8FB),
       appBarTheme: const AppBarTheme(centerTitle: false),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(

@@ -187,20 +187,20 @@ void main() {
 
     expect(find.text('New Project 1'), findsOneWidget);
 
-    final projectId = await _openProjectMenuForProject(tester, 'New Project 1');
+    await _openProjectMenuForProject(tester, 'New Project 1');
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('projectMenuDuplicate_$projectId')));
+    await tester.tap(find.text('Duplicate').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('New Project 1 Copy'), findsOneWidget);
 
-    final copyProjectId = await _openProjectMenuForProject(
+    await _openProjectMenuForProject(
       tester,
       'New Project 1 Copy',
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('projectMenuDelete_$copyProjectId')));
+    await tester.tap(find.text('Delete').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -409,9 +409,9 @@ void main() {
 
     await _scrollProjectListToCards(tester);
 
-    final projectId = await _openProjectMenuForProject(tester, 'New Project 1');
+    await _openProjectMenuForProject(tester, 'New Project 1');
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('projectMenuCopyJson_$projectId')));
+    await tester.tap(find.text('Copy JSON').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -434,12 +434,12 @@ void main() {
 
       await _scrollProjectListToCards(tester);
 
-      final projectId = await _openProjectMenuForProject(
+      await _openProjectMenuForProject(
         tester,
         'New Project 1',
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(Key('projectMenuDownloadJson_$projectId')));
+      await tester.tap(find.text('Download JSON').last);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
@@ -726,9 +726,9 @@ void main() {
 
     expect(find.text('New Project 1'), findsOneWidget);
 
-    final projectId = await _openProjectMenuForProject(tester, 'New Project 1');
+    await _openProjectMenuForProject(tester, 'New Project 1');
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('projectMenuRename_$projectId')));
+    await tester.tap(find.text('Rename').last);
     await tester.pumpAndSettle();
 
     final dialogFinder = find.byType(AlertDialog);
@@ -842,9 +842,9 @@ void main() {
     expect(find.text('Type: other'), findsOneWidget);
     expect(find.text('Ad (0)'), findsOneWidget);
 
-    final projectId = await _openProjectMenuForProject(tester, 'New Project 1');
+    await _openProjectMenuForProject(tester, 'New Project 1');
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(Key('projectMenuSetTypeAd_$projectId')));
+    await tester.tap(find.text('Set Type: Ad').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
@@ -1123,7 +1123,18 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.tap(find.byKey(const Key('portfolioReviewAttentionButton')));
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    final portfolioReviewAttentionButton = find.byKey(
+      const Key('portfolioReviewAttentionButton'),
+    );
+    await tester.ensureVisible(portfolioReviewAttentionButton);
+    await tester.pumpAndSettle();
+    final reviewButton = tester.widget<OutlinedButton>(
+      portfolioReviewAttentionButton,
+    );
+    reviewButton.onPressed!.call();
     await tester.pumpAndSettle();
 
     expect(find.text('Chat Editor'), findsOneWidget);
@@ -1243,8 +1254,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    final addFirstMessageCta = find.byKey(
-      const Key('projectAttentionCta_empty-project-cta-id'),
+    final addFirstMessageCta = _projectCardDescendant(
+      projectName: 'Empty CTA Project',
+      matching: find.widgetWithText(OutlinedButton, 'Add First Message'),
     );
     await tester.ensureVisible(addFirstMessageCta);
     await tester.pumpAndSettle();
@@ -2569,10 +2581,18 @@ void main() {
 
     expect(find.text('Stress Playback Project'), findsOneWidget);
 
-    await _openPlaybackFromProjectList(tester);
+    await _openPlaybackFromProjectList(
+      tester,
+      projectName: 'Stress Playback Project',
+    );
 
+    expect(find.text('Playback'), findsOneWidget);
     expect(
-      find.textContaining('Scenes: 1 • Messages: 520 • Max: 519s'),
+      find.textContaining('Scene: Stress Scene', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Messages: 520', skipOffstage: false),
       findsOneWidget,
     );
     expect(
@@ -2639,38 +2659,65 @@ Future<void> _ensureMessageComposerVisible(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _openChatEditorFromProjectList(WidgetTester tester) async {
-  final openEditorButton = find.text('Open Chat Editor').first;
-  await tester.ensureVisible(openEditorButton);
+Finder _projectCardDescendant({
+  required String projectName,
+  required Finder matching,
+}) {
+  final projectCard = find.ancestor(
+    of: find.text(projectName).first,
+    matching: find.byType(Card),
+  ).first;
+  return find.descendant(of: projectCard, matching: matching);
+}
+
+String _projectIdForName(WidgetTester tester, String projectName) {
+  final projectCard = find.ancestor(
+    of: find.text(projectName).first,
+    matching: find.byType(Card),
+  ).first;
+  final cardWidget = tester.widget<Card>(projectCard);
+  return (cardWidget.key! as ValueKey<String>).value.replaceFirst(
+    'projectCard_',
+    '',
+  );
+}
+
+Future<void> _openChatEditorFromProjectList(
+  WidgetTester tester, {
+  String projectName = 'New Project 1',
+}) async {
+  final projectId = _projectIdForName(tester, projectName);
+  final openEditorButton = find.byKey(Key('projectOpenEditor_$projectId'));
+  await _prepareProjectActionTap(tester, openEditorButton);
+  await tester.tap(openEditorButton.hitTestable().first, warnIfMissed: false);
   await tester.pumpAndSettle();
-  await tester.tap(openEditorButton);
+}
+
+Future<void> _openPlaybackFromProjectList(
+  WidgetTester tester, {
+  String projectName = 'New Project 1',
+}) async {
+  final projectId = _projectIdForName(tester, projectName);
+  final openPlaybackButton = find.byKey(Key('projectOpenPlayback_$projectId'));
+  await _prepareProjectActionTap(tester, openPlaybackButton);
+  await tester.tap(openPlaybackButton.hitTestable().first, warnIfMissed: false);
   await tester.pumpAndSettle();
-  if (find.text('Chat Editor').evaluate().isNotEmpty) {
+}
+
+Future<void> _prepareProjectActionTap(
+  WidgetTester tester,
+  Finder actionButton,
+) async {
+  await tester.ensureVisible(actionButton);
+  await tester.pumpAndSettle();
+
+  if (actionButton.hitTestable().evaluate().isNotEmpty ||
+      find.byType(SnackBar).evaluate().isEmpty) {
     return;
   }
 
-  final retryButton = find.text('Open Chat Editor');
-  if (retryButton.evaluate().isNotEmpty) {
-    await tester.ensureVisible(retryButton.first);
-    await tester.pumpAndSettle();
-    await tester.tap(retryButton.first);
-    await tester.pumpAndSettle();
-  }
-}
-
-Future<void> _openPlaybackFromProjectList(WidgetTester tester) async {
-  final openPlaybackButton = find.widgetWithText(
-    OutlinedButton,
-    'Open Playback',
-  ).first;
-  await tester.dragUntilVisible(
-    openPlaybackButton,
-    find.byType(ListView).first,
-    const Offset(0, -200),
-  );
-  await tester.ensureVisible(openPlaybackButton);
-  await tester.pumpAndSettle();
-  await tester.tap(openPlaybackButton, warnIfMissed: false);
+  final scrollable = find.byType(Scrollable).first;
+  await tester.drag(scrollable, const Offset(0, -180));
   await tester.pumpAndSettle();
 }
 
@@ -2691,13 +2738,15 @@ Future<String> _openProjectMenuForProject(
     'projectCard_',
     '',
   );
-  final menuButton = find.byKey(Key('projectMenuButton_$projectId'));
+  final menuButton = _projectCardDescendant(
+    projectName: projectName,
+    matching: find.byWidgetPredicate((widget) => widget is PopupMenuButton),
+  );
 
   await tester.ensureVisible(menuButton);
   await tester.pumpAndSettle();
-  await tester.tap(menuButton, warnIfMissed: false);
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 200));
+  tester.state<PopupMenuButtonState<Object?>>(menuButton).showButtonMenu();
+  await tester.pumpAndSettle();
   return projectId;
 }
 

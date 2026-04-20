@@ -947,7 +947,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                           ),
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
                           itemBuilder: (context, index) {
                             final project = filteredProjects[index];
                             return _ProjectCard(
@@ -1064,14 +1064,6 @@ class _ProjectCard extends ConsumerStatefulWidget {
 }
 
 class _ProjectCardState extends ConsumerState<_ProjectCard> {
-  late final GlobalKey _menuButtonKey;
-
-  @override
-  void initState() {
-    super.initState();
-    _menuButtonKey = GlobalKey(debugLabel: 'projectMenuButton_${widget.project.id}');
-  }
-
   @override
   Widget build(BuildContext context) {
     final project = widget.project;
@@ -1106,92 +1098,13 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                   ),
                 ),
                 if (!selectionMode)
-                  IconButton(
-                    key: _menuButtonKey,
+                  PopupMenuButton<_ProjectMenuAction>(
                     tooltip: 'Project Menu',
-                    onPressed: () async {
-                      final buttonContext = _menuButtonKey.currentContext;
-                      final buttonRenderObject = buttonContext?.findRenderObject();
-                      if (buttonContext == null || buttonRenderObject is! RenderBox) {
-                        return;
-                      }
-                      final buttonBox = buttonRenderObject;
-
-                      final overlayRenderObject = Overlay.of(
-                        buttonContext,
-                      ).context.findRenderObject();
-                      if (overlayRenderObject is! RenderBox) {
-                        return;
-                      }
-                      final overlayBox = overlayRenderObject;
-                      final position = RelativeRect.fromRect(
-                        Rect.fromPoints(
-                          buttonBox.localToGlobal(
-                            Offset.zero,
-                            ancestor: overlayBox,
-                          ),
-                          buttonBox.localToGlobal(
-                            buttonBox.size.bottomRight(Offset.zero),
-                            ancestor: overlayBox,
-                          ),
-                        ),
-                        Offset.zero & overlayBox.size,
-                      );
-
-                      final action = await showMenu<_ProjectMenuAction>(
-                        context: buttonContext,
-                        position: position,
-                        items: [
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.rename,
-                            key: Key('projectMenuRename_${project.id}'),
-                            child: const Text('Rename'),
-                          ),
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.duplicate,
-                            key: Key('projectMenuDuplicate_${project.id}'),
-                            child: const Text('Duplicate'),
-                          ),
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.copyJson,
-                            key: Key('projectMenuCopyJson_${project.id}'),
-                            child: const Text('Copy JSON'),
-                          ),
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.downloadJson,
-                            key: Key('projectMenuDownloadJson_${project.id}'),
-                            child: const Text('Download JSON'),
-                          ),
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.setTypeAd,
-                            key: Key('projectMenuSetTypeAd_${project.id}'),
-                            child: const Text('Set Type: Ad'),
-                          ),
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.setTypeSeries,
-                            key: Key('projectMenuSetTypeSeries_${project.id}'),
-                            child: const Text('Set Type: Series'),
-                          ),
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.setTypeOther,
-                            key: Key('projectMenuSetTypeOther_${project.id}'),
-                            child: const Text('Set Type: Other'),
-                          ),
-                          PopupMenuItem(
-                            value: _ProjectMenuAction.delete,
-                            key: Key('projectMenuDelete_${project.id}'),
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      );
-                      if (!mounted || !buttonContext.mounted) {
-                        return;
-                      }
-
+                    onSelected: (action) async {
                       switch (action) {
                         case _ProjectMenuAction.rename:
                           final newName = await _showRenameDialog(
-                            buttonContext,
+                            context,
                             project,
                           );
                           if (newName == null) {
@@ -1207,10 +1120,10 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                           await controller.duplicateProject(project.id);
                           return;
                         case _ProjectMenuAction.copyJson:
-                          await _copyProjectJson(buttonContext, project);
+                          await _copyProjectJson(context, project);
                           return;
                         case _ProjectMenuAction.downloadJson:
-                          await _downloadProjectJson(buttonContext, project);
+                          await _downloadProjectJson(context, project);
                           return;
                         case _ProjectMenuAction.setTypeAd:
                           await controller.setProjectType(
@@ -1233,11 +1146,78 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                         case _ProjectMenuAction.delete:
                           await controller.deleteProject(project.id);
                           return;
-                        case null:
-                          return;
                       }
                     },
-                    icon: const Icon(Icons.more_vert),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        key: Key('projectMenuRename_${project.id}'),
+                        value: _ProjectMenuAction.rename,
+                        child: const ListTile(
+                          leading: Icon(Icons.edit_rounded),
+                          title: Text('Rename'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        key: Key('projectMenuDuplicate_${project.id}'),
+                        value: _ProjectMenuAction.duplicate,
+                        child: const ListTile(
+                          leading: Icon(Icons.copy_rounded),
+                          title: Text('Duplicate'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        key: Key('projectMenuCopyJson_${project.id}'),
+                        value: _ProjectMenuAction.copyJson,
+                        child: const ListTile(
+                          leading: Icon(Icons.content_copy_rounded),
+                          title: Text('Copy JSON'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        key: Key('projectMenuDownloadJson_${project.id}'),
+                        value: _ProjectMenuAction.downloadJson,
+                        child: const ListTile(
+                          leading: Icon(Icons.download_rounded),
+                          title: Text('Download JSON'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        key: Key('projectMenuSetTypeAd_${project.id}'),
+                        value: _ProjectMenuAction.setTypeAd,
+                        child: const ListTile(
+                          leading: Icon(Icons.campaign_rounded),
+                          title: Text('Set Type: Ad'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        key: Key('projectMenuSetTypeSeries_${project.id}'),
+                        value: _ProjectMenuAction.setTypeSeries,
+                        child: const ListTile(
+                          leading: Icon(Icons.live_tv_rounded),
+                          title: Text('Set Type: Series'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        key: Key('projectMenuSetTypeOther_${project.id}'),
+                        value: _ProjectMenuAction.setTypeOther,
+                        child: const ListTile(
+                          leading: Icon(Icons.category_rounded),
+                          title: Text('Set Type: Other'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        key: Key('projectMenuDelete_${project.id}'),
+                        value: _ProjectMenuAction.delete,
+                        child: const ListTile(
+                          leading: Icon(Icons.delete_outline_rounded),
+                          title: Text('Delete'),
+                        ),
+                      ),
+                    ],
+                    icon: Icon(
+                      Icons.more_vert,
+                      key: Key('projectMenuButton_${project.id}'),
+                    ),
                   ),
               ],
             ),
@@ -1291,6 +1271,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
               runSpacing: 8,
               children: [
                 FilledButton.icon(
+                  key: Key('projectOpenEditor_${project.id}'),
                   onPressed: selectionMode
                       ? null
                       : () => context.goNamed(
@@ -1301,6 +1282,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                   label: const Text('Open Chat Editor'),
                 ),
                 OutlinedButton.icon(
+                  key: Key('projectOpenPlayback_${project.id}'),
                   onPressed: selectionMode
                       ? null
                       : () => context.goNamed(
@@ -1562,11 +1544,13 @@ class _ProjectAttentionState {
           'editorProject',
           pathParameters: {'projectId': project.id},
         );
+        return;
       case _ProjectAttentionIntent.openPlayback:
         context.goNamed(
           'playbackProject',
           pathParameters: {'projectId': project.id},
         );
+        return;
     }
   }
 }
