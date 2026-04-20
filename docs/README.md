@@ -12,6 +12,7 @@ Ovaj paket je pripremljen kao ulaz za AI coding asistenta i kao početna dokumen
 - `05-web-done-checklist.md` — trenutni status web MVP-a i release gate pregled
 - `06-product-description.md` — landing/product copy draft za prezentaciju
 - `07-demo-script.md` — koraci za 2-3 minute produkt demo walkthrough
+- `08-web-smoke-checklist.md` — kratki ručni smoke pass za finalnu web provjeru
 - `production-chat-prop.code-workspace` — opcionalni workspace file za VS Code
 
 ## Preporučeni redoslijed
