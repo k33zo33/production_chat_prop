@@ -44,3 +44,16 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local agent/workspace state
+.envrc.flutter
+.openclaw/
+memory/
+AGENTS.md
+BOOT.md
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+WORKFLOW.md
