@@ -27,6 +27,7 @@ This checklist reflects the current web MVP state after the widget test stabiliz
 
 - [x] `flutter analyze`
 - [x] `flutter test test/widget_test.dart`
+- [x] `flutter build web`
 - [x] Main widget flow stabilized on web
 
 ## MVP alignment vs docs
@@ -54,3 +55,9 @@ These are not current blockers for the web test/stability gate, but are sensible
 Run a short manual web smoke pass, then either:
 1. declare web MVP done and start mobile kickoff, or
 2. spend one small pass on web polish/release prep only.
+
+## Latest verification snapshot
+
+- `flutter analyze` passed
+- `flutter test test/widget_test.dart` passed
+- `flutter build web` passed
