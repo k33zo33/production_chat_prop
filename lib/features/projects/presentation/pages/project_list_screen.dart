@@ -864,7 +864,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                 ),
                               ),
                               Chip(
-                                key: const Key('projectPortfolioNeedsAttentionChip'),
+                                key: const Key(
+                                  'projectPortfolioNeedsAttentionChip',
+                                ),
                                 avatar: const Icon(
                                   Icons.error_outline_rounded,
                                   size: 18,
@@ -881,13 +883,17 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             runSpacing: 8,
                             children: [
                               OutlinedButton.icon(
-                                key: const Key('portfolioContinueEditingButton'),
-                                onPressed: readinessSummary.primaryProjectId == null
+                                key: const Key(
+                                  'portfolioContinueEditingButton',
+                                ),
+                                onPressed:
+                                    readinessSummary.primaryProjectId == null
                                     ? null
                                     : () => context.goNamed(
                                         'editorProject',
                                         pathParameters: {
-                                          'projectId': readinessSummary.primaryProjectId!,
+                                          'projectId': readinessSummary
+                                              .primaryProjectId!,
                                         },
                                       ),
                                 icon: const Icon(Icons.edit_note_rounded),
@@ -895,25 +901,35 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                               ),
                               OutlinedButton.icon(
                                 key: const Key('portfolioPreviewReadyButton'),
-                                onPressed: readinessSummary.firstReadyProjectId == null
+                                onPressed:
+                                    readinessSummary.firstReadyProjectId == null
                                     ? null
                                     : () => context.goNamed(
                                         'playbackProject',
                                         pathParameters: {
-                                          'projectId': readinessSummary.firstReadyProjectId!,
+                                          'projectId': readinessSummary
+                                              .firstReadyProjectId!,
                                         },
                                       ),
-                                icon: const Icon(Icons.play_circle_outline_rounded),
+                                icon: const Icon(
+                                  Icons.play_circle_outline_rounded,
+                                ),
                                 label: const Text('Preview Ready Project'),
                               ),
                               OutlinedButton.icon(
-                                key: const Key('portfolioReviewAttentionButton'),
-                                onPressed: readinessSummary.firstNeedsAttentionProjectId == null
+                                key: const Key(
+                                  'portfolioReviewAttentionButton',
+                                ),
+                                onPressed:
+                                    readinessSummary
+                                            .firstNeedsAttentionProjectId ==
+                                        null
                                     ? null
                                     : () => context.goNamed(
                                         'editorProject',
                                         pathParameters: {
-                                          'projectId': readinessSummary.firstNeedsAttentionProjectId!,
+                                          'projectId': readinessSummary
+                                              .firstNeedsAttentionProjectId!,
                                         },
                                       ),
                                 icon: const Icon(Icons.rule_folder_outlined),
@@ -1261,7 +1277,9 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
               key: Key('projectAttentionCta_${project.id}'),
               onPressed: selectionMode
                   ? null
-                  : () => _projectAttentionState(project).onPressed(context, project),
+                  : () => _projectAttentionState(
+                      project,
+                    ).onPressed(context, project),
               icon: Icon(_projectAttentionState(project).ctaIcon),
               label: Text(_projectAttentionState(project).ctaLabel),
             ),

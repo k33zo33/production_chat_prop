@@ -1011,7 +1011,9 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.textContaining('Projects: 1 • Ready scenes: 1/1 • Empty scenes: 0 • Messages: 3'),
+      find.textContaining(
+        'Projects: 1 • Ready scenes: 1/1 • Empty scenes: 0 • Messages: 3',
+      ),
       findsOneWidget,
     );
     expect(find.text('1 ready projects'), findsOneWidget);
@@ -1034,7 +1036,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(
-      find.textContaining('Projects: 1 • Ready scenes: 2/2 • Empty scenes: 0 • Messages: 7'),
+      find.textContaining(
+        'Projects: 1 • Ready scenes: 2/2 • Empty scenes: 0 • Messages: 7',
+      ),
       findsOneWidget,
     );
     expect(find.text('1 ready projects'), findsOneWidget);
@@ -1077,119 +1081,207 @@ void main() {
     expect(find.text('Chat Editor'), findsOneWidget);
   });
 
-  testWidgets('portfolio review attention CTA opens editor for attention project', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: ProductionChatPropApp()),
-    );
-    await _ensureOnProjectList(tester);
+  testWidgets(
+    'portfolio review attention CTA opens editor for attention project',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
 
-    final payload = jsonEncode({
-      'id': 'attention-project-id',
-      'name': 'Attention Project',
-      'type': 'other',
-      'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
-      'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
-      'scenes': [
-        {
-          'id': 'attention-scene-1',
-          'title': 'Empty Scene',
-          'styleId': 'studio_slate',
-          'aspectRatio': 'portrait9x16',
-          'characters': [
-            {
-              'id': 'attention-char-1',
-              'displayName': 'Taylor',
-              'avatarPath': null,
-              'bubbleColor': '#2E90FA',
-            },
-          ],
-          'messages': <Object>[],
-        },
-      ],
-    });
+      final payload = jsonEncode({
+        'id': 'attention-project-id',
+        'name': 'Attention Project',
+        'type': 'other',
+        'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'scenes': [
+          {
+            'id': 'attention-scene-1',
+            'title': 'Empty Scene',
+            'styleId': 'studio_slate',
+            'aspectRatio': 'portrait9x16',
+            'characters': [
+              {
+                'id': 'attention-char-1',
+                'displayName': 'Taylor',
+                'avatarPath': null,
+                'bubbleColor': '#2E90FA',
+              },
+            ],
+            'messages': <Object>[],
+          },
+        ],
+      });
 
-    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('importProjectJsonField')),
-      payload,
-    );
-    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        payload,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-    await tester.pump(const Duration(seconds: 4));
-    await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
 
-    final portfolioReviewAttentionButton = find.byKey(
-      const Key('portfolioReviewAttentionButton'),
-    );
-    await tester.ensureVisible(portfolioReviewAttentionButton);
-    await tester.pumpAndSettle();
-    final reviewButton = tester.widget<OutlinedButton>(
-      portfolioReviewAttentionButton,
-    );
-    reviewButton.onPressed!.call();
-    await tester.pumpAndSettle();
+      final portfolioReviewAttentionButton = find.byKey(
+        const Key('portfolioReviewAttentionButton'),
+      );
+      await tester.ensureVisible(portfolioReviewAttentionButton);
+      await tester.pumpAndSettle();
+      final reviewButton = tester.widget<OutlinedButton>(
+        portfolioReviewAttentionButton,
+      );
+      reviewButton.onPressed!.call();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Chat Editor'), findsOneWidget);
-  });
+      expect(find.text('Chat Editor'), findsOneWidget);
+    },
+  );
 
-  testWidgets('project card shows no messages attention state for empty project', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: ProductionChatPropApp()),
-    );
-    await _ensureOnProjectList(tester);
+  testWidgets(
+    'project card shows no messages attention state for empty project',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
 
-    final payload = jsonEncode({
-      'id': 'empty-project-source-id',
-      'name': 'Empty Project',
-      'type': 'other',
-      'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
-      'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
-      'scenes': [
-        {
-          'id': 'empty-scene-1',
-          'title': 'Empty Scene',
-          'styleId': 'studio_slate',
-          'aspectRatio': 'portrait9x16',
-          'characters': [
-            {
-              'id': 'empty-char-1',
-              'displayName': 'Taylor',
-              'avatarPath': null,
-              'bubbleColor': '#2E90FA',
-            },
-          ],
-          'messages': <Object>[],
-        },
-      ],
-    });
+      final payload = jsonEncode({
+        'id': 'empty-project-source-id',
+        'name': 'Empty Project',
+        'type': 'other',
+        'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'scenes': [
+          {
+            'id': 'empty-scene-1',
+            'title': 'Empty Scene',
+            'styleId': 'studio_slate',
+            'aspectRatio': 'portrait9x16',
+            'characters': [
+              {
+                'id': 'empty-char-1',
+                'displayName': 'Taylor',
+                'avatarPath': null,
+                'bubbleColor': '#2E90FA',
+              },
+            ],
+            'messages': <Object>[],
+          },
+        ],
+      });
 
-    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+      await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const Key('importProjectJsonField')),
-      payload,
-    );
-    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        payload,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('No messages yet'), findsOneWidget);
-    expect(find.text('Add First Message'), findsOneWidget);
-  });
+      expect(find.text('No messages yet'), findsOneWidget);
+      expect(find.text('Add First Message'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'project card shows empty-scene attention state when partially ready',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      final payload = jsonEncode({
+        'id': 'mixed-project-source-id',
+        'name': 'Mixed Readiness Project',
+        'type': 'series',
+        'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'scenes': [
+          {
+            'id': 'mixed-scene-1',
+            'title': 'Ready Scene',
+            'styleId': 'studio_slate',
+            'aspectRatio': 'portrait9x16',
+            'characters': [
+              {
+                'id': 'mixed-char-1',
+                'displayName': 'Taylor',
+                'avatarPath': null,
+                'bubbleColor': '#2E90FA',
+              },
+            ],
+            'messages': [
+              {
+                'id': 'mixed-msg-1',
+                'characterId': 'mixed-char-1',
+                'text': 'Scene one is ready',
+                'timestampSeconds': 0,
+                'status': 'sent',
+                'isIncoming': false,
+                'showTypingBefore': false,
+              },
+            ],
+          },
+          {
+            'id': 'mixed-scene-2',
+            'title': 'Empty Scene',
+            'styleId': 'night_shift',
+            'aspectRatio': 'landscape16x9',
+            'characters': [
+              {
+                'id': 'mixed-char-2',
+                'displayName': 'Jordan',
+                'avatarPath': null,
+                'bubbleColor': '#12B76A',
+              },
+            ],
+            'messages': <Object>[],
+          },
+        ],
+      });
+
+      await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        payload,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Has empty scenes'), findsOneWidget);
+      expect(find.text('Finish Empty Scenes'), findsOneWidget);
+      expect(
+        find.textContaining('Playback: 1/2 ready • 1 empty • 2 styles'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('ready project attention CTA opens playback', (tester) async {
     await tester.pumpWidget(
@@ -1201,7 +1293,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    final openPlaybackCta = find.widgetWithText(OutlinedButton, 'Open Playback').first;
+    final openPlaybackCta = find
+        .widgetWithText(OutlinedButton, 'Open Playback')
+        .first;
     await tester.ensureVisible(openPlaybackCta);
     await tester.pumpAndSettle();
     await tester.tap(openPlaybackCta);
@@ -1457,7 +1551,9 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.textContaining('Playback summary: 3 cues • 2 typing cues • 00:09 total duration'),
+      find.textContaining(
+        'Playback summary: 3 cues • 2 typing cues • 00:09 total duration',
+      ),
       findsOneWidget,
     );
   });
@@ -2663,18 +2759,22 @@ Finder _projectCardDescendant({
   required String projectName,
   required Finder matching,
 }) {
-  final projectCard = find.ancestor(
-    of: find.text(projectName).first,
-    matching: find.byType(Card),
-  ).first;
+  final projectCard = find
+      .ancestor(
+        of: find.text(projectName).first,
+        matching: find.byType(Card),
+      )
+      .first;
   return find.descendant(of: projectCard, matching: matching);
 }
 
 String _projectIdForName(WidgetTester tester, String projectName) {
-  final projectCard = find.ancestor(
-    of: find.text(projectName).first,
-    matching: find.byType(Card),
-  ).first;
+  final projectCard = find
+      .ancestor(
+        of: find.text(projectName).first,
+        matching: find.byType(Card),
+      )
+      .first;
   final cardWidget = tester.widget<Card>(projectCard);
   return (cardWidget.key! as ValueKey<String>).value.replaceFirst(
     'projectCard_',
@@ -2729,10 +2829,12 @@ Future<String> _openProjectMenuForProject(
   await tester.ensureVisible(projectNameFinder);
   await tester.pumpAndSettle();
 
-  final projectCard = find.ancestor(
-    of: projectNameFinder,
-    matching: find.byType(Card),
-  ).first;
+  final projectCard = find
+      .ancestor(
+        of: projectNameFinder,
+        matching: find.byType(Card),
+      )
+      .first;
   final cardWidget = tester.widget<Card>(projectCard);
   final projectId = (cardWidget.key! as ValueKey<String>).value.replaceFirst(
     'projectCard_',
