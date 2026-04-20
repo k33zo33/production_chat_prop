@@ -1,11 +1,11 @@
 {
-    "name": "production_chat_prop",
-    "short_name": "production_chat_prop",
+    "name": "Production Chat Prop",
+    "short_name": "Chat Prop",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7F8FB",
+    "theme_color": "#155EEF",
+    "description": "A web-first tool for creating, playing back, and exporting production-safe chat conversations for film, ads, and digital content.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
