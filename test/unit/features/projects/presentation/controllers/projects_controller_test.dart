@@ -48,6 +48,29 @@ void main() {
       expect(messages[1].text, 'Inserted earlier than last message');
     });
 
+    test('addMessage ignores negative timestamps', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addMessage(
+            projectId: 'p1',
+            sceneId: 's1',
+            characterId: 'c1',
+            text: 'Should not be added',
+            timestampSeconds: -1,
+            status: MessageStatus.sent,
+            isIncoming: false,
+            showTypingBefore: false,
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final messages = projects.first.scenes.first.messages;
+
+      expect(messages, hasLength(2));
+      expect(messages.map((message) => message.id), ['m1', 'm2']);
+    });
+
     test('updateMessageText changes only targeted message', () async {
       await container.read(projectsControllerProvider.future);
 
@@ -93,6 +116,33 @@ void main() {
       expect(updated.status, MessageStatus.seen);
       expect(updated.isIncoming, isTrue);
       expect(updated.showTypingBefore, isTrue);
+    });
+
+    test('updateMessage ignores negative timestamps', () async {
+      await container.read(projectsControllerProvider.future);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .updateMessage(
+            projectId: 'p1',
+            sceneId: 's1',
+            messageId: 'm2',
+            characterId: 'c1',
+            text: 'Should not apply',
+            timestampSeconds: -1,
+            status: MessageStatus.seen,
+            isIncoming: true,
+            showTypingBefore: true,
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final message = projects.first.scenes.first.messages.firstWhere(
+        (item) => item.id == 'm2',
+      );
+
+      expect(message.text, 'Message B');
+      expect(message.timestampSeconds, 5);
+      expect(message.status, MessageStatus.delivered);
     });
 
     test('deleteMessage removes targeted message', () async {
@@ -368,7 +418,7 @@ void main() {
       expect(moved, isFalse);
     });
 
-    test('moveMessageInOrder moves message and reindexes timestamps', () async {
+    test('moveMessageInOrder swaps neighboring timestamps without flattening scene timing', () async {
       await container.read(projectsControllerProvider.future);
 
       final moved = await container
@@ -385,7 +435,9 @@ void main() {
 
       expect(moved, isTrue);
       expect(messages.map((message) => message.id), ['m2', 'm1']);
-      expect(messages.map((message) => message.timestampSeconds), [0, 1]);
+      expect(messages.map((message) => message.timestampSeconds), [0, 5]);
+      expect(messages.first.text, 'Message B');
+      expect(messages.last.text, 'Message A');
     });
 
     test('moveMessageInOrder returns false when already at edge', () async {
@@ -579,6 +631,20 @@ void main() {
         expect(names, contains('New Project 2 Copy'));
       },
     );
+
+    test('duplicateProject assigns unique copy names on repeated duplication', () async {
+      await container.read(projectsControllerProvider.future);
+      final notifier = container.read(projectsControllerProvider.notifier);
+
+      await notifier.duplicateProject('p1');
+      await notifier.duplicateProject('p1');
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final names = projects.map((project) => project.name).toList();
+
+      expect(names, contains('Project One Copy'));
+      expect(names, contains('Project One Copy 2'));
+    });
 
     test('duplicateProjectsByIds returns zero for empty selection', () async {
       await container.read(projectsControllerProvider.future);

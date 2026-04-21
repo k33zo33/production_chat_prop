@@ -29,5 +29,25 @@ void main() {
       expect(result.failure, ScreenshotExportFailure.missingBoundary);
       expect(wasDownloaderCalled, isFalse);
     });
+
+    test('returns missingBoundary when key resolves without repaint boundary', () async {
+      final key = GlobalKey();
+      final service = ScreenshotExportService(
+        downloader: ({
+          required bytes,
+          required filename,
+          required mimeType,
+        }) async => true,
+      );
+
+      final result = await service.exportBoundaryAsPng(
+        boundaryKey: key,
+        projectName: 'Demo Project',
+        sceneTitle: 'Scene A',
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(result.failure, ScreenshotExportFailure.missingBoundary);
+    });
   });
 }

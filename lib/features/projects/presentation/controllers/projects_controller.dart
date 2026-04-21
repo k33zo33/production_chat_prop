@@ -326,9 +326,15 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     }
 
     final now = DateTime.now();
+    final existingNames = current
+        .map((project) => project.name.toLowerCase())
+        .toSet();
     final duplicate = Project(
       id: _uuid.v4(),
-      name: '${source.name} Copy',
+      name: _buildDuplicateProjectName(
+        existingNames: existingNames,
+        sourceName: source.name,
+      ),
       type: source.type,
       createdAt: now,
       updatedAt: now,
@@ -486,7 +492,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     required bool showTypingBefore,
   }) async {
     final trimmedText = text.trim();
-    if (trimmedText.isEmpty) {
+    if (trimmedText.isEmpty || timestampSeconds < 0) {
       return;
     }
 
@@ -829,7 +835,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     required bool showTypingBefore,
   }) async {
     final trimmedText = text.trim();
-    if (trimmedText.isEmpty) {
+    if (trimmedText.isEmpty || timestampSeconds < 0) {
       return;
     }
 
@@ -1208,15 +1214,39 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                   return scene;
                 }
 
-                final movedMessage = orderedMessages.removeAt(fromIndex);
-                orderedMessages.insert(toIndex, movedMessage);
+                final reorderedMessages = [...orderedMessages];
+                final movedMessage = reorderedMessages[fromIndex];
+                final adjacentMessage = reorderedMessages[toIndex];
+                reorderedMessages[fromIndex] = Message(
+                  id: movedMessage.id,
+                  characterId: movedMessage.characterId,
+                  text: movedMessage.text,
+                  timestampSeconds: adjacentMessage.timestampSeconds,
+                  status: movedMessage.status,
+                  isIncoming: movedMessage.isIncoming,
+                  showTypingBefore: movedMessage.showTypingBefore,
+                );
+                reorderedMessages[toIndex] = Message(
+                  id: adjacentMessage.id,
+                  characterId: adjacentMessage.characterId,
+                  text: adjacentMessage.text,
+                  timestampSeconds: movedMessage.timestampSeconds,
+                  status: adjacentMessage.status,
+                  isIncoming: adjacentMessage.isIncoming,
+                  showTypingBefore: adjacentMessage.showTypingBefore,
+                );
+                reorderedMessages.sort(
+                  (a, b) => a.timestampSeconds != b.timestampSeconds
+                      ? a.timestampSeconds.compareTo(b.timestampSeconds)
+                      : a.id.compareTo(b.id),
+                );
                 moved = true;
 
                 return Scene(
                   id: scene.id,
                   title: scene.title,
                   characters: scene.characters,
-                  messages: _reindexMessagesByOrder(orderedMessages),
+                  messages: reorderedMessages,
                   styleId: scene.styleId,
                   aspectRatio: scene.aspectRatio,
                 );
@@ -1656,29 +1686,6 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       styleId: source.styleId,
       aspectRatio: source.aspectRatio,
     );
-  }
-
-  List<Message> _reindexMessagesByOrder(List<Message> orderedMessages) {
-    if (orderedMessages.isEmpty) {
-      return const [];
-    }
-
-    final reindexed = <Message>[];
-    for (var i = 0; i < orderedMessages.length; i++) {
-      final message = orderedMessages[i];
-      reindexed.add(
-        Message(
-          id: message.id,
-          characterId: message.characterId,
-          text: message.text,
-          timestampSeconds: i,
-          status: message.status,
-          isIncoming: message.isIncoming,
-          showTypingBefore: message.showTypingBefore,
-        ),
-      );
-    }
-    return reindexed;
   }
 
   _SceneTemplateData? _buildTemplateData(String templateId) {

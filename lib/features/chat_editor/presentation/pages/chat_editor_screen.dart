@@ -839,6 +839,14 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                       ? null
                       : () async {
                           final messenger = ScaffoldMessenger.of(context);
+                          final confirmed = await _showDeleteSelectedMessagesDialog(
+                            context,
+                            selectedCount: _selectedMessageIds.length,
+                          );
+                          if (!context.mounted || !confirmed) {
+                            return;
+                          }
+
                           final removed = await ref
                               .read(projectsControllerProvider.notifier)
                               .deleteMessagesByIds(
@@ -928,6 +936,7 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                   projectId: widget.projectId,
                   sceneId: widget.sceneId,
                   message: widget.sceneMessages[i],
+                  messages: widget.sceneMessages,
                   palette: palette,
                   characters: widget.sceneCharacters,
                   speakerName: _resolveSpeakerName(
@@ -997,6 +1006,33 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
     );
     return result ?? false;
   }
+
+  Future<bool> _showDeleteSelectedMessagesDialog(
+    BuildContext context, {
+    required int selectedCount,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Selected Messages'),
+          content: Text('Delete $selectedCount selected messages?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const Key('confirmDeleteSelectedMessagesButton'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
 }
 
 class _MessageRow extends StatelessWidget {
@@ -1004,6 +1040,7 @@ class _MessageRow extends StatelessWidget {
     required this.projectId,
     required this.sceneId,
     required this.message,
+    required this.messages,
     required this.palette,
     required this.characters,
     required this.speakerName,
@@ -1017,6 +1054,7 @@ class _MessageRow extends StatelessWidget {
   final String projectId;
   final String sceneId;
   final Message message;
+  final List<Message> messages;
   final ChatStylePalette palette;
   final List<Character> characters;
   final String speakerName;
@@ -1059,6 +1097,7 @@ class _MessageRow extends StatelessWidget {
                 projectId: projectId,
                 sceneId: sceneId,
                 message: message,
+                messages: messages,
                 characters: characters,
                 canMoveEarlier: canMoveEarlier,
                 canMoveLater: canMoveLater,
@@ -1313,6 +1352,7 @@ class _MessageActions extends ConsumerWidget {
     required this.projectId,
     required this.sceneId,
     required this.message,
+    required this.messages,
     required this.characters,
     required this.canMoveEarlier,
     required this.canMoveLater,
@@ -1322,6 +1362,7 @@ class _MessageActions extends ConsumerWidget {
   final String projectId;
   final String sceneId;
   final Message message;
+  final List<Message> messages;
   final List<Character> characters;
   final bool canMoveEarlier;
   final bool canMoveLater;
@@ -1332,6 +1373,8 @@ class _MessageActions extends ConsumerWidget {
     if (selectionMode) {
       return const SizedBox.shrink();
     }
+
+    final currentMessages = messages;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1367,6 +1410,7 @@ class _MessageActions extends ConsumerWidget {
           icon: const Icon(Icons.arrow_downward_rounded),
         ),
         PopupMenuButton<_MessageAction>(
+          key: Key('messageActions_${message.id}'),
           onSelected: (action) async {
             switch (action) {
               case _MessageAction.editMessage:
@@ -1378,13 +1422,16 @@ class _MessageActions extends ConsumerWidget {
                   return;
                 }
 
-                if (updatedMessage.timestampSeconds <
-                        message.timestampSeconds &&
+                final previousTimestamp = _previousSceneTimestamp(
+                  currentMessages,
+                );
+                if (previousTimestamp != null &&
+                    updatedMessage.timestampSeconds < previousTimestamp &&
                     context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'Warning: timestamp goes backward for this message.',
+                        'Warning: timestamp goes backward compared to the current scene order.',
                       ),
                     ),
                   );
@@ -1405,6 +1452,14 @@ class _MessageActions extends ConsumerWidget {
                     );
                 return;
               case _MessageAction.delete:
+                final confirmed = await _showDeleteMessageDialog(
+                  context,
+                  message: message,
+                );
+                if (!context.mounted || !confirmed) {
+                  return;
+                }
+
                 await ref
                     .read(projectsControllerProvider.notifier)
                     .deleteMessage(
@@ -1429,6 +1484,49 @@ class _MessageActions extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<bool> _showDeleteMessageDialog(
+    BuildContext context, {
+    required Message message,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Message'),
+          content: Text(
+            'Delete this message? "${message.text}"',
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const Key('confirmDeleteMessageButton'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  int? _previousSceneTimestamp(List<Message> currentMessages) {
+    final currentIndex = currentMessages.indexWhere(
+      (item) => item.id == message.id,
+    );
+    if (currentIndex <= 0) {
+      return null;
+    }
+
+    return currentMessages[currentIndex - 1].timestampSeconds;
   }
 
   Future<_EditedMessageInput?> _showEditMessageDialog(
@@ -1551,6 +1649,15 @@ class _MessageActions extends ConsumerWidget {
                       scaffoldMessenger.showSnackBar(
                         const SnackBar(
                           content: Text('Timestamp must be a valid number.'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (parsedTimestamp < 0) {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Timestamp cannot be negative.'),
                         ),
                       );
                       return;

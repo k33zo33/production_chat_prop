@@ -123,6 +123,40 @@ void main() {
       expect(container.read(provider).status, PlaybackStatus.idle);
     });
 
+    test('play restarts from zero when replaying from finished state', () {
+      fakeAsync((async) {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final provider = playbackControllerProvider('project-1');
+
+        container.read(provider.notifier).jumpToEnd(maxSecond: 4);
+        expect(container.read(provider).currentSecond, 4);
+        expect(container.read(provider).status, PlaybackStatus.finished);
+
+        container.read(provider.notifier).play(maxSecond: 4);
+
+        expect(container.read(provider).status, PlaybackStatus.playing);
+        expect(container.read(provider).currentSecond, 0);
+
+        async.elapse(const Duration(seconds: 1));
+        expect(container.read(provider).currentSecond, 1);
+      });
+    });
+
+    test('play and jumpToEnd ignore non-positive max values', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final provider = playbackControllerProvider('project-1');
+
+      container.read(provider.notifier).play(maxSecond: 0);
+      expect(container.read(provider).status, PlaybackStatus.idle);
+      expect(container.read(provider).currentSecond, 0);
+
+      container.read(provider.notifier).jumpToEnd(maxSecond: 0);
+      expect(container.read(provider).status, PlaybackStatus.idle);
+      expect(container.read(provider).currentSecond, 0);
+    });
+
     test('playback remains stable across long max timeline', () {
       fakeAsync((async) {
         final container = ProviderContainer();

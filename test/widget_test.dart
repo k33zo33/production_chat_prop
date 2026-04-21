@@ -1830,6 +1830,49 @@ void main() {
     expect(find.textContaining('t=1s'), findsOneWidget);
   });
 
+  testWidgets('delete message asks for confirmation before removing it', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    final messageMenuButton = await _openMessageActionsForText(
+      tester,
+      'Ready for set in 10?',
+    );
+    await tester.tap(messageMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete Message'), findsOneWidget);
+    expect(find.textContaining('Ready for set in 10?'), findsWidgets);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete Message'), findsNothing);
+    expect(find.text('Ready for set in 10?'), findsOneWidget);
+
+    await tester.tap(messageMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmDeleteMessageButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Ready for set in 10?'), findsNothing);
+  });
+
   testWidgets('warns when adding message with backward timestamp', (
     tester,
   ) async {
@@ -1866,6 +1909,58 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('edit message dialog rejects invalid timestamps', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    final messageMenuButton = await _openMessageActionsForText(
+      tester,
+      'Ready for set in 10?',
+    );
+    await tester.tap(messageMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Message'));
+    await tester.pumpAndSettle();
+
+    final dialogFinder = find.byType(AlertDialog);
+    final dialogTimestampField = find.descendant(
+      of: dialogFinder,
+      matching: find.widgetWithText(TextField, 'Timestamp (seconds)'),
+    );
+    final dialogSaveButton = find.descendant(
+      of: dialogFinder,
+      matching: find.text('Save'),
+    );
+
+    await tester.enterText(dialogTimestampField, 'abc');
+    await tester.tap(dialogSaveButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Timestamp must be a valid number.'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(dialogTimestampField, '-1');
+    await tester.tap(dialogSaveButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Timestamp cannot be negative.'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+  });
+
 
   testWidgets('shows add-message validation snackbars for invalid input', (
     tester,
@@ -1956,7 +2051,7 @@ void main() {
     expect(afterGreat, lessThan(afterYes));
   });
 
-  testWidgets('bulk select deletes multiple messages in chat editor', (
+  testWidgets('bulk select delete asks for confirmation before removing messages', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -2001,6 +2096,23 @@ void main() {
     await tester.ensureVisible(deleteSelectedButton);
     await tester.pumpAndSettle();
     await tester.tap(deleteSelectedButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete Selected Messages'), findsOneWidget);
+    expect(find.text('Delete 2 selected messages?'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete Selected Messages'), findsNothing);
+    expect(find.text('Ready for set in 10?'), findsOneWidget);
+    expect(find.text('Yes, prop phone is prepared.'), findsOneWidget);
+
+    await tester.tap(deleteSelectedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('confirmDeleteSelectedMessagesButton')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -2753,6 +2865,43 @@ Future<void> _ensureMessageComposerVisible(WidgetTester tester) async {
   final messageTextField = messageTextFinder.first;
   await tester.ensureVisible(messageTextField);
   await tester.pumpAndSettle();
+}
+
+Future<Finder> _openMessageActionsForText(
+  WidgetTester tester,
+  String messageText,
+) async {
+  final messageFinder = find.text(messageText, skipOffstage: false);
+  if (messageFinder.evaluate().isEmpty) {
+    final scrollable = find.byType(ListView).first;
+    for (var i = 0; i < 6; i++) {
+      await tester.drag(scrollable, const Offset(0, -220));
+      await tester.pumpAndSettle();
+      if (messageFinder.evaluate().isNotEmpty) {
+        break;
+      }
+    }
+  }
+
+  if (messageFinder.evaluate().isEmpty) {
+    fail('Message "$messageText" not found after scrolling.');
+  }
+
+  final visibleMessageFinder = find.text(messageText, skipOffstage: false).first;
+  await tester.ensureVisible(visibleMessageFinder);
+  await tester.pumpAndSettle();
+
+  final messageCard = find.ancestor(
+    of: visibleMessageFinder,
+    matching: find.byType(Card),
+  ).first;
+  final messageMenuButton = find.descendant(
+    of: messageCard,
+    matching: find.byIcon(Icons.more_horiz_rounded),
+  ).first;
+  await tester.ensureVisible(messageMenuButton);
+  await tester.pumpAndSettle();
+  return messageMenuButton;
 }
 
 Finder _projectCardDescendant({
