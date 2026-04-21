@@ -43,10 +43,10 @@ From `01-product-spec-mvp.md` and `03-roadmap-and-sprints.md`, the web MVP expec
 
 ## Remaining non-blocking follow-up items
 
-These are not current blockers for the web test/stability gate, but are sensible next steps:
+These are not current blockers for the automated web gate, but are sensible next steps before calling release/demo quality fully done:
 
 - [ ] Small web polish/release pass (spacing, typography, visual consistency audit)
-- [ ] Manual export QA on real browser session for PNG/video output quality
+- [ ] Manual export QA on real browser session for PNG/video output quality and browser-specific download/clipboard behavior
 - [ ] Short demo flow / smoke checklist for stakeholder review
 - [ ] Decide whether next phase is mobile kickoff or extra web polish
 
@@ -61,3 +61,5 @@ Run a short manual web smoke pass, then either:
 - `flutter analyze` passed
 - `flutter test test/widget_test.dart` passed
 - `flutter build web` passed
+- playback preview toggle behavior is covered so frame/clean preview state affects the export preview
+- video fallback export covers unsupported-download environments with clipboard fallback feedback

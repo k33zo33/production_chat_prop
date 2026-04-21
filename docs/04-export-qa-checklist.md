@@ -15,15 +15,16 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
   - [ ] labela `Export readiness` pokazuje očekivano stanje prije exporta (`Ready` kad scena ima poruke)
   - [ ] na webu se pokreće download `.png` datoteke
   - [ ] naziv datoteke sadrži projekt + scenu + timestamp
-  - [ ] sadržaj odgovara trenutnom previewu (timeline, status chipovi, typing)
+  - [ ] sadržaj odgovara trenutnom previewu, uključujući frame/clean toggle stanje (timeline, status chipovi, typing)
 
 ## 3) Video fallback export (`.json`)
 - [ ] Kliknuti `Export Video`
 - [ ] Provjeriti:
-  - [ ] na webu se pokreće download `.json` datoteke
+  - [ ] na webu se pokreće download `.json` datoteke ili, ako download nije dostupan, app jasno javlja da je fallback JSON kopiran u clipboard
   - [ ] payload sadrži `project`, `selectedScene`, `renderHints`, `workflow`
   - [ ] `renderHints.includeDeviceFrame` i `cleanPreview` prate trenutno stanje toggleova
   - [ ] poruke u `selectedScene.messages` su sortirane po `timestampSeconds`
+  - [ ] odgovarajuća scena u `project.scenes` ne proturječi `selectedScene.messages` redoslijedu
 
 ## 4) Omjeri izlaza (9:16 / 16:9)
 - [ ] U Playbacku prebaciti `Scene ratio` između `9:16` i `16:9`
@@ -48,4 +49,5 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 ## 6) Minimalna release gate pravila
 - [ ] `flutter analyze` prolazi bez issuea
 - [ ] `flutter test` prolazi
-- [ ] ručni QA iz ove liste odrađen barem jednom prije web builda
+- [ ] `flutter build web` prolazi
+- [ ] ručni QA iz ove liste odrađen barem jednom prije release/deploy odluke
