@@ -5,8 +5,26 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/app/app.dart';
+import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
+import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
 import 'package:production_chat_prop/features/projects/presentation/pages/project_list_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _FakeScreenshotExportService extends ScreenshotExportService {
+  _FakeScreenshotExportService(this._result);
+
+  final ScreenshotExportResult _result;
+
+  @override
+  Future<ScreenshotExportResult> exportBoundaryAsPng({
+    required GlobalKey boundaryKey,
+    required String projectName,
+    required String sceneTitle,
+    double pixelRatio = 2,
+  }) async {
+    return _result;
+  }
+}
 
 void main() {
   setUp(() {
@@ -2511,7 +2529,18 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const ProviderScope(child: ProductionChatPropApp()),
+      ProviderScope(
+        overrides: [
+          screenshotExportServiceProvider.overrideWithValue(
+            _FakeScreenshotExportService(
+              const ScreenshotExportResult.success(
+                filename: 'fake_capture.png',
+              ),
+            ),
+          ),
+        ],
+        child: const ProductionChatPropApp(),
+      ),
     );
     await _ensureOnProjectList(tester);
 
@@ -2534,11 +2563,15 @@ void main() {
     await tester.tap(exportScreenshotButton);
     await tester.pumpAndSettle();
 
-    final hasScreenshotFeedback =
-        find.textContaining('Export: Screenshot OK').evaluate().isNotEmpty ||
-        find.textContaining('Export: Screenshot Error').evaluate().isNotEmpty ||
-        find.textContaining('Export: Running').evaluate().isNotEmpty;
-    expect(hasScreenshotFeedback, isTrue);
+    expect(find.textContaining('Export: Screenshot OK'), findsOneWidget);
+    expect(
+      find.text('Screenshot exported as fake_capture.png.'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('cleanPreviewHeader')), findsOneWidget);
+    expect(find.text('Playback Timeline (read-only)'), findsNothing);
+    expect(find.text('INCOMING'), findsNothing);
+    expect(find.text('OUTGOING'), findsNothing);
   });
 
   testWidgets('video export button shows fallback package feedback', (

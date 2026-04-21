@@ -13,6 +13,18 @@ import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
+final screenshotExportServiceProvider = Provider<ScreenshotExportService>((
+  ref,
+) {
+  return ScreenshotExportService();
+});
+
+final videoExportFallbackServiceProvider = Provider<VideoExportFallbackService>((
+  ref,
+) {
+  return VideoExportFallbackService();
+});
+
 class PlaybackScreen extends ConsumerWidget {
   const PlaybackScreen({super.key, this.projectId});
 
@@ -118,10 +130,6 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   bool _isExporting = false;
   _ExportState _lastExportState = _ExportState.idle;
   final GlobalKey _previewBoundaryKey = GlobalKey();
-  final ScreenshotExportService _screenshotExportService =
-      ScreenshotExportService();
-  final VideoExportFallbackService _videoExportFallbackService =
-      VideoExportFallbackService();
 
   @override
   void initState() {
@@ -160,6 +168,13 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final playbackController = ref.read(
       playbackControllerProvider(project.id).notifier,
     );
+    final screenshotExportService = ref.read(
+      screenshotExportServiceProvider,
+    );
+    final videoExportFallbackService = ref.read(
+      videoExportFallbackServiceProvider,
+    );
+
     final exportReadiness = sortedMessages.isEmpty
         ? 'No messages in scene'
         : _isExporting
@@ -374,6 +389,8 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                             : () async => _exportScreenshot(
                                 project: project,
                                 scene: scene,
+                                screenshotExportService:
+                                    screenshotExportService,
                               ),
                         icon: const Icon(Icons.photo_camera_outlined),
                         label: const Text('Export Screenshot'),
@@ -385,6 +402,8 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                             : () async => _exportVideoFallback(
                                 project: project,
                                 scene: scene,
+                                videoExportFallbackService:
+                                    videoExportFallbackService,
                               ),
                         icon: const Icon(Icons.videocam_outlined),
                         label: const Text('Export Video'),
@@ -539,53 +558,86 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           const SizedBox(height: 12),
           RepaintBoundary(
             key: _previewBoundaryKey,
-            child: Card(
-              color: palette.surfaceColor,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Playback Timeline (read-only)',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Timeline preview follows timecode: queued messages stay dim until their cue time.',
-                    ),
-                    const SizedBox(height: 12),
-                    if (sortedMessages.isEmpty)
-                      const Text('No messages available for playback.')
-                    else
-                      for (final message in sortedMessages) ...[
-                        if (_showTypingIndicator(
-                          message: message,
-                          currentSecond: playbackState.currentSecond,
-                        )) ...[
-                          _TypingIndicatorItem(
-                            speakerName: _resolveSpeakerName(
-                              characterId: message.characterId,
-                              speakerNameById: speakerNameById,
-                            ),
-                            palette: palette,
+            child: Container(
+              decoration: BoxDecoration(
+                color: _showDeviceFrame ? Colors.black : Colors.transparent,
+                borderRadius: BorderRadius.circular(_showDeviceFrame ? 28 : 0),
+                border: _showDeviceFrame
+                    ? Border.all(color: Colors.black87, width: 6)
+                    : null,
+                boxShadow: _showDeviceFrame
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x22000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 10),
+                        ),
+                      ]
+                    : null,
+              ),
+              padding: EdgeInsets.all(_showDeviceFrame ? 12 : 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(_showDeviceFrame ? 20 : 0),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: palette.surfaceColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!_cleanPreview) ...[
+                          Text(
+                            'Playback Timeline (read-only)',
+                            style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                        ],
-                        _TimelineItem(
-                          message: message,
-                          palette: palette,
-                          speakerName: _resolveSpeakerName(
-                            characterId: message.characterId,
-                            speakerNameById: speakerNameById,
+                          const Text(
+                            'Timeline preview follows timecode: queued messages stay dim until their cue time.',
                           ),
-                          isVisibleAtCurrentTime:
-                              message.timestampSeconds <=
-                              playbackState.currentSecond,
-                        ),
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 12),
+                        ],
+                        if (_cleanPreview)
+                          Text(
+                            'Preview • ${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)}',
+                            key: const Key('cleanPreviewHeader'),
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                        if (_cleanPreview) const SizedBox(height: 12),
+                        if (sortedMessages.isEmpty)
+                          const Text('No messages available for playback.')
+                        else
+                          for (final message in sortedMessages) ...[
+                            if (_showTypingIndicator(
+                              message: message,
+                              currentSecond: playbackState.currentSecond,
+                            )) ...[
+                              _TypingIndicatorItem(
+                                speakerName: _resolveSpeakerName(
+                                  characterId: message.characterId,
+                                  speakerNameById: speakerNameById,
+                                ),
+                                palette: palette,
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            _TimelineItem(
+                              message: message,
+                              palette: palette,
+                              speakerName: _resolveSpeakerName(
+                                characterId: message.characterId,
+                                speakerNameById: speakerNameById,
+                              ),
+                              isVisibleAtCurrentTime:
+                                  message.timestampSeconds <=
+                                  playbackState.currentSecond,
+                              cleanPreview: _cleanPreview,
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                       ],
-                  ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -618,6 +670,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   Future<void> _exportScreenshot({
     required Project project,
     required Scene? scene,
+    required ScreenshotExportService screenshotExportService,
   }) async {
     if (_isExporting) {
       return;
@@ -631,7 +684,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       _isExporting = true;
       _lastExportState = _ExportState.running;
     });
-    final result = await _screenshotExportService.exportBoundaryAsPng(
+    final result = await screenshotExportService.exportBoundaryAsPng(
       boundaryKey: _previewBoundaryKey,
       projectName: project.name,
       sceneTitle: scene.title,
@@ -667,6 +720,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   Future<void> _exportVideoFallback({
     required Project project,
     required Scene? scene,
+    required VideoExportFallbackService videoExportFallbackService,
   }) async {
     if (_isExporting) {
       return;
@@ -680,7 +734,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       _isExporting = true;
       _lastExportState = _ExportState.running;
     });
-    final result = await _videoExportFallbackService.exportFallbackPackage(
+    final result = await videoExportFallbackService.exportFallbackPackage(
       project: project,
       scene: scene,
       includeDeviceFrame: _showDeviceFrame,
@@ -923,12 +977,14 @@ class _TimelineItem extends StatelessWidget {
     required this.palette,
     required this.speakerName,
     required this.isVisibleAtCurrentTime,
+    this.cleanPreview = false,
   });
 
   final Message message;
   final ChatStylePalette palette;
   final String speakerName;
   final bool isVisibleAtCurrentTime;
+  final bool cleanPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -967,44 +1023,47 @@ class _TimelineItem extends StatelessWidget {
                     speakerName,
                     style: TextStyle(color: palette.textColor),
                   ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      Chip(
-                        backgroundColor: palette.chipColor,
-                        visualDensity: VisualDensity.compact,
-                        avatar: Icon(
-                          statusIcon,
-                          size: 14,
-                          color: palette.textColor,
+                  if (!cleanPreview) ...[
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        Chip(
+                          backgroundColor: palette.chipColor,
+                          visualDensity: VisualDensity.compact,
+                          avatar: Icon(
+                            statusIcon,
+                            size: 14,
+                            color: palette.textColor,
+                          ),
+                          label: Text(
+                            statusLabel,
+                            style: TextStyle(color: palette.textColor),
+                          ),
                         ),
-                        label: Text(
-                          statusLabel,
-                          style: TextStyle(color: palette.textColor),
-                        ),
-                      ),
-                      Chip(
-                        backgroundColor: palette.chipColor,
-                        visualDensity: VisualDensity.compact,
-                        label: Text(
-                          directionLabel,
-                          style: TextStyle(color: palette.textColor),
-                        ),
-                      ),
-                      if (message.showTypingBefore)
                         Chip(
                           backgroundColor: palette.chipColor,
                           visualDensity: VisualDensity.compact,
                           label: Text(
-                            'TYPING BEFORE',
+                            directionLabel,
                             style: TextStyle(color: palette.textColor),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
+                        if (message.showTypingBefore)
+                          Chip(
+                            backgroundColor: palette.chipColor,
+                            visualDensity: VisualDensity.compact,
+                            label: Text(
+                              'TYPING BEFORE',
+                              style: TextStyle(color: palette.textColor),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                  ] else
+                    const SizedBox(height: 6),
                   Text(
                     message.text,
                     style: TextStyle(color: palette.textColor),
