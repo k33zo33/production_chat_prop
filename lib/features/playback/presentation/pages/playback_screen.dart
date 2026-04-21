@@ -755,16 +755,37 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       return;
     }
 
-    final failureLabel = switch (result.failure) {
-      VideoFallbackExportFailure.downloadUnavailable =>
-        'download is not available on this platform',
-      null => 'unknown error',
-    };
+    if (result.failure == VideoFallbackExportFailure.downloadUnavailable) {
+      final copied = await _copyTextToClipboard(
+        videoExportFallbackService.buildFallbackPackageJson(
+          project: project,
+          scene: scene,
+          includeDeviceFrame: _showDeviceFrame,
+          cleanPreview: _cleanPreview,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _lastExportState = copied
+            ? _ExportState.videoOk
+            : _ExportState.videoError;
+        _isExporting = false;
+      });
+      _showSnackBar(
+        copied
+            ? 'Download unavailable. Video fallback JSON copied to clipboard.'
+            : 'Video export failed: download is not available on this platform.',
+      );
+      return;
+    }
+
     setState(() {
       _lastExportState = _ExportState.videoError;
       _isExporting = false;
     });
-    _showSnackBar('Video export failed: $failureLabel.');
+    _showSnackBar('Video export failed: unknown error.');
   }
 
   Future<void> _setSceneAspectRatio({
@@ -785,6 +806,15 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           styleId: scene.styleId,
           aspectRatio: aspectRatio,
         );
+  }
+
+  Future<bool> _copyTextToClipboard(String text) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      return true;
+    } on PlatformException {
+      return false;
+    }
   }
 
   void _showSnackBar(String message) {

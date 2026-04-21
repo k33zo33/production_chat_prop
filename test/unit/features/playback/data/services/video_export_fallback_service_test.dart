@@ -95,6 +95,19 @@ void main() {
       expect((messages.first as Map<String, dynamic>)['timestampSeconds'], 1);
       expect((messages.last as Map<String, dynamic>)['timestampSeconds'], 4);
 
+      final projectPayload = payload['project'] as Map<String, dynamic>;
+      final projectScenes = projectPayload['scenes'] as List<dynamic>;
+      final exportedScene = projectScenes.single as Map<String, dynamic>;
+      final projectMessages = exportedScene['messages'] as List<dynamic>;
+      expect(
+        (projectMessages.first as Map<String, dynamic>)['timestampSeconds'],
+        1,
+      );
+      expect(
+        (projectMessages.last as Map<String, dynamic>)['timestampSeconds'],
+        4,
+      );
+
       final renderHints = payload['renderHints'] as Map<String, dynamic>;
       expect(renderHints['includeDeviceFrame'], isFalse);
       expect(renderHints['cleanPreview'], isTrue);
@@ -136,6 +149,38 @@ void main() {
 
       expect(result.isSuccess, isFalse);
       expect(result.failure, VideoFallbackExportFailure.downloadUnavailable);
+    });
+
+    test('buildFallbackPackageJson returns readable payload for clipboard fallback', () {
+      final service = VideoExportFallbackService();
+      const scene = Scene(
+        id: 's1',
+        title: 'Scene',
+        styleId: 'style',
+        aspectRatio: SceneAspectRatio.landscape16x9,
+        characters: [],
+        messages: [],
+      );
+      final project = Project(
+        id: 'p1',
+        name: 'Project',
+        type: ProjectType.other,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        scenes: [scene],
+      );
+
+      final jsonText = service.buildFallbackPackageJson(
+        project: project,
+        scene: scene,
+        includeDeviceFrame: true,
+        cleanPreview: false,
+      );
+
+      final payload = jsonDecode(jsonText) as Map<String, dynamic>;
+      expect((payload['meta'] as Map<String, dynamic>)['format'], 'video_fallback_package');
+      expect((payload['renderHints'] as Map<String, dynamic>)['includeDeviceFrame'], isTrue);
+      expect((payload['selectedScene'] as Map<String, dynamic>)['title'], 'Scene');
     });
 
     test('exports package with 500+ scene messages intact', () async {

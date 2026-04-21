@@ -2574,9 +2574,25 @@ void main() {
     expect(find.text('OUTGOING'), findsNothing);
   });
 
-  testWidgets('video export button shows fallback package feedback', (
+  testWidgets('video export button copies fallback package to clipboard when download is unavailable', (
     tester,
   ) async {
+    String? clipboardText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, (
+            methodCall,
+          ) async {
+            if (methodCall.method == 'Clipboard.setData') {
+              clipboardText = (methodCall.arguments as Map)['text'] as String?;
+              return null;
+            }
+            return null;
+          });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
     );
@@ -2595,15 +2611,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining(
-        'Video export failed: download is not available on this platform.',
-      ),
+      find.text('Download unavailable. Video fallback JSON copied to clipboard.'),
       findsOneWidget,
     );
     expect(
-      find.textContaining('Export: Video Error'),
+      find.textContaining('Export: Video OK'),
       findsOneWidget,
     );
+    expect(clipboardText, isNotNull);
+    expect(clipboardText, contains('"format": "video_fallback_package"'));
   });
 
   testWidgets('playback aspect ratio chips update selected scene ratio', (

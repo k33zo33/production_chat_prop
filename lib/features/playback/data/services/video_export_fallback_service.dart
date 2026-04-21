@@ -34,20 +34,34 @@ class VideoExportFallbackService {
 
   final BytesDownloader _downloader;
 
-  Future<VideoFallbackExportResult> exportFallbackPackage({
+  String buildFallbackPackageJson({
     required Project project,
     required Scene scene,
     required bool includeDeviceFrame,
     required bool cleanPreview,
-  }) async {
+  }) {
     final payload = _buildPayload(
       project: project,
       scene: scene,
       includeDeviceFrame: includeDeviceFrame,
       cleanPreview: cleanPreview,
     );
+    return const JsonEncoder.withIndent('  ').convert(payload);
+  }
+
+  Future<VideoFallbackExportResult> exportFallbackPackage({
+    required Project project,
+    required Scene scene,
+    required bool includeDeviceFrame,
+    required bool cleanPreview,
+  }) async {
     final encoded = utf8.encode(
-      const JsonEncoder.withIndent('  ').convert(payload),
+      buildFallbackPackageJson(
+        project: project,
+        scene: scene,
+        includeDeviceFrame: includeDeviceFrame,
+        cleanPreview: cleanPreview,
+      ),
     );
     final filename = _buildFileName(
       projectName: project.name,
@@ -75,6 +89,19 @@ class VideoExportFallbackService {
     required bool cleanPreview,
   }) {
     final sortedMessages = sortMessagesByTimeline(scene.messages);
+    final normalizedProject = project.toJson();
+    final projectScenes =
+        (normalizedProject['scenes'] as List<dynamic>? ?? <dynamic>[])
+            .cast<Map<String, dynamic>>();
+    final normalizedScenes = projectScenes.map((sceneJson) {
+      if (sceneJson['id'] != scene.id) {
+        return sceneJson;
+      }
+      return {
+        ...sceneJson,
+        'messages': sortedMessages.map((message) => message.toJson()).toList(),
+      };
+    }).toList(growable: false);
 
     return {
       'meta': {
@@ -83,7 +110,10 @@ class VideoExportFallbackService {
         'version': 1,
         'exportedAt': DateTime.now().toIso8601String(),
       },
-      'project': project.toJson(),
+      'project': {
+        ...normalizedProject,
+        'scenes': normalizedScenes,
+      },
       'selectedScene': {
         ...scene.toJson(),
         'messages': sortedMessages.map((message) => message.toJson()).toList(),
