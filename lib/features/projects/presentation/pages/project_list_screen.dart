@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
+import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_portfolio_export_service.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -685,336 +686,344 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               label: const Text('New Project'),
             ),
       body: SafeArea(
-        child: projectsState.when(
-          data: (projects) {
-            if (projects.isEmpty) {
-              return _EmptyProjectState(
-                onCreateProject: () => ref
-                    .read(projectsControllerProvider.notifier)
-                    .createProject(),
-                onCreateDemoProject: () => ref
-                    .read(projectsControllerProvider.notifier)
-                    .createDemoProject(),
+        child: AppContentFrame(
+          child: projectsState.when(
+            data: (projects) {
+              if (projects.isEmpty) {
+                return _EmptyProjectState(
+                  onCreateProject: () => ref
+                      .read(projectsControllerProvider.notifier)
+                      .createProject(),
+                  onCreateDemoProject: () => ref
+                      .read(projectsControllerProvider.notifier)
+                      .createDemoProject(),
+                );
+              }
+
+              final normalizedQuery = _searchQuery.trim().toLowerCase();
+              final typeCounts = <ProjectType, int>{
+                for (final type in ProjectType.values) type: 0,
+              };
+              for (final project in projects) {
+                typeCounts[project.type] = (typeCounts[project.type] ?? 0) + 1;
+              }
+              final filteredProjects =
+                  projects
+                      .where((project) {
+                        final matchesQuery =
+                            normalizedQuery.isEmpty ||
+                            project.name.toLowerCase().contains(normalizedQuery);
+                        final matchesType =
+                            _selectedTypeFilter == null ||
+                            project.type == _selectedTypeFilter;
+                        return matchesQuery && matchesType;
+                      })
+                      .toList(growable: false)
+                    ..sort(_projectSortComparator(_selectedSortMode));
+              final selectedIdsForCurrentProjects = _selectedIdsForProjects(
+                projects,
               );
-            }
+              final readinessSummary = _buildProjectPortfolioReadinessSummary(
+                filteredProjects,
+              );
 
-            final normalizedQuery = _searchQuery.trim().toLowerCase();
-            final typeCounts = <ProjectType, int>{
-              for (final type in ProjectType.values) type: 0,
-            };
-            for (final project in projects) {
-              typeCounts[project.type] = (typeCounts[project.type] ?? 0) + 1;
-            }
-            final filteredProjects =
-                projects
-                    .where((project) {
-                      final matchesQuery =
-                          normalizedQuery.isEmpty ||
-                          project.name.toLowerCase().contains(normalizedQuery);
-                      final matchesType =
-                          _selectedTypeFilter == null ||
-                          project.type == _selectedTypeFilter;
-                      return matchesQuery && matchesType;
-                    })
-                    .toList(growable: false)
-                  ..sort(_projectSortComparator(_selectedSortMode));
-            final selectedIdsForCurrentProjects = _selectedIdsForProjects(
-              projects,
-            );
-            final readinessSummary = _buildProjectPortfolioReadinessSummary(
-              filteredProjects,
-            );
-
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: TextField(
-                    key: const Key('projectSearchField'),
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      labelText: 'Search Projects',
-                      prefixIcon: Icon(Icons.search_rounded),
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: TextField(
+                      key: const Key('projectSearchField'),
+                      controller: _searchController,
+                      decoration: const InputDecoration(
+                        labelText: 'Search Projects',
+                        prefixIcon: Icon(Icons.search_rounded),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ChoiceChip(
-                          key: const Key('projectTypeFilter_all'),
-                          label: Text('All (${projects.length})'),
-                          selected: _selectedTypeFilter == null,
-                          onSelected: (selected) {
-                            if (!selected) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedTypeFilter = null;
-                            });
-                          },
-                        ),
-                        for (final type in ProjectType.values)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
                           ChoiceChip(
-                            key: Key('projectTypeFilter_${type.name}'),
-                            label: Text(
-                              '${_typeLabel(type)} (${typeCounts[type] ?? 0})',
-                            ),
-                            selected: _selectedTypeFilter == type,
+                            key: const Key('projectTypeFilter_all'),
+                            label: Text('All (${projects.length})'),
+                            selected: _selectedTypeFilter == null,
                             onSelected: (selected) {
                               if (!selected) {
                                 return;
                               }
                               setState(() {
-                                _selectedTypeFilter = type;
+                                _selectedTypeFilter = null;
                               });
                             },
                           ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<_ProjectSortMode>(
-                          key: const Key('projectSortDropdown'),
-                          initialValue: _selectedSortMode,
-                          decoration: const InputDecoration(
-                            labelText: 'Sort Projects',
-                          ),
-                          items: [
-                            for (final sort in _ProjectSortMode.values)
-                              DropdownMenuItem(
-                                value: sort,
-                                child: Text(_projectSortLabel(sort)),
+                          for (final type in ProjectType.values)
+                            ChoiceChip(
+                              key: Key('projectTypeFilter_${type.name}'),
+                              label: Text(
+                                '${_typeLabel(type)} (${typeCounts[type] ?? 0})',
                               ),
-                          ],
-                          onChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedSortMode = value;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        key: const Key('projectResetFiltersButton'),
-                        onPressed: () {
-                          setState(() {
-                            _selectedTypeFilter = null;
-                            _selectedSortMode = _ProjectSortMode.updatedNewest;
-                            _searchQuery = '';
-                            _searchController.clear();
-                          });
-                        },
-                        child: const Text('Reset'),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Portfolio Readiness',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            key: const Key('projectPortfolioReadinessSummary'),
-                            'Projects: ${filteredProjects.length} • '
-                            'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
-                            'Empty scenes: ${readinessSummary.emptyScenes} • '
-                            'Messages: ${readinessSummary.totalMessages}',
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Chip(
-                                key: const Key('projectPortfolioReadyChip'),
-                                avatar: const Icon(
-                                  Icons.check_circle_outline_rounded,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  '${readinessSummary.readyProjectCount} ready projects',
-                                ),
-                              ),
-                              Chip(
-                                key: const Key(
-                                  'projectPortfolioNeedsAttentionChip',
-                                ),
-                                avatar: const Icon(
-                                  Icons.error_outline_rounded,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  '${readinessSummary.needsAttentionProjectCount} need attention',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              OutlinedButton.icon(
-                                key: const Key(
-                                  'portfolioContinueEditingButton',
-                                ),
-                                onPressed:
-                                    readinessSummary.primaryProjectId == null
-                                    ? null
-                                    : () => context.goNamed(
-                                        'editorProject',
-                                        pathParameters: {
-                                          'projectId': readinessSummary
-                                              .primaryProjectId!,
-                                        },
-                                      ),
-                                icon: const Icon(Icons.edit_note_rounded),
-                                label: const Text('Continue Editing'),
-                              ),
-                              OutlinedButton.icon(
-                                key: const Key('portfolioPreviewReadyButton'),
-                                onPressed:
-                                    readinessSummary.firstReadyProjectId == null
-                                    ? null
-                                    : () => context.goNamed(
-                                        'playbackProject',
-                                        pathParameters: {
-                                          'projectId': readinessSummary
-                                              .firstReadyProjectId!,
-                                        },
-                                      ),
-                                icon: const Icon(
-                                  Icons.play_circle_outline_rounded,
-                                ),
-                                label: const Text('Preview Ready Project'),
-                              ),
-                              OutlinedButton.icon(
-                                key: const Key(
-                                  'portfolioReviewAttentionButton',
-                                ),
-                                onPressed:
-                                    readinessSummary
-                                            .firstNeedsAttentionProjectId ==
-                                        null
-                                    ? null
-                                    : () => context.goNamed(
-                                        'editorProject',
-                                        pathParameters: {
-                                          'projectId': readinessSummary
-                                              .firstNeedsAttentionProjectId!,
-                                        },
-                                      ),
-                                icon: const Icon(Icons.rule_folder_outlined),
-                                label: const Text('Review Attention Project'),
-                              ),
-                            ],
-                          ),
+                              selected: _selectedTypeFilter == type,
+                              onSelected: (selected) {
+                                if (!selected) {
+                                  return;
+                                }
+                                setState(() {
+                                  _selectedTypeFilter = type;
+                                });
+                              },
+                            ),
                         ],
                       ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      _isSelectionMode
-                          ? 'Selected ${selectedIdsForCurrentProjects.length} of ${projects.length} projects'
-                          : 'Showing ${filteredProjects.length} of ${projects.length} projects',
-                      style: Theme.of(context).textTheme.bodySmall,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<_ProjectSortMode>(
+                            key: const Key('projectSortDropdown'),
+                            initialValue: _selectedSortMode,
+                            decoration: const InputDecoration(
+                              labelText: 'Sort Projects',
+                            ),
+                            items: [
+                              for (final sort in _ProjectSortMode.values)
+                                DropdownMenuItem(
+                                  value: sort,
+                                  child: Text(_projectSortLabel(sort)),
+                                ),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              setState(() {
+                                _selectedSortMode = value;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          key: const Key('projectResetFiltersButton'),
+                          onPressed: () {
+                            setState(() {
+                              _selectedTypeFilter = null;
+                              _selectedSortMode =
+                                  _ProjectSortMode.updatedNewest;
+                              _searchQuery = '';
+                              _searchController.clear();
+                            });
+                          },
+                          child: const Text('Reset'),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                Expanded(
-                  child: filteredProjects.isEmpty
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Text('No projects match current filters.'),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
-                          itemBuilder: (context, index) {
-                            final project = filteredProjects[index];
-                            return _ProjectCard(
-                              project: project,
-                              selectionMode: _isSelectionMode,
-                              isSelected: selectedIdsForCurrentProjects
-                                  .contains(project.id),
-                              onSelectionChanged: (isSelected) {
-                                _setProjectSelected(
-                                  projectId: project.id,
-                                  isSelected: isSelected,
-                                );
-                              },
-                            );
-                          },
-                          separatorBuilder: (_, index) =>
-                              const SizedBox(height: 12),
-                          itemCount: filteredProjects.length,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Portfolio Readiness',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              key: const Key('projectPortfolioReadinessSummary'),
+                              'Projects: ${filteredProjects.length} • '
+                              'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
+                              'Empty scenes: ${readinessSummary.emptyScenes} • '
+                              'Messages: ${readinessSummary.totalMessages}',
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                Chip(
+                                  key: const Key('projectPortfolioReadyChip'),
+                                  avatar: const Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    '${readinessSummary.readyProjectCount} ready projects',
+                                  ),
+                                ),
+                                Chip(
+                                  key: const Key(
+                                    'projectPortfolioNeedsAttentionChip',
+                                  ),
+                                  avatar: const Icon(
+                                    Icons.error_outline_rounded,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    '${readinessSummary.needsAttentionProjectCount} need attention',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                OutlinedButton.icon(
+                                  key: const Key(
+                                    'portfolioContinueEditingButton',
+                                  ),
+                                  onPressed:
+                                      readinessSummary.primaryProjectId == null
+                                      ? null
+                                      : () => context.goNamed(
+                                          'editorProject',
+                                          pathParameters: {
+                                            'projectId':
+                                                readinessSummary.primaryProjectId!,
+                                          },
+                                        ),
+                                  icon: const Icon(Icons.edit_note_rounded),
+                                  label: const Text('Continue Editing'),
+                                ),
+                                OutlinedButton.icon(
+                                  key: const Key('portfolioPreviewReadyButton'),
+                                  onPressed:
+                                      readinessSummary.firstReadyProjectId ==
+                                          null
+                                      ? null
+                                      : () => context.goNamed(
+                                          'playbackProject',
+                                          pathParameters: {
+                                            'projectId': readinessSummary
+                                                .firstReadyProjectId!,
+                                          },
+                                        ),
+                                  icon: const Icon(
+                                    Icons.play_circle_outline_rounded,
+                                  ),
+                                  label: const Text('Preview Ready Project'),
+                                ),
+                                OutlinedButton.icon(
+                                  key: const Key(
+                                    'portfolioReviewAttentionButton',
+                                  ),
+                                  onPressed: readinessSummary
+                                              .firstNeedsAttentionProjectId ==
+                                          null
+                                      ? null
+                                      : () => context.goNamed(
+                                          'editorProject',
+                                          pathParameters: {
+                                            'projectId': readinessSummary
+                                                .firstNeedsAttentionProjectId!,
+                                          },
+                                        ),
+                                  icon: const Icon(Icons.rule_folder_outlined),
+                                  label: const Text('Review Attention Project'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                ),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline_rounded),
-                    const SizedBox(height: 12),
-                    const Text('Unable to load projects.'),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$error',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () =>
-                          ref.invalidate(projectsControllerProvider),
-                      child: const Text('Try Again'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _isSelectionMode
+                            ? 'Selected ${selectedIdsForCurrentProjects.length} of ${projects.length} projects'
+                            : 'Showing ${filteredProjects.length} of ${projects.length} projects',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ),
-                  ],
+                  ),
+                  Expanded(
+                    child: filteredProjects.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Text('No projects match current filters.'),
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(
+                              16,
+                              8,
+                              16,
+                              180,
+                            ),
+                            itemBuilder: (context, index) {
+                              final project = filteredProjects[index];
+                              return _ProjectCard(
+                                project: project,
+                                selectionMode: _isSelectionMode,
+                                isSelected: selectedIdsForCurrentProjects
+                                    .contains(project.id),
+                                onSelectionChanged: (isSelected) {
+                                  _setProjectSelected(
+                                    projectId: project.id,
+                                    isSelected: isSelected,
+                                  );
+                                },
+                              );
+                            },
+                            separatorBuilder: (_, index) =>
+                                const SizedBox(height: 12),
+                            itemCount: filteredProjects.length,
+                          ),
+                  ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline_rounded),
+                      const SizedBox(height: 12),
+                      const Text('Unable to load projects.'),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$error',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: () =>
+                            ref.invalidate(projectsControllerProvider),
+                        child: const Text('Try Again'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

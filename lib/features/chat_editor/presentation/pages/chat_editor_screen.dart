@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -54,36 +55,38 @@ class ChatEditorScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: snapshotState.when(
-          data: (snapshot) {
-            if (snapshot == null) {
-              return const _ProjectNotFoundState();
-            }
+        child: AppContentFrame(
+          child: snapshotState.when(
+            data: (snapshot) {
+              if (snapshot == null) {
+                return const _ProjectNotFoundState();
+              }
 
-            return _ProjectEditorPlaceholder(
-              projectId: activeProjectId,
-              snapshot: snapshot,
-              onSceneSelected: (sceneId) {
-                ref
-                        .read(sceneSelectionProvider(activeProjectId).notifier)
-                        .selectedSceneId =
-                    sceneId;
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline_rounded),
-                  const SizedBox(height: 12),
-                  const Text('Unable to open project.'),
-                  const SizedBox(height: 8),
-                  Text('$error', textAlign: TextAlign.center),
-                ],
+              return _ProjectEditorPlaceholder(
+                projectId: activeProjectId,
+                snapshot: snapshot,
+                onSceneSelected: (sceneId) {
+                  ref
+                          .read(sceneSelectionProvider(activeProjectId).notifier)
+                          .selectedSceneId =
+                      sceneId;
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline_rounded),
+                    const SizedBox(height: 12),
+                    const Text('Unable to open project.'),
+                    const SizedBox(height: 8),
+                    Text('$error', textAlign: TextAlign.center),
+                  ],
+                ),
               ),
             ),
           ),

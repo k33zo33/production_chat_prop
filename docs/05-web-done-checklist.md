@@ -47,19 +47,24 @@ These are not current blockers for the automated web gate, but are sensible next
 
 - [ ] Small web polish/release pass (spacing, typography, visual consistency audit)
 - [ ] Manual export QA on real browser session for PNG/video output quality and browser-specific download/clipboard behavior
-- [ ] Short demo flow / smoke checklist for stakeholder review
+- [x] Short demo flow / smoke checklist for stakeholder review (`07-demo-script.md`, `08-web-smoke-checklist.md`)
 - [ ] Decide whether next phase is mobile kickoff or extra web polish
+
+## Recommended verification order
+
+1. Run the quick browser pass from `08-web-smoke-checklist.md`
+2. Run the focused export pass from `04-export-qa-checklist.md`
+3. If both are clean, treat web MVP as functionally ready and choose between:
+   - mobile kickoff, or
+   - one final web polish-only pass
 
 ## Recommended next step
 
-Run a short manual web smoke pass, then either:
-1. declare web MVP done and start mobile kickoff, or
-2. spend one small pass on web polish/release prep only.
+Do one manual browser verification pass using the smoke checklist first, then the export checklist.
 
 ## Latest verification snapshot
 
-- `flutter analyze` passed
-- `flutter test test/widget_test.dart` passed
-- `flutter build web` passed
+- `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
 - playback preview toggle behavior is covered so frame/clean preview state affects the export preview
 - video fallback export covers unsupported-download environments with clipboard fallback feedback
+- playback screenshot/export output should still be manually checked in a real browser because the current web/desktop content frame constrains rendered preview width

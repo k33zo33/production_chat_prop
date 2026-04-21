@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
+import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/data/services/video_export_fallback_service.dart';
@@ -70,38 +71,40 @@ class PlaybackScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: snapshotState.when(
-          data: (snapshot) {
-            if (snapshot == null) {
-              return const _ProjectNotFoundState();
-            }
+        child: AppContentFrame(
+          child: snapshotState.when(
+            data: (snapshot) {
+              if (snapshot == null) {
+                return const _ProjectNotFoundState();
+              }
 
-            return _PlaybackTimeline(
-              snapshot: snapshot,
-              onSceneSelected: (sceneId) {
-                ref
-                        .read(sceneSelectionProvider(activeProjectId).notifier)
-                        .selectedSceneId =
-                    sceneId;
-                ref
-                    .read(playbackControllerProvider(activeProjectId).notifier)
-                    .restart();
-              },
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline_rounded),
-                  const SizedBox(height: 12),
-                  const Text('Unable to open playback.'),
-                  const SizedBox(height: 8),
-                  Text('$error', textAlign: TextAlign.center),
-                ],
+              return _PlaybackTimeline(
+                snapshot: snapshot,
+                onSceneSelected: (sceneId) {
+                  ref
+                          .read(sceneSelectionProvider(activeProjectId).notifier)
+                          .selectedSceneId =
+                      sceneId;
+                  ref
+                      .read(playbackControllerProvider(activeProjectId).notifier)
+                      .restart();
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline_rounded),
+                    const SizedBox(height: 12),
+                    const Text('Unable to open playback.'),
+                    const SizedBox(height: 8),
+                    Text('$error', textAlign: TextAlign.center),
+                  ],
+                ),
               ),
             ),
           ),
