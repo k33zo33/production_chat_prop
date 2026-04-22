@@ -11,9 +11,10 @@ import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
 class ChatEditorScreen extends ConsumerWidget {
-  const ChatEditorScreen({super.key, this.projectId});
+  const ChatEditorScreen({super.key, this.projectId, this.forceCompactLayout});
 
   final String? projectId;
+  final bool? forceCompactLayout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -65,6 +66,7 @@ class ChatEditorScreen extends ConsumerWidget {
               return _ProjectEditorPlaceholder(
                 projectId: activeProjectId,
                 snapshot: snapshot,
+                forceCompactLayout: forceCompactLayout,
                 onSceneSelected: (sceneId) {
                   ref
                           .read(sceneSelectionProvider(activeProjectId).notifier)
@@ -101,11 +103,13 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
     required this.projectId,
     required this.snapshot,
     required this.onSceneSelected,
+    this.forceCompactLayout,
   });
 
   final String projectId;
   final SceneSnapshot snapshot;
   final ValueChanged<String> onSceneSelected;
+  final bool? forceCompactLayout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -117,6 +121,8 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
     final selectedSceneIndex = selectedScene == null
         ? -1
         : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
+    final isCompactLayout =
+        forceCompactLayout ?? MediaQuery.sizeOf(context).width < 720;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -200,214 +206,12 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     '${_formatSceneDuration(selectedSceneMaxSecond)} total duration',
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: () async {
-                          final sceneName = await _showSceneNameDialog(
-                            context,
-                            title: 'Add Scene',
-                            initialValue: 'Scene ${project.scenes.length + 1}',
-                          );
-                          if (sceneName == null) {
-                            return;
-                          }
-
-                          final addedSceneId = await ref
-                              .read(projectsControllerProvider.notifier)
-                              .addScene(
-                                projectId: project.id,
-                                title: sceneName,
-                              );
-                          if (addedSceneId != null) {
-                            onSceneSelected(addedSceneId);
-                          }
-                        },
-                        icon: const Icon(Icons.add_rounded),
-                        label: const Text('Add Scene'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const Key('duplicateSceneButton'),
-                        onPressed: () async {
-                          final duplicatedSceneId = await ref
-                              .read(projectsControllerProvider.notifier)
-                              .duplicateScene(
-                                projectId: project.id,
-                                sceneId: selectedScene.id,
-                              );
-                          if (duplicatedSceneId != null) {
-                            onSceneSelected(duplicatedSceneId);
-                          }
-                        },
-                        icon: const Icon(Icons.copy_rounded),
-                        label: const Text('Duplicate Scene'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const Key('applyTemplateBriefingButton'),
-                        onPressed: () async {
-                          final applied = await ref
-                              .read(projectsControllerProvider.notifier)
-                              .applySceneTemplate(
-                                projectId: project.id,
-                                sceneId: selectedScene.id,
-                                templateId: 'briefing',
-                              );
-                          if (!context.mounted || !applied) {
-                            return;
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Applied template: Briefing'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.auto_awesome_rounded),
-                        label: const Text('Template: Briefing'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const Key('applyTemplateGroupAlertButton'),
-                        onPressed: () async {
-                          final applied = await ref
-                              .read(projectsControllerProvider.notifier)
-                              .applySceneTemplate(
-                                projectId: project.id,
-                                sceneId: selectedScene.id,
-                                templateId: 'group_alert',
-                              );
-                          if (!context.mounted || !applied) {
-                            return;
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Applied template: Group Alert'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.groups_rounded),
-                        label: const Text('Template: Group Alert'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final updatedName = await _showSceneNameDialog(
-                            context,
-                            title: 'Rename Scene',
-                            initialValue: selectedScene.title,
-                          );
-                          if (updatedName == null) {
-                            return;
-                          }
-
-                          await ref
-                              .read(projectsControllerProvider.notifier)
-                              .renameScene(
-                                projectId: project.id,
-                                sceneId: selectedScene.id,
-                                newTitle: updatedName,
-                              );
-                        },
-                        icon: const Icon(
-                          Icons.drive_file_rename_outline_rounded,
-                        ),
-                        label: const Text('Rename Scene'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const Key('moveSceneUpButton'),
-                        onPressed: selectedSceneIndex <= 0
-                            ? null
-                            : () async {
-                                final moved = await ref
-                                    .read(projectsControllerProvider.notifier)
-                                    .moveScene(
-                                      projectId: project.id,
-                                      sceneId: selectedScene.id,
-                                      direction: -1,
-                                    );
-                                if (moved) {
-                                  onSceneSelected(selectedScene.id);
-                                }
-                              },
-                        icon: const Icon(Icons.keyboard_arrow_up_rounded),
-                        label: const Text('Move Scene Up'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const Key('moveSceneDownButton'),
-                        onPressed:
-                            selectedSceneIndex < 0 ||
-                                selectedSceneIndex >= project.scenes.length - 1
-                            ? null
-                            : () async {
-                                final moved = await ref
-                                    .read(projectsControllerProvider.notifier)
-                                    .moveScene(
-                                      projectId: project.id,
-                                      sceneId: selectedScene.id,
-                                      direction: 1,
-                                    );
-                                if (moved) {
-                                  onSceneSelected(selectedScene.id);
-                                }
-                              },
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                        label: const Text('Move Scene Down'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: project.scenes.length <= 1
-                            ? null
-                            : () async {
-                                final confirmed = await _showDeleteSceneDialog(
-                                  context,
-                                  sceneTitle: selectedScene.title,
-                                );
-                                if (!confirmed) {
-                                  return;
-                                }
-
-                                final deleted = await ref
-                                    .read(projectsControllerProvider.notifier)
-                                    .deleteScene(
-                                      projectId: project.id,
-                                      sceneId: selectedScene.id,
-                                    );
-                                if (!deleted) {
-                                  return;
-                                }
-
-                                for (final scene in project.scenes) {
-                                  if (scene.id != selectedScene.id) {
-                                    onSceneSelected(scene.id);
-                                    break;
-                                  }
-                                }
-                              },
-                        icon: const Icon(Icons.delete_outline_rounded),
-                        label: const Text('Delete Scene'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final input = await _showSceneSettingsDialog(
-                            context,
-                            scene: selectedScene,
-                          );
-                          if (input == null) {
-                            return;
-                          }
-
-                          await ref
-                              .read(projectsControllerProvider.notifier)
-                              .updateSceneSettings(
-                                projectId: project.id,
-                                sceneId: selectedScene.id,
-                                title: input.title,
-                                styleId: input.styleId,
-                                aspectRatio: input.aspectRatio,
-                              );
-                        },
-                        icon: const Icon(Icons.tune_rounded),
-                        label: const Text('Edit Scene Settings'),
-                      ),
-                    ],
+                  _SceneActionSection(
+                    project: project,
+                    selectedScene: selectedScene,
+                    selectedSceneIndex: selectedSceneIndex,
+                    onSceneSelected: onSceneSelected,
+                    isCompactLayout: isCompactLayout,
                   ),
                   if (project.scenes.length <= 1) ...[
                     const SizedBox(height: 8),
@@ -468,222 +272,490 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
     );
   }
 
-  Future<String?> _showSceneNameDialog(
-    BuildContext context, {
-    required String title,
-    String? initialValue,
-  }) async {
-    final controller = TextEditingController(text: initialValue ?? '');
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(title),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(labelText: 'Scene Title'),
+}
+
+class _SceneActionSection extends ConsumerWidget {
+  const _SceneActionSection({
+    required this.project,
+    required this.selectedScene,
+    required this.selectedSceneIndex,
+    required this.onSceneSelected,
+    required this.isCompactLayout,
+  });
+
+  final Project project;
+  final Scene selectedScene;
+  final int selectedSceneIndex;
+  final ValueChanged<String> onSceneSelected;
+  final bool isCompactLayout;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Future<void> addScene() async {
+      final sceneName = await _showSceneNameDialog(
+        context,
+        title: 'Add Scene',
+        initialValue: 'Scene ${project.scenes.length + 1}',
+      );
+      if (sceneName == null) {
+        return;
+      }
+
+      final addedSceneId = await ref
+          .read(projectsControllerProvider.notifier)
+          .addScene(projectId: project.id, title: sceneName);
+      if (addedSceneId != null) {
+        onSceneSelected(addedSceneId);
+      }
+    }
+
+    Future<void> duplicateScene() async {
+      final duplicatedSceneId = await ref
+          .read(projectsControllerProvider.notifier)
+          .duplicateScene(projectId: project.id, sceneId: selectedScene.id);
+      if (duplicatedSceneId != null) {
+        onSceneSelected(duplicatedSceneId);
+      }
+    }
+
+    Future<void> applyTemplate(String templateId, String label) async {
+      final applied = await ref
+          .read(projectsControllerProvider.notifier)
+          .applySceneTemplate(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+            templateId: templateId,
+          );
+      if (!context.mounted || !applied) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Applied template: $label')));
+    }
+
+    Future<void> renameScene() async {
+      final updatedName = await _showSceneNameDialog(
+        context,
+        title: 'Rename Scene',
+        initialValue: selectedScene.title,
+      );
+      if (updatedName == null) {
+        return;
+      }
+
+      await ref.read(projectsControllerProvider.notifier).renameScene(
+        projectId: project.id,
+        sceneId: selectedScene.id,
+        newTitle: updatedName,
+      );
+    }
+
+    Future<void> moveScene(int direction) async {
+      final moved = await ref.read(projectsControllerProvider.notifier).moveScene(
+        projectId: project.id,
+        sceneId: selectedScene.id,
+        direction: direction,
+      );
+      if (moved) {
+        onSceneSelected(selectedScene.id);
+      }
+    }
+
+    Future<void> deleteScene() async {
+      final confirmed = await _showDeleteSceneDialog(
+        context,
+        sceneTitle: selectedScene.title,
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      final deleted = await ref.read(projectsControllerProvider.notifier).deleteScene(
+        projectId: project.id,
+        sceneId: selectedScene.id,
+      );
+      if (!deleted) {
+        return;
+      }
+
+      for (final scene in project.scenes) {
+        if (scene.id != selectedScene.id) {
+          onSceneSelected(scene.id);
+          break;
+        }
+      }
+    }
+
+    Future<void> editSceneSettings() async {
+      final input = await _showSceneSettingsDialog(context, scene: selectedScene);
+      if (input == null) {
+        return;
+      }
+
+      await ref.read(projectsControllerProvider.notifier).updateSceneSettings(
+        projectId: project.id,
+        sceneId: selectedScene.id,
+        title: input.title,
+        styleId: input.styleId,
+        aspectRatio: input.aspectRatio,
+      );
+    }
+
+    if (!isCompactLayout) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          FilledButton.icon(
+            onPressed: addScene,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add Scene'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+          OutlinedButton.icon(
+            key: const Key('duplicateSceneButton'),
+            onPressed: duplicateScene,
+            icon: const Icon(Icons.copy_rounded),
+            label: const Text('Duplicate Scene'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('applyTemplateBriefingButton'),
+            onPressed: () => applyTemplate('briefing', 'Briefing'),
+            icon: const Icon(Icons.auto_awesome_rounded),
+            label: const Text('Template: Briefing'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('applyTemplateGroupAlertButton'),
+            onPressed: () => applyTemplate('group_alert', 'Group Alert'),
+            icon: const Icon(Icons.groups_rounded),
+            label: const Text('Template: Group Alert'),
+          ),
+          OutlinedButton.icon(
+            onPressed: renameScene,
+            icon: const Icon(Icons.drive_file_rename_outline_rounded),
+            label: const Text('Rename Scene'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('moveSceneUpButton'),
+            onPressed: selectedSceneIndex <= 0 ? null : () => moveScene(-1),
+            icon: const Icon(Icons.keyboard_arrow_up_rounded),
+            label: const Text('Move Scene Up'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('moveSceneDownButton'),
+            onPressed: selectedSceneIndex < 0 ||
+                    selectedSceneIndex >= project.scenes.length - 1
+                ? null
+                : () => moveScene(1),
+            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            label: const Text('Move Scene Down'),
+          ),
+          OutlinedButton.icon(
+            onPressed: project.scenes.length <= 1 ? null : deleteScene,
+            icon: const Icon(Icons.delete_outline_rounded),
+            label: const Text('Delete Scene'),
+          ),
+          OutlinedButton.icon(
+            onPressed: editSceneSettings,
+            icon: const Icon(Icons.tune_rounded),
+            label: const Text('Edit Scene Settings'),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            key: const Key('compactAddSceneButton'),
+            onPressed: addScene,
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add Scene'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        PopupMenuButton<_CompactSceneAction>(
+          key: const Key('sceneActionsOverflowMenuButton'),
+          tooltip: 'More scene actions',
+          onSelected: (action) async {
+            switch (action) {
+              case _CompactSceneAction.duplicate:
+                await duplicateScene();
+              case _CompactSceneAction.templateBriefing:
+                await applyTemplate('briefing', 'Briefing');
+              case _CompactSceneAction.templateGroupAlert:
+                await applyTemplate('group_alert', 'Group Alert');
+              case _CompactSceneAction.rename:
+                await renameScene();
+              case _CompactSceneAction.moveUp:
+                await moveScene(-1);
+              case _CompactSceneAction.moveDown:
+                await moveScene(1);
+              case _CompactSceneAction.editSettings:
+                await editSceneSettings();
+              case _CompactSceneAction.delete:
+                await deleteScene();
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: _CompactSceneAction.duplicate,
+              child: Text('Duplicate Scene'),
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Save'),
+            const PopupMenuItem(
+              value: _CompactSceneAction.templateBriefing,
+              child: Text('Template: Briefing'),
+            ),
+            const PopupMenuItem(
+              value: _CompactSceneAction.templateGroupAlert,
+              child: Text('Template: Group Alert'),
+            ),
+            const PopupMenuItem(
+              value: _CompactSceneAction.rename,
+              child: Text('Rename Scene'),
+            ),
+            PopupMenuItem(
+              value: _CompactSceneAction.moveUp,
+              enabled: selectedSceneIndex > 0,
+              child: const Text('Move Scene Up'),
+            ),
+            PopupMenuItem(
+              value: _CompactSceneAction.moveDown,
+              enabled: selectedSceneIndex >= 0 &&
+                  selectedSceneIndex < project.scenes.length - 1,
+              child: const Text('Move Scene Down'),
+            ),
+            const PopupMenuItem(
+              value: _CompactSceneAction.editSettings,
+              child: Text('Edit Scene Settings'),
+            ),
+            PopupMenuItem(
+              value: _CompactSceneAction.delete,
+              enabled: project.scenes.length > 1,
+              child: const Text('Delete Scene'),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
-    return result;
   }
+}
 
-  Future<bool> _showDeleteSceneDialog(
-    BuildContext context, {
-    required String sceneTitle,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Scene'),
-          content: Text('Delete "$sceneTitle"? This removes all its messages.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-    return result ?? false;
-  }
+enum _CompactSceneAction {
+  duplicate,
+  templateBriefing,
+  templateGroupAlert,
+  rename,
+  moveUp,
+  moveDown,
+  editSettings,
+  delete,
+}
 
-  Future<_SceneSettingsInput?> _showSceneSettingsDialog(
-    BuildContext context, {
-    required Scene scene,
-  }) async {
-    final titleController = TextEditingController(text: scene.title);
-    final styleIdController = TextEditingController(text: scene.styleId);
-    var selectedStyleId = scene.styleId;
-    var selectedAspectRatio = scene.aspectRatio;
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+Future<String?> _showSceneNameDialog(
+  BuildContext context, {
+  required String title,
+  String? initialValue,
+}) async {
+  final controller = TextEditingController(text: initialValue ?? '');
+  final result = await showDialog<String>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Scene Title'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      );
+    },
+  );
+  return result;
+}
 
-    final result = await showDialog<_SceneSettingsInput>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            final selectedPalette = resolveChatStylePalette(selectedStyleId);
-            return AlertDialog(
-              title: const Text('Edit Scene Settings'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Scene Title',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: styleIdController,
-                      decoration: const InputDecoration(labelText: 'Style ID'),
-                      onChanged: (value) {
-                        selectedStyleId = value.trim();
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue:
-                          kChatStylePalettes.any(
-                            (style) => style.id == selectedStyleId,
-                          )
-                          ? selectedStyleId
-                          : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Style Preset',
-                      ),
-                      items: [
-                        for (final style in kChatStylePalettes)
-                          DropdownMenuItem(
-                            value: style.id,
-                            child: Text('${style.name} (${style.id})'),
-                          ),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedStyleId = value;
-                            styleIdController.text = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      key: const Key('sceneStylePreviewRow'),
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: selectedPalette.surfaceColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          _StyleDot(
-                            color: selectedPalette.incomingBubbleColor,
-                          ),
-                          const SizedBox(width: 8),
-                          _StyleDot(
-                            color: selectedPalette.outgoingBubbleColor,
-                          ),
-                          const SizedBox(width: 8),
-                          _StyleDot(color: selectedPalette.typingColor),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              selectedPalette.name,
-                              style: TextStyle(
-                                color: selectedPalette.textColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<SceneAspectRatio>(
-                      initialValue: selectedAspectRatio,
-                      decoration: const InputDecoration(
-                        labelText: 'Aspect Ratio',
-                      ),
-                      items: SceneAspectRatio.values
-                          .map(
-                            (ratio) => DropdownMenuItem(
-                              value: ratio,
-                              child: Text(ratio.name),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedAspectRatio = value;
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final trimmedTitle = titleController.text.trim();
-                    final trimmedStyleId = styleIdController.text.trim();
-                    if (trimmedTitle.isEmpty || trimmedStyleId.isEmpty) {
-                      scaffoldMessenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Scene title and style are required.'),
+Future<bool> _showDeleteSceneDialog(
+  BuildContext context, {
+  required String sceneTitle,
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Delete Scene'),
+        content: Text('Delete "$sceneTitle"? This removes all its messages.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+  return result ?? false;
+}
+
+Future<_SceneSettingsInput?> _showSceneSettingsDialog(
+  BuildContext context, {
+  required Scene scene,
+}) async {
+  final titleController = TextEditingController(text: scene.title);
+  final styleIdController = TextEditingController(text: scene.styleId);
+  var selectedStyleId = scene.styleId;
+  var selectedAspectRatio = scene.aspectRatio;
+  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+  final result = await showDialog<_SceneSettingsInput>(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          final selectedPalette = resolveChatStylePalette(selectedStyleId);
+          return AlertDialog(
+            title: const Text('Edit Scene Settings'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    autofocus: true,
+                    decoration: const InputDecoration(labelText: 'Scene Title'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: styleIdController,
+                    decoration: const InputDecoration(labelText: 'Style ID'),
+                    onChanged: (value) {
+                      selectedStyleId = value.trim();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue:
+                        kChatStylePalettes.any(
+                              (style) => style.id == selectedStyleId,
+                            )
+                            ? selectedStyleId
+                            : null,
+                    decoration: const InputDecoration(labelText: 'Style Preset'),
+                    items: [
+                      for (final style in kChatStylePalettes)
+                        DropdownMenuItem(
+                          value: style.id,
+                          child: Text('${style.name} (${style.id})'),
                         ),
-                      );
-                      return;
-                    }
-
-                    Navigator.of(context).pop(
-                      _SceneSettingsInput(
-                        title: trimmedTitle,
-                        styleId: trimmedStyleId,
-                        aspectRatio: selectedAspectRatio,
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedStyleId = value;
+                          styleIdController.text = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    key: const Key('sceneStylePreviewRow'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: selectedPalette.surfaceColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        _StyleDot(color: selectedPalette.incomingBubbleColor),
+                        const SizedBox(width: 8),
+                        _StyleDot(color: selectedPalette.outgoingBubbleColor),
+                        const SizedBox(width: 8),
+                        _StyleDot(color: selectedPalette.typingColor),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            selectedPalette.name,
+                            style: TextStyle(color: selectedPalette.textColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<SceneAspectRatio>(
+                    initialValue: selectedAspectRatio,
+                    decoration: const InputDecoration(labelText: 'Aspect Ratio'),
+                    items: SceneAspectRatio.values
+                        .map(
+                          (ratio) => DropdownMenuItem(
+                            value: ratio,
+                            child: Text(ratio.name),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedAspectRatio = value;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final trimmedTitle = titleController.text.trim();
+                  final trimmedStyleId = styleIdController.text.trim();
+                  if (trimmedTitle.isEmpty || trimmedStyleId.isEmpty) {
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Scene title and style are required.'),
                       ),
                     );
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                    return;
+                  }
 
-    return result;
-  }
+                  Navigator.of(context).pop(
+                    _SceneSettingsInput(
+                      title: trimmedTitle,
+                      styleId: trimmedStyleId,
+                      aspectRatio: selectedAspectRatio,
+                    ),
+                  );
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  return result;
 }
 
 class _SceneSettingsInput {
