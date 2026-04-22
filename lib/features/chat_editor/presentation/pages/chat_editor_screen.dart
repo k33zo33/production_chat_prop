@@ -1303,6 +1303,8 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1337,62 +1339,143 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
               controller: _textController,
               decoration: const InputDecoration(labelText: 'Message Text'),
               minLines: 1,
-              maxLines: 3,
+              maxLines: isCompactLayout ? 4 : 3,
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: _timestampController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Timestamp (seconds)',
-              ),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<MessageStatus>(
-              initialValue: _status,
-              decoration: const InputDecoration(labelText: 'Status'),
-              items: MessageStatus.values
-                  .map(
-                    (status) => DropdownMenuItem(
-                      value: status,
-                      child: Text(status.name),
+            if (isCompactLayout)
+              Column(
+                children: [
+                  TextField(
+                    controller: _timestampController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Timestamp (seconds)',
                     ),
-                  )
-                  .toList(growable: false),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _status = value;
-                  });
-                }
-              },
-            ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<MessageStatus>(
+                    initialValue: _status,
+                    decoration: const InputDecoration(labelText: 'Status'),
+                    items: MessageStatus.values
+                        .map(
+                          (status) => DropdownMenuItem(
+                            value: status,
+                            child: Text(status.name),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _status = value;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _timestampController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Timestamp (seconds)',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButtonFormField<MessageStatus>(
+                      initialValue: _status,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      items: MessageStatus.values
+                          .map(
+                            (status) => DropdownMenuItem(
+                              value: status,
+                              child: Text(status.name),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _status = value;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
             const SizedBox(height: 8),
-            SwitchListTile(
-              value: _isIncoming,
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Incoming'),
-              onChanged: (value) {
-                setState(() {
-                  _isIncoming = value;
-                });
-              },
-            ),
-            SwitchListTile(
-              value: _showTypingBefore,
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Show typing before'),
-              onChanged: (value) {
-                setState(() {
-                  _showTypingBefore = value;
-                });
-              },
-            ),
+            if (isCompactLayout)
+              Column(
+                children: [
+                  SwitchListTile(
+                    value: _isIncoming,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: const Text('Incoming'),
+                    onChanged: (value) {
+                      setState(() {
+                        _isIncoming = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile(
+                    value: _showTypingBefore,
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: const Text('Show typing before'),
+                    onChanged: (value) {
+                      setState(() {
+                        _showTypingBefore = value;
+                      });
+                    },
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: SwitchListTile(
+                      value: _isIncoming,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Incoming'),
+                      onChanged: (value) {
+                        setState(() {
+                          _isIncoming = value;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SwitchListTile(
+                      value: _showTypingBefore,
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Show typing before'),
+                      onChanged: (value) {
+                        setState(() {
+                          _showTypingBefore = value;
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
             const SizedBox(height: 8),
-            FilledButton.icon(
-              onPressed: _selectedCharacterId == null ? null : _addMessage,
-              icon: const Icon(Icons.add_comment_outlined),
-              label: const Text('Add Message'),
+            SizedBox(
+              width: isCompactLayout ? double.infinity : null,
+              child: FilledButton.icon(
+                onPressed: _selectedCharacterId == null ? null : _addMessage,
+                icon: const Icon(Icons.add_comment_outlined),
+                label: const Text('Add Message'),
+              ),
             ),
           ],
         ),
