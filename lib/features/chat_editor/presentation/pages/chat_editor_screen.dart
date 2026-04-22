@@ -2014,45 +2014,114 @@ class _CharacterManagerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  'Characters',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const Spacer(),
-                FilledButton.icon(
-                  onPressed: () async {
-                    final newName = await _showCharacterNameDialog(
-                      context,
-                      title: 'Add Character',
-                    );
-                    if (newName == null) {
-                      return;
-                    }
-
-                    await ref
-                        .read(projectsControllerProvider.notifier)
-                        .addCharacter(
-                          projectId: projectId,
-                          sceneId: sceneId,
-                          displayName: newName,
+            if (isCompactLayout)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Characters',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () async {
+                        final newName = await _showCharacterNameDialog(
+                          context,
+                          title: 'Add Character',
                         );
-                  },
-                  icon: const Icon(Icons.person_add_alt_1_rounded),
-                  label: const Text('Add'),
-                ),
-              ],
-            ),
+                        if (newName == null) {
+                          return;
+                        }
+
+                        await ref
+                            .read(projectsControllerProvider.notifier)
+                            .addCharacter(
+                              projectId: projectId,
+                              sceneId: sceneId,
+                              displayName: newName,
+                            );
+                      },
+                      icon: const Icon(Icons.person_add_alt_1_rounded),
+                      label: const Text('Add Character'),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Text(
+                    'Characters',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      final newName = await _showCharacterNameDialog(
+                        context,
+                        title: 'Add Character',
+                      );
+                      if (newName == null) {
+                        return;
+                      }
+
+                      await ref
+                          .read(projectsControllerProvider.notifier)
+                          .addCharacter(
+                            projectId: projectId,
+                            sceneId: sceneId,
+                            displayName: newName,
+                          );
+                    },
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    label: const Text('Add'),
+                  ),
+                ],
+              ),
             const SizedBox(height: 12),
             if (characters.isEmpty)
               const Text('No characters in this scene.')
+            else if (isCompactLayout)
+              Column(
+                children: [
+                  for (final character in characters) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Chip(label: Text(character.displayName)),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          tooltip: 'Delete ${character.displayName}',
+                          onPressed: characters.length == 1
+                              ? null
+                              : () async {
+                                  await ref
+                                      .read(projectsControllerProvider.notifier)
+                                      .deleteCharacter(
+                                        projectId: projectId,
+                                        sceneId: sceneId,
+                                        characterId: character.id,
+                                      );
+                                },
+                          icon: const Icon(Icons.person_remove_rounded),
+                        ),
+                      ],
+                    ),
+                    if (character != characters.last) const SizedBox(height: 8),
+                  ],
+                ],
+              )
             else
               Wrap(
                 spacing: 8,
@@ -2086,36 +2155,71 @@ class _CharacterManagerCard extends ConsumerWidget {
             ],
             if (characters.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final character in characters)
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final updatedName = await _showCharacterNameDialog(
-                          context,
-                          title: 'Rename Character',
-                          initialValue: character.displayName,
-                        );
-                        if (updatedName == null) {
-                          return;
-                        }
-
-                        await ref
-                            .read(projectsControllerProvider.notifier)
-                            .renameCharacter(
-                              projectId: projectId,
-                              sceneId: sceneId,
-                              characterId: character.id,
-                              newDisplayName: updatedName,
+              if (isCompactLayout)
+                Column(
+                  children: [
+                    for (final character in characters) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final updatedName = await _showCharacterNameDialog(
+                              context,
+                              title: 'Rename Character',
+                              initialValue: character.displayName,
                             );
-                      },
-                      icon: const Icon(Icons.edit_rounded),
-                      label: Text('Rename ${character.displayName}'),
-                    ),
-                ],
-              ),
+                            if (updatedName == null) {
+                              return;
+                            }
+
+                            await ref
+                                .read(projectsControllerProvider.notifier)
+                                .renameCharacter(
+                                  projectId: projectId,
+                                  sceneId: sceneId,
+                                  characterId: character.id,
+                                  newDisplayName: updatedName,
+                                );
+                          },
+                          icon: const Icon(Icons.edit_rounded),
+                          label: Text('Rename ${character.displayName}'),
+                        ),
+                      ),
+                      if (character != characters.last) const SizedBox(height: 8),
+                    ],
+                  ],
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final character in characters)
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final updatedName = await _showCharacterNameDialog(
+                            context,
+                            title: 'Rename Character',
+                            initialValue: character.displayName,
+                          );
+                          if (updatedName == null) {
+                            return;
+                          }
+
+                          await ref
+                              .read(projectsControllerProvider.notifier)
+                              .renameCharacter(
+                                projectId: projectId,
+                                sceneId: sceneId,
+                                characterId: character.id,
+                                newDisplayName: updatedName,
+                              );
+                        },
+                        icon: const Icon(Icons.edit_rounded),
+                        label: Text('Rename ${character.displayName}'),
+                      ),
+                  ],
+                ),
             ],
           ],
         ),
