@@ -16,7 +16,9 @@ final projectJsonFilePickerProvider = Provider<TextFilePicker>((ref) {
 });
 
 class ProjectListScreen extends ConsumerStatefulWidget {
-  const ProjectListScreen({super.key});
+  const ProjectListScreen({super.key, this.forceCompactAppBar});
+
+  final bool? forceCompactAppBar;
 
   @override
   ConsumerState<ProjectListScreen> createState() => _ProjectListScreenState();
@@ -535,6 +537,263 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     };
   }
 
+  List<Widget> _buildDefaultAppBarActions({
+    required BuildContext context,
+    required List<Project> loadedProjects,
+    required bool isCompactAppBar,
+  }) {
+    if (!isCompactAppBar) {
+      return [
+        IconButton(
+          key: const Key('toggleProjectSelectionModeButton'),
+          tooltip: 'Select Projects',
+          onPressed: loadedProjects.isEmpty
+              ? null
+              : () => _toggleSelectionMode(loadedProjects),
+          icon: const Icon(Icons.checklist_rounded),
+        ),
+        IconButton(
+          key: const Key('exportAllProjectsJsonButton'),
+          tooltip: 'Export All Projects JSON',
+          onPressed: _onExportAllProjectsPressed,
+          icon: const Icon(Icons.download_for_offline_outlined),
+        ),
+        IconButton(
+          key: const Key('importProjectJsonFileButton'),
+          tooltip: 'Import JSON File',
+          onPressed: _onImportProjectJsonFilePressed,
+          icon: const Icon(Icons.upload_file_rounded),
+        ),
+        IconButton(
+          key: const Key('importProjectJsonButton'),
+          tooltip: 'Import Project JSON',
+          onPressed: _onImportProjectJsonPressed,
+          icon: const Icon(Icons.file_upload_outlined),
+        ),
+        IconButton(
+          tooltip: 'Add Demo Project',
+          onPressed: () => ref
+              .read(projectsControllerProvider.notifier)
+              .createDemoProject(),
+          icon: const Icon(Icons.auto_awesome_rounded),
+        ),
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: () => ref.invalidate(projectsControllerProvider),
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+      ];
+    }
+
+    return [
+      PopupMenuButton<_ProjectListAppBarAction>(
+        key: const Key('projectListOverflowMenuButton'),
+        tooltip: 'More project actions',
+        onSelected: (action) async {
+          switch (action) {
+            case _ProjectListAppBarAction.selectProjects:
+              _toggleSelectionMode(loadedProjects);
+            case _ProjectListAppBarAction.exportAll:
+              await _onExportAllProjectsPressed();
+            case _ProjectListAppBarAction.importFile:
+              await _onImportProjectJsonFilePressed();
+            case _ProjectListAppBarAction.importJson:
+              await _onImportProjectJsonPressed();
+            case _ProjectListAppBarAction.addDemo:
+              await ref
+                  .read(projectsControllerProvider.notifier)
+                  .createDemoProject();
+            case _ProjectListAppBarAction.refresh:
+              ref.invalidate(projectsControllerProvider);
+          }
+        },
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: _ProjectListAppBarAction.selectProjects,
+            enabled: loadedProjects.isNotEmpty,
+            child: const Text('Select Projects'),
+          ),
+          const PopupMenuItem(
+            value: _ProjectListAppBarAction.exportAll,
+            child: Text('Export All Projects JSON'),
+          ),
+          const PopupMenuItem(
+            value: _ProjectListAppBarAction.importFile,
+            child: Text('Import JSON File'),
+          ),
+          const PopupMenuItem(
+            value: _ProjectListAppBarAction.importJson,
+            child: Text('Import Project JSON'),
+          ),
+          const PopupMenuItem(
+            value: _ProjectListAppBarAction.addDemo,
+            child: Text('Add Demo Project'),
+          ),
+          const PopupMenuItem(
+            value: _ProjectListAppBarAction.refresh,
+            child: Text('Refresh'),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildSelectionModeActions({
+    required BuildContext context,
+    required List<Project> loadedProjects,
+    required int selectedCount,
+    required bool isCompactAppBar,
+  }) {
+    if (!isCompactAppBar) {
+      return [
+        IconButton(
+          key: const Key('selectAllProjectsButton'),
+          tooltip: 'Select All Projects',
+          onPressed: selectedCount == loadedProjects.length
+              ? null
+              : () => _selectAllProjects(loadedProjects),
+          icon: const Icon(Icons.select_all_rounded),
+        ),
+        IconButton(
+          key: const Key('clearProjectSelectionButton'),
+          tooltip: 'Clear Selection',
+          onPressed: selectedCount == 0
+              ? null
+              : () => _clearProjectSelection(exitMode: false),
+          icon: const Icon(Icons.deselect_rounded),
+        ),
+        IconButton(
+          key: const Key('duplicateSelectedProjectsButton'),
+          tooltip: 'Duplicate Selected Projects',
+          onPressed: selectedCount == 0
+              ? null
+              : () => _onDuplicateSelectedProjectsPressed(loadedProjects),
+          icon: const Icon(Icons.copy_all_rounded),
+        ),
+        PopupMenuButton<ProjectType>(
+          key: const Key('setSelectedProjectsTypeButton'),
+          tooltip: 'Set Selected Type',
+          enabled: selectedCount > 0,
+          onSelected: (type) async {
+            await _onSetSelectedProjectsType(
+              projects: loadedProjects,
+              type: type,
+            );
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: ProjectType.ad,
+              child: Text('Set Type: Ad'),
+            ),
+            PopupMenuItem(
+              value: ProjectType.series,
+              child: Text('Set Type: Series'),
+            ),
+            PopupMenuItem(
+              value: ProjectType.other,
+              child: Text('Set Type: Other'),
+            ),
+          ],
+          icon: const Icon(Icons.label_rounded),
+        ),
+        IconButton(
+          key: const Key('exportSelectedProjectsJsonButton'),
+          tooltip: 'Export Selected Projects JSON',
+          onPressed: selectedCount == 0
+              ? null
+              : () => _onExportSelectedProjectsPressed(loadedProjects),
+          icon: const Icon(Icons.download_rounded),
+        ),
+        IconButton(
+          key: const Key('deleteSelectedProjectsButton'),
+          tooltip: 'Delete Selected Projects',
+          onPressed: selectedCount == 0
+              ? null
+              : () => _onDeleteSelectedProjectsPressed(loadedProjects),
+          icon: const Icon(Icons.delete_outline_rounded),
+        ),
+      ];
+    }
+
+    return [
+      PopupMenuButton<_ProjectSelectionAction>(
+        key: const Key('projectSelectionOverflowMenuButton'),
+        tooltip: 'Selected project actions',
+        onSelected: (action) async {
+          switch (action) {
+            case _ProjectSelectionAction.selectAll:
+              _selectAllProjects(loadedProjects);
+            case _ProjectSelectionAction.clear:
+              _clearProjectSelection(exitMode: false);
+            case _ProjectSelectionAction.duplicate:
+              await _onDuplicateSelectedProjectsPressed(loadedProjects);
+            case _ProjectSelectionAction.setTypeAd:
+              await _onSetSelectedProjectsType(
+                projects: loadedProjects,
+                type: ProjectType.ad,
+              );
+            case _ProjectSelectionAction.setTypeSeries:
+              await _onSetSelectedProjectsType(
+                projects: loadedProjects,
+                type: ProjectType.series,
+              );
+            case _ProjectSelectionAction.setTypeOther:
+              await _onSetSelectedProjectsType(
+                projects: loadedProjects,
+                type: ProjectType.other,
+              );
+            case _ProjectSelectionAction.exportSelected:
+              await _onExportSelectedProjectsPressed(loadedProjects);
+            case _ProjectSelectionAction.deleteSelected:
+              await _onDeleteSelectedProjectsPressed(loadedProjects);
+          }
+        },
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: _ProjectSelectionAction.selectAll,
+            enabled: selectedCount != loadedProjects.length,
+            child: const Text('Select All Projects'),
+          ),
+          PopupMenuItem(
+            value: _ProjectSelectionAction.clear,
+            enabled: selectedCount > 0,
+            child: const Text('Clear Selection'),
+          ),
+          PopupMenuItem(
+            value: _ProjectSelectionAction.duplicate,
+            enabled: selectedCount > 0,
+            child: const Text('Duplicate Selected Projects'),
+          ),
+          PopupMenuItem(
+            value: _ProjectSelectionAction.setTypeAd,
+            enabled: selectedCount > 0,
+            child: const Text('Set Type: Ad'),
+          ),
+          PopupMenuItem(
+            value: _ProjectSelectionAction.setTypeSeries,
+            enabled: selectedCount > 0,
+            child: const Text('Set Type: Series'),
+          ),
+          PopupMenuItem(
+            value: _ProjectSelectionAction.setTypeOther,
+            enabled: selectedCount > 0,
+            child: const Text('Set Type: Other'),
+          ),
+          PopupMenuItem(
+            value: _ProjectSelectionAction.exportSelected,
+            enabled: selectedCount > 0,
+            child: const Text('Export Selected Projects JSON'),
+          ),
+          PopupMenuItem(
+            value: _ProjectSelectionAction.deleteSelected,
+            enabled: selectedCount > 0,
+            child: const Text('Delete Selected Projects'),
+          ),
+        ],
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final projectsState = ref.watch(projectsControllerProvider);
@@ -546,6 +805,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final selectedIds = _selectedIdsForProjects(loadedProjects);
     final selectedCount = selectedIds.length;
     final showSelectionMode = _isSelectionMode && loadedProjects.isNotEmpty;
+    final isCompactAppBar =
+        widget.forceCompactAppBar ?? MediaQuery.sizeOf(context).width < 720;
 
     return Scaffold(
       appBar: AppBar(
@@ -565,116 +826,17 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               : 'Project List',
         ),
         actions: showSelectionMode
-            ? [
-                IconButton(
-                  key: const Key('selectAllProjectsButton'),
-                  tooltip: 'Select All Projects',
-                  onPressed: selectedCount == loadedProjects.length
-                      ? null
-                      : () => _selectAllProjects(loadedProjects),
-                  icon: const Icon(Icons.select_all_rounded),
-                ),
-                IconButton(
-                  key: const Key('clearProjectSelectionButton'),
-                  tooltip: 'Clear Selection',
-                  onPressed: selectedCount == 0
-                      ? null
-                      : () => _clearProjectSelection(exitMode: false),
-                  icon: const Icon(Icons.deselect_rounded),
-                ),
-                IconButton(
-                  key: const Key('duplicateSelectedProjectsButton'),
-                  tooltip: 'Duplicate Selected Projects',
-                  onPressed: selectedCount == 0
-                      ? null
-                      : () => _onDuplicateSelectedProjectsPressed(
-                          loadedProjects,
-                        ),
-                  icon: const Icon(Icons.copy_all_rounded),
-                ),
-                PopupMenuButton<ProjectType>(
-                  key: const Key('setSelectedProjectsTypeButton'),
-                  tooltip: 'Set Selected Type',
-                  enabled: selectedCount > 0,
-                  onSelected: (type) async {
-                    await _onSetSelectedProjectsType(
-                      projects: loadedProjects,
-                      type: type,
-                    );
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: ProjectType.ad,
-                      child: Text('Set Type: Ad'),
-                    ),
-                    PopupMenuItem(
-                      value: ProjectType.series,
-                      child: Text('Set Type: Series'),
-                    ),
-                    PopupMenuItem(
-                      value: ProjectType.other,
-                      child: Text('Set Type: Other'),
-                    ),
-                  ],
-                  icon: const Icon(Icons.label_rounded),
-                ),
-                IconButton(
-                  key: const Key('exportSelectedProjectsJsonButton'),
-                  tooltip: 'Export Selected Projects JSON',
-                  onPressed: selectedCount == 0
-                      ? null
-                      : () => _onExportSelectedProjectsPressed(loadedProjects),
-                  icon: const Icon(Icons.download_rounded),
-                ),
-                IconButton(
-                  key: const Key('deleteSelectedProjectsButton'),
-                  tooltip: 'Delete Selected Projects',
-                  onPressed: selectedCount == 0
-                      ? null
-                      : () => _onDeleteSelectedProjectsPressed(loadedProjects),
-                  icon: const Icon(Icons.delete_outline_rounded),
-                ),
-              ]
-            : [
-                IconButton(
-                  key: const Key('toggleProjectSelectionModeButton'),
-                  tooltip: 'Select Projects',
-                  onPressed: loadedProjects.isEmpty
-                      ? null
-                      : () => _toggleSelectionMode(loadedProjects),
-                  icon: const Icon(Icons.checklist_rounded),
-                ),
-                IconButton(
-                  key: const Key('exportAllProjectsJsonButton'),
-                  tooltip: 'Export All Projects JSON',
-                  onPressed: _onExportAllProjectsPressed,
-                  icon: const Icon(Icons.download_for_offline_outlined),
-                ),
-                IconButton(
-                  key: const Key('importProjectJsonFileButton'),
-                  tooltip: 'Import JSON File',
-                  onPressed: _onImportProjectJsonFilePressed,
-                  icon: const Icon(Icons.upload_file_rounded),
-                ),
-                IconButton(
-                  key: const Key('importProjectJsonButton'),
-                  tooltip: 'Import Project JSON',
-                  onPressed: _onImportProjectJsonPressed,
-                  icon: const Icon(Icons.file_upload_outlined),
-                ),
-                IconButton(
-                  tooltip: 'Add Demo Project',
-                  onPressed: () => ref
-                      .read(projectsControllerProvider.notifier)
-                      .createDemoProject(),
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                ),
-                IconButton(
-                  tooltip: 'Refresh',
-                  onPressed: () => ref.invalidate(projectsControllerProvider),
-                  icon: const Icon(Icons.refresh_rounded),
-                ),
-              ],
+            ? _buildSelectionModeActions(
+                context: context,
+                loadedProjects: loadedProjects,
+                selectedCount: selectedCount,
+                isCompactAppBar: isCompactAppBar,
+              )
+            : _buildDefaultAppBarActions(
+                context: context,
+                loadedProjects: loadedProjects,
+                isCompactAppBar: isCompactAppBar,
+              ),
       ),
       floatingActionButton: showSelectionMode
           ? null
@@ -788,34 +950,33 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<_ProjectSortMode>(
-                            key: const Key('projectSortDropdown'),
-                            initialValue: _selectedSortMode,
-                            decoration: const InputDecoration(
-                              labelText: 'Sort Projects',
-                            ),
-                            items: [
-                              for (final sort in _ProjectSortMode.values)
-                                DropdownMenuItem(
-                                  value: sort,
-                                  child: Text(_projectSortLabel(sort)),
-                                ),
-                            ],
-                            onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              setState(() {
-                                _selectedSortMode = value;
-                              });
-                            },
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isCompactControls = constraints.maxWidth < 480;
+                        final sortDropdown = DropdownButtonFormField<_ProjectSortMode>(
+                          key: const Key('projectSortDropdown'),
+                          isExpanded: isCompactControls,
+                          initialValue: _selectedSortMode,
+                          decoration: const InputDecoration(
+                            labelText: 'Sort Projects',
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
+                          items: [
+                            for (final sort in _ProjectSortMode.values)
+                              DropdownMenuItem(
+                                value: sort,
+                                child: Text(_projectSortLabel(sort)),
+                              ),
+                          ],
+                          onChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            setState(() {
+                              _selectedSortMode = value;
+                            });
+                          },
+                        );
+                        final resetButton = OutlinedButton(
                           key: const Key('projectResetFiltersButton'),
                           onPressed: () {
                             setState(() {
@@ -827,8 +988,30 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             });
                           },
                           child: const Text('Reset'),
-                        ),
-                      ],
+                        );
+
+                        if (isCompactControls) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              sortDropdown,
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: resetButton,
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            Expanded(child: sortDropdown),
+                            const SizedBox(width: 8),
+                            resetButton,
+                          ],
+                        );
+                      },
                     ),
                   ),
                   Padding(
@@ -1043,6 +1226,26 @@ enum _ProjectSortMode {
   updatedOldest,
   nameAscending,
   nameDescending,
+}
+
+enum _ProjectListAppBarAction {
+  selectProjects,
+  exportAll,
+  importFile,
+  importJson,
+  addDemo,
+  refresh,
+}
+
+enum _ProjectSelectionAction {
+  selectAll,
+  clear,
+  duplicate,
+  setTypeAd,
+  setTypeSeries,
+  setTypeOther,
+  exportSelected,
+  deleteSelected,
 }
 
 String _projectSortLabel(_ProjectSortMode mode) {

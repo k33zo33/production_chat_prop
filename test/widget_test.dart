@@ -939,6 +939,63 @@ void main() {
     expect(yNewProject1, lessThan(yNewProject2));
   });
 
+  testWidgets('compact project list app bar uses overflow menu actions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: ProjectListScreen(forceCompactAppBar: true)),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    expect(find.byKey(const Key('projectListOverflowMenuButton')), findsOneWidget);
+    expect(find.byKey(const Key('toggleProjectSelectionModeButton')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add Demo Project'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Demo Project 1'), findsOneWidget);
+  });
+
+  testWidgets('compact selection app bar uses overflow menu actions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: ProjectListScreen(forceCompactAppBar: true)),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('emptyCreateProjectButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Select Projects'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('projectSelectionOverflowMenuButton')), findsOneWidget);
+
+    final visibleCheckbox = find.byType(Checkbox).last;
+    await tester.ensureVisible(visibleCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(visibleCheckbox);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('projectSelectionOverflowMenuButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear Selection'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('projectSelectionOverflowMenuButton')), findsOneWidget);
+    expect(find.text('Select Projects'), findsOneWidget);
+  });
+
   testWidgets('project reset button clears search and filter state', (
     tester,
   ) async {
