@@ -351,8 +351,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Import Project JSON'),
-          content: SizedBox(
-            width: 560,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
             child: TextField(
               key: const Key('importProjectJsonField'),
               autofocus: true,
@@ -1564,7 +1564,21 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
   Future<void> _copyProjectJson(BuildContext context, Project project) async {
     const encoder = JsonEncoder.withIndent('  ');
     final jsonText = encoder.convert(project.toJson());
-    await Clipboard.setData(ClipboardData(text: jsonText));
+
+    try {
+      await Clipboard.setData(ClipboardData(text: jsonText));
+    } on PlatformException {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Project JSON copy failed: clipboard is unavailable.'),
+        ),
+      );
+      return;
+    }
+
     if (!context.mounted) {
       return;
     }
@@ -1826,13 +1840,7 @@ _ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
       firstNeedsAttentionProjectId ??= project.id;
     }
 
-    if (primaryProjectId == null) {
-      if (projectHasEmptyScene || !projectHasMessages) {
-        primaryProjectId = project.id;
-      } else {
-        primaryProjectId = project.id;
-      }
-    }
+    primaryProjectId ??= firstNeedsAttentionProjectId ?? firstReadyProjectId;
   }
 
   return _ProjectPortfolioReadinessSummary(

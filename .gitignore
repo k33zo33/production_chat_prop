@@ -49,6 +49,7 @@ app.*.map.json
 .envrc.flutter
 .openclaw/
 memory/
+claude/
 AGENTS.md
 BOOT.md
 HEARTBEAT.md
