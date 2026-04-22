@@ -1191,6 +1191,8 @@ class _MessageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1203,33 +1205,73 @@ class _MessageRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
+          if (isCompactLayout)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
                   style: Theme.of(
                     context,
                   ).textTheme.labelMedium?.copyWith(color: palette.textColor),
                 ),
-              ),
-              if (selectionMode)
-                Checkbox(
-                  value: isSelected,
-                  onChanged: (value) => onSelectedChanged(value ?? false),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    if (selectionMode)
+                      Checkbox(
+                        value: isSelected,
+                        onChanged: (value) => onSelectedChanged(value ?? false),
+                      ),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _MessageActions(
+                          projectId: projectId,
+                          sceneId: sceneId,
+                          message: message,
+                          messages: messages,
+                          characters: characters,
+                          canMoveEarlier: canMoveEarlier,
+                          canMoveLater: canMoveLater,
+                          selectionMode: selectionMode,
+                          isCompactLayout: true,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              _MessageActions(
-                projectId: projectId,
-                sceneId: sceneId,
-                message: message,
-                messages: messages,
-                characters: characters,
-                canMoveEarlier: canMoveEarlier,
-                canMoveLater: canMoveLater,
-                selectionMode: selectionMode,
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelMedium?.copyWith(color: palette.textColor),
+                  ),
+                ),
+                if (selectionMode)
+                  Checkbox(
+                    value: isSelected,
+                    onChanged: (value) => onSelectedChanged(value ?? false),
+                  ),
+                _MessageActions(
+                  projectId: projectId,
+                  sceneId: sceneId,
+                  message: message,
+                  messages: messages,
+                  characters: characters,
+                  canMoveEarlier: canMoveEarlier,
+                  canMoveLater: canMoveLater,
+                  selectionMode: selectionMode,
+                  isCompactLayout: false,
+                ),
+              ],
+            ),
           const SizedBox(height: 4),
           Text(
             message.text,
@@ -1565,6 +1607,7 @@ class _MessageActions extends ConsumerWidget {
     required this.canMoveEarlier,
     required this.canMoveLater,
     required this.selectionMode,
+    required this.isCompactLayout,
   });
 
   final String projectId;
@@ -1575,6 +1618,7 @@ class _MessageActions extends ConsumerWidget {
   final bool canMoveEarlier;
   final bool canMoveLater;
   final bool selectionMode;
+  final bool isCompactLayout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1587,40 +1631,62 @@ class _MessageActions extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          key: Key('moveMessageUp_${message.id}'),
-          tooltip: 'Move Message Up',
-          onPressed: !canMoveEarlier
-              ? null
-              : () => ref
+        if (!isCompactLayout)
+          IconButton(
+            key: Key('moveMessageUp_${message.id}'),
+            tooltip: 'Move Message Up',
+            onPressed: !canMoveEarlier
+                ? null
+                : () => ref
+                      .read(projectsControllerProvider.notifier)
+                      .moveMessageInOrder(
+                        projectId: projectId,
+                        sceneId: sceneId,
+                        messageId: message.id,
+                        direction: -1,
+                      ),
+            icon: const Icon(Icons.arrow_upward_rounded),
+          ),
+        if (!isCompactLayout)
+          IconButton(
+            key: Key('moveMessageDown_${message.id}'),
+            tooltip: 'Move Message Down',
+            onPressed: !canMoveLater
+                ? null
+                : () => ref
+                      .read(projectsControllerProvider.notifier)
+                      .moveMessageInOrder(
+                        projectId: projectId,
+                        sceneId: sceneId,
+                        messageId: message.id,
+                        direction: 1,
+                      ),
+            icon: const Icon(Icons.arrow_downward_rounded),
+          ),
+        PopupMenuButton<_MessageAction>(
+          key: Key('messageActions_${message.id}'),
+          onSelected: (action) async {
+            switch (action) {
+              case _MessageAction.moveEarlier:
+                await ref
                     .read(projectsControllerProvider.notifier)
                     .moveMessageInOrder(
                       projectId: projectId,
                       sceneId: sceneId,
                       messageId: message.id,
                       direction: -1,
-                    ),
-          icon: const Icon(Icons.arrow_upward_rounded),
-        ),
-        IconButton(
-          key: Key('moveMessageDown_${message.id}'),
-          tooltip: 'Move Message Down',
-          onPressed: !canMoveLater
-              ? null
-              : () => ref
+                    );
+                return;
+              case _MessageAction.moveLater:
+                await ref
                     .read(projectsControllerProvider.notifier)
                     .moveMessageInOrder(
                       projectId: projectId,
                       sceneId: sceneId,
                       messageId: message.id,
                       direction: 1,
-                    ),
-          icon: const Icon(Icons.arrow_downward_rounded),
-        ),
-        PopupMenuButton<_MessageAction>(
-          key: Key('messageActions_${message.id}'),
-          onSelected: (action) async {
-            switch (action) {
+                    );
+                return;
               case _MessageAction.editMessage:
                 final updatedMessage = await _showEditMessageDialog(
                   context,
@@ -1678,12 +1744,24 @@ class _MessageActions extends ConsumerWidget {
                 return;
             }
           },
-          itemBuilder: (context) => const [
-            PopupMenuItem(
+          itemBuilder: (context) => [
+            if (isCompactLayout)
+              PopupMenuItem(
+                value: _MessageAction.moveEarlier,
+                enabled: canMoveEarlier,
+                child: const Text('Move Message Up'),
+              ),
+            if (isCompactLayout)
+              PopupMenuItem(
+                value: _MessageAction.moveLater,
+                enabled: canMoveLater,
+                child: const Text('Move Message Down'),
+              ),
+            const PopupMenuItem(
               value: _MessageAction.editMessage,
               child: Text('Edit Message'),
             ),
-            PopupMenuItem(
+            const PopupMenuItem(
               value: _MessageAction.delete,
               child: Text('Delete'),
             ),
@@ -1903,7 +1981,7 @@ class _MessageActions extends ConsumerWidget {
   }
 }
 
-enum _MessageAction { editMessage, delete }
+enum _MessageAction { moveEarlier, moveLater, editMessage, delete }
 
 class _EditedMessageInput {
   const _EditedMessageInput({
