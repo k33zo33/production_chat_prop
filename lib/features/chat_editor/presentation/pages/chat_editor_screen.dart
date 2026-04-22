@@ -830,6 +830,7 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
   Widget build(BuildContext context) {
     final palette = resolveChatStylePalette(widget.sceneStyleId);
     final speakerNameById = _buildSpeakerNameById(widget.sceneProject);
+    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
 
     return Card(
       child: Padding(
@@ -837,119 +838,79 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Messages',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('toggleMessageSelectionModeButton'),
-                  onPressed: () {
-                    setState(() {
-                      _selectionMode = !_selectionMode;
-                      if (!_selectionMode) {
-                        _selectedMessageIds.clear();
+            _MessageTimelineHeader(
+              isCompactLayout: isCompactLayout,
+              selectionMode: _selectionMode,
+              selectedCount: _selectedMessageIds.length,
+              hasMessages: widget.sceneMessages.isNotEmpty,
+              onToggleSelectionMode: () {
+                setState(() {
+                  _selectionMode = !_selectionMode;
+                  if (!_selectionMode) {
+                    _selectedMessageIds.clear();
+                  }
+                });
+              },
+              onClearMessages: widget.sceneMessages.isEmpty
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final confirmed = await _showClearMessagesDialog(context);
+                      if (!confirmed) {
+                        return;
                       }
-                    });
-                  },
-                  icon: Icon(
-                    _selectionMode
-                        ? Icons.check_box_rounded
-                        : Icons.check_box_outline_blank_rounded,
-                  ),
-                  label: Text(
-                    _selectionMode ? 'Selection On' : 'Select Multiple',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  key: const Key('clearSceneMessagesButton'),
-                  onPressed: widget.sceneMessages.isEmpty
-                      ? null
-                      : () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final confirmed = await _showClearMessagesDialog(
-                            context,
-                          );
-                          if (!confirmed) {
-                            return;
-                          }
 
-                          final removed = await ref
-                              .read(projectsControllerProvider.notifier)
-                              .clearSceneMessages(
-                                projectId: widget.projectId,
-                                sceneId: widget.sceneId,
-                              );
-                          if (!mounted) {
-                            return;
-                          }
-                          setState(() {
-                            _selectedMessageIds.clear();
-                            _selectionMode = false;
-                          });
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Cleared $removed messages from scene.',
-                              ),
-                            ),
+                      final removed = await ref
+                          .read(projectsControllerProvider.notifier)
+                          .clearSceneMessages(
+                            projectId: widget.projectId,
+                            sceneId: widget.sceneId,
                           );
-                        },
-                  icon: const Icon(Icons.clear_all_rounded),
-                  label: const Text('Clear Scene Chat'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('deleteSelectedMessagesButton'),
-                  onPressed: !_selectionMode || _selectedMessageIds.isEmpty
-                      ? null
-                      : () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final confirmed = await _showDeleteSelectedMessagesDialog(
-                            context,
-                            selectedCount: _selectedMessageIds.length,
-                          );
-                          if (!context.mounted || !confirmed) {
-                            return;
-                          }
+                      if (!mounted) {
+                        return;
+                      }
+                      setState(() {
+                        _selectedMessageIds.clear();
+                        _selectionMode = false;
+                      });
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Cleared $removed messages from scene.'),
+                        ),
+                      );
+                    },
+              onDeleteSelected: !_selectionMode || _selectedMessageIds.isEmpty
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final confirmed = await _showDeleteSelectedMessagesDialog(
+                        context,
+                        selectedCount: _selectedMessageIds.length,
+                      );
+                      if (!context.mounted || !confirmed) {
+                        return;
+                      }
 
-                          final removed = await ref
-                              .read(projectsControllerProvider.notifier)
-                              .deleteMessagesByIds(
-                                projectId: widget.projectId,
-                                sceneId: widget.sceneId,
-                                messageIds: _selectedMessageIds,
-                              );
-                          if (!mounted) {
-                            return;
-                          }
-                          setState(() {
-                            _selectedMessageIds.clear();
-                            _selectionMode = false;
-                          });
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Deleted $removed selected messages.',
-                              ),
-                            ),
+                      final removed = await ref
+                          .read(projectsControllerProvider.notifier)
+                          .deleteMessagesByIds(
+                            projectId: widget.projectId,
+                            sceneId: widget.sceneId,
+                            messageIds: _selectedMessageIds,
                           );
-                        },
-                  icon: const Icon(Icons.delete_sweep_rounded),
-                  label: Text(
-                    'Delete Selected (${_selectedMessageIds.length})',
-                  ),
-                ),
-              ],
+                      if (!mounted) {
+                        return;
+                      }
+                      setState(() {
+                        _selectedMessageIds.clear();
+                        _selectionMode = false;
+                      });
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Deleted $removed selected messages.'),
+                        ),
+                      );
+                    },
             ),
             const SizedBox(height: 12),
             if (widget.sceneMessages.isEmpty) ...[
@@ -1107,6 +1068,95 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
       },
     );
     return result ?? false;
+  }
+}
+
+class _MessageTimelineHeader extends StatelessWidget {
+  const _MessageTimelineHeader({
+    required this.isCompactLayout,
+    required this.selectionMode,
+    required this.selectedCount,
+    required this.hasMessages,
+    required this.onToggleSelectionMode,
+    required this.onClearMessages,
+    required this.onDeleteSelected,
+  });
+
+  final bool isCompactLayout;
+  final bool selectionMode;
+  final int selectedCount;
+  final bool hasMessages;
+  final VoidCallback onToggleSelectionMode;
+  final Future<void> Function()? onClearMessages;
+  final Future<void> Function()? onDeleteSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = Text(
+      'Messages',
+      style: Theme.of(context).textTheme.titleSmall,
+    );
+    final selectionButton = OutlinedButton.icon(
+      key: const Key('toggleMessageSelectionModeButton'),
+      onPressed: onToggleSelectionMode,
+      icon: Icon(
+        selectionMode
+            ? Icons.check_box_rounded
+            : Icons.check_box_outline_blank_rounded,
+      ),
+      label: Text(selectionMode ? 'Selection On' : 'Select Multiple'),
+    );
+    final clearButton = FilledButton.icon(
+      key: const Key('clearSceneMessagesButton'),
+      onPressed: onClearMessages,
+      icon: const Icon(Icons.clear_all_rounded),
+      label: Text(isCompactLayout ? 'Clear Chat' : 'Clear Scene Chat'),
+    );
+    final deleteButton = OutlinedButton.icon(
+      key: const Key('deleteSelectedMessagesButton'),
+      onPressed: onDeleteSelected,
+      icon: const Icon(Icons.delete_sweep_rounded),
+      label: Text(
+        isCompactLayout ? 'Delete ($selectedCount)' : 'Delete Selected ($selectedCount)',
+      ),
+    );
+
+    if (!isCompactLayout) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: title),
+              selectionButton,
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [clearButton, deleteButton],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        title,
+        const SizedBox(height: 8),
+        Row(children: [Expanded(child: selectionButton)]),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: clearButton),
+            const SizedBox(width: 8),
+            Expanded(child: deleteButton),
+          ],
+        ),
+      ],
+    );
   }
 }
 
