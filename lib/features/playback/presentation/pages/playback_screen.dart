@@ -183,6 +183,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
         : _isExporting
         ? 'Export in progress'
         : 'Ready';
+    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
     final visibleMessagesCount = _countVisibleMessages(
       messages: sortedMessages,
       currentSecond: playbackState.currentSecond,
@@ -381,37 +382,19 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      FilledButton.icon(
-                        key: const Key('exportScreenshotButton'),
-                        onPressed: sortedMessages.isEmpty || _isExporting
-                            ? null
-                            : () async => _exportScreenshot(
-                                project: project,
-                                scene: scene,
-                                screenshotExportService:
-                                    screenshotExportService,
-                              ),
-                        icon: const Icon(Icons.photo_camera_outlined),
-                        label: const Text('Export Screenshot'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const Key('exportVideoButton'),
-                        onPressed: sortedMessages.isEmpty || _isExporting
-                            ? null
-                            : () async => _exportVideoFallback(
-                                project: project,
-                                scene: scene,
-                                videoExportFallbackService:
-                                    videoExportFallbackService,
-                              ),
-                        icon: const Icon(Icons.videocam_outlined),
-                        label: const Text('Export Video'),
-                      ),
-                    ],
+                  _PlaybackExportActions(
+                    isCompactLayout: isCompactLayout,
+                    isDisabled: sortedMessages.isEmpty || _isExporting,
+                    onExportScreenshot: () async => _exportScreenshot(
+                      project: project,
+                      scene: scene,
+                      screenshotExportService: screenshotExportService,
+                    ),
+                    onExportVideo: () async => _exportVideoFallback(
+                      project: project,
+                      scene: scene,
+                      videoExportFallbackService: videoExportFallbackService,
+                    ),
                   ),
                 ],
               ),
@@ -455,104 +438,59 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     },
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      OutlinedButton.icon(
-                        key: const Key('prevCueButton'),
-                        onPressed: previousCue == null
-                            ? null
-                            : () => playbackController.scrubTo(
-                                second: previousCue,
-                                maxSecond: maxSecond,
-                              ),
-                        icon: const Icon(Icons.skip_previous_rounded),
-                        label: const Text('Prev Cue'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const Key('nextCueButton'),
-                        onPressed: nextCue == null
-                            ? null
-                            : () => playbackController.scrubTo(
-                                second: nextCue,
-                                maxSecond: maxSecond,
-                              ),
-                        icon: const Icon(Icons.skip_next_rounded),
-                        label: const Text('Next Cue'),
-                      ),
-                      FilledButton.tonalIcon(
-                        key: const Key('seekBackward5Button'),
-                        onPressed: maxSecond == 0
-                            ? null
-                            : () => playbackController.seekBy(
-                                delta: -5,
-                                maxSecond: maxSecond,
-                              ),
-                        icon: const Icon(Icons.replay_30_rounded),
-                        label: const Text('-5s'),
-                      ),
-                      FilledButton.tonalIcon(
-                        onPressed: maxSecond == 0
-                            ? null
-                            : () => playbackController.seekBy(
-                                delta: -1,
-                                maxSecond: maxSecond,
-                              ),
-                        icon: const Icon(Icons.replay_10_rounded),
-                        label: const Text('-1s'),
-                      ),
-                      FilledButton.icon(
-                        onPressed: maxSecond == 0
-                            ? null
-                            : () =>
-                                  playbackController.play(maxSecond: maxSecond),
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: const Text('Play'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: playbackState.isPlaying
-                            ? playbackController.pause
-                            : null,
-                        icon: const Icon(Icons.pause_rounded),
-                        label: const Text('Pause'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: playbackController.restart,
-                        icon: const Icon(Icons.restart_alt_rounded),
-                        label: const Text('Restart'),
-                      ),
-                      FilledButton.tonalIcon(
-                        onPressed: maxSecond == 0
-                            ? null
-                            : () => playbackController.seekBy(
-                                delta: 1,
-                                maxSecond: maxSecond,
-                              ),
-                        icon: const Icon(Icons.forward_10_rounded),
-                        label: const Text('+1s'),
-                      ),
-                      FilledButton.tonalIcon(
-                        key: const Key('seekForward5Button'),
-                        onPressed: maxSecond == 0
-                            ? null
-                            : () => playbackController.seekBy(
-                                delta: 5,
-                                maxSecond: maxSecond,
-                              ),
-                        icon: const Icon(Icons.forward_30_rounded),
-                        label: const Text('+5s'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: maxSecond == 0
-                            ? null
-                            : () => playbackController.jumpToEnd(
-                                maxSecond: maxSecond,
-                              ),
-                        icon: const Icon(Icons.skip_next_rounded),
-                        label: const Text('End'),
-                      ),
-                    ],
+                  _PlaybackTransportControls(
+                    isCompactLayout: isCompactLayout,
+                    isPlaying: playbackState.isPlaying,
+                    previousCue: previousCue,
+                    nextCue: nextCue,
+                    onPrevCue: previousCue == null
+                        ? null
+                        : () => playbackController.scrubTo(
+                            second: previousCue,
+                            maxSecond: maxSecond,
+                          ),
+                    onNextCue: nextCue == null
+                        ? null
+                        : () => playbackController.scrubTo(
+                            second: nextCue,
+                            maxSecond: maxSecond,
+                          ),
+                    onSeekBackward5: maxSecond == 0
+                        ? null
+                        : () => playbackController.seekBy(
+                            delta: -5,
+                            maxSecond: maxSecond,
+                          ),
+                    onSeekBackward1: maxSecond == 0
+                        ? null
+                        : () => playbackController.seekBy(
+                            delta: -1,
+                            maxSecond: maxSecond,
+                          ),
+                    onPlay: maxSecond == 0
+                        ? null
+                        : () => playbackController.play(maxSecond: maxSecond),
+                    onPause: playbackState.isPlaying
+                        ? playbackController.pause
+                        : null,
+                    onRestart: playbackController.restart,
+                    onSeekForward1: maxSecond == 0
+                        ? null
+                        : () => playbackController.seekBy(
+                            delta: 1,
+                            maxSecond: maxSecond,
+                          ),
+                    onSeekForward5: maxSecond == 0
+                        ? null
+                        : () => playbackController.seekBy(
+                            delta: 5,
+                            maxSecond: maxSecond,
+                          ),
+                    onJumpToEnd: maxSecond == 0
+                        ? null
+                        : () => playbackController.jumpToEnd(
+                            maxSecond: maxSecond,
+                          ),
                   ),
                 ],
               ),
@@ -970,6 +908,257 @@ enum _ExportState {
   screenshotError,
   videoOk,
   videoError,
+}
+
+class _PlaybackExportActions extends StatelessWidget {
+  const _PlaybackExportActions({
+    required this.isCompactLayout,
+    required this.isDisabled,
+    required this.onExportScreenshot,
+    required this.onExportVideo,
+  });
+
+  final bool isCompactLayout;
+  final bool isDisabled;
+  final Future<void> Function() onExportScreenshot;
+  final Future<void> Function() onExportVideo;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isCompactLayout) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          FilledButton.icon(
+            key: const Key('exportScreenshotButton'),
+            onPressed: isDisabled ? null : onExportScreenshot,
+            icon: const Icon(Icons.photo_camera_outlined),
+            label: const Text('Export Screenshot'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('exportVideoButton'),
+            onPressed: isDisabled ? null : onExportVideo,
+            icon: const Icon(Icons.videocam_outlined),
+            label: const Text('Export Video'),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            key: const Key('exportScreenshotButton'),
+            onPressed: isDisabled ? null : onExportScreenshot,
+            icon: const Icon(Icons.photo_camera_outlined),
+            label: const Text('Screenshot'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: OutlinedButton.icon(
+            key: const Key('exportVideoButton'),
+            onPressed: isDisabled ? null : onExportVideo,
+            icon: const Icon(Icons.videocam_outlined),
+            label: const Text('Video'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlaybackTransportControls extends StatelessWidget {
+  const _PlaybackTransportControls({
+    required this.isCompactLayout,
+    required this.isPlaying,
+    required this.previousCue,
+    required this.nextCue,
+    required this.onPrevCue,
+    required this.onNextCue,
+    required this.onSeekBackward5,
+    required this.onSeekBackward1,
+    required this.onPlay,
+    required this.onPause,
+    required this.onRestart,
+    required this.onSeekForward1,
+    required this.onSeekForward5,
+    required this.onJumpToEnd,
+  });
+
+  final bool isCompactLayout;
+  final bool isPlaying;
+  final int? previousCue;
+  final int? nextCue;
+  final VoidCallback? onPrevCue;
+  final VoidCallback? onNextCue;
+  final VoidCallback? onSeekBackward5;
+  final VoidCallback? onSeekBackward1;
+  final VoidCallback? onPlay;
+  final VoidCallback? onPause;
+  final VoidCallback onRestart;
+  final VoidCallback? onSeekForward1;
+  final VoidCallback? onSeekForward5;
+  final VoidCallback? onJumpToEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isCompactLayout) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            key: const Key('prevCueButton'),
+            onPressed: onPrevCue,
+            icon: const Icon(Icons.skip_previous_rounded),
+            label: const Text('Prev Cue'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('nextCueButton'),
+            onPressed: onNextCue,
+            icon: const Icon(Icons.skip_next_rounded),
+            label: const Text('Next Cue'),
+          ),
+          FilledButton.tonalIcon(
+            key: const Key('seekBackward5Button'),
+            onPressed: onSeekBackward5,
+            icon: const Icon(Icons.replay_30_rounded),
+            label: const Text('-5s'),
+          ),
+          FilledButton.tonalIcon(
+            key: const Key('seekBackward1Button'),
+            onPressed: onSeekBackward1,
+            icon: const Icon(Icons.replay_10_rounded),
+            label: const Text('-1s'),
+          ),
+          FilledButton.icon(
+            key: const Key('playButton'),
+            onPressed: onPlay,
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Play'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('pauseButton'),
+            onPressed: onPause,
+            icon: const Icon(Icons.pause_rounded),
+            label: const Text('Pause'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('restartButton'),
+            onPressed: onRestart,
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: const Text('Restart'),
+          ),
+          FilledButton.tonalIcon(
+            key: const Key('seekForward1Button'),
+            onPressed: onSeekForward1,
+            icon: const Icon(Icons.forward_10_rounded),
+            label: const Text('+1s'),
+          ),
+          FilledButton.tonalIcon(
+            key: const Key('seekForward5Button'),
+            onPressed: onSeekForward5,
+            icon: const Icon(Icons.forward_30_rounded),
+            label: const Text('+5s'),
+          ),
+          OutlinedButton.icon(
+            key: const Key('jumpToEndButton'),
+            onPressed: onJumpToEnd,
+            icon: const Icon(Icons.skip_next_rounded),
+            label: const Text('End'),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                key: const Key('playButton'),
+                onPressed: onPlay,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Play'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('pauseButton'),
+                onPressed: onPause,
+                icon: const Icon(Icons.pause_rounded),
+                label: const Text('Pause'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('restartButton'),
+                onPressed: onRestart,
+                icon: const Icon(Icons.restart_alt_rounded),
+                label: const Text('Restart'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton.icon(
+              key: const Key('prevCueButton'),
+              onPressed: onPrevCue,
+              icon: const Icon(Icons.skip_previous_rounded),
+              label: const Text('Prev Cue'),
+            ),
+            OutlinedButton.icon(
+              key: const Key('nextCueButton'),
+              onPressed: onNextCue,
+              icon: const Icon(Icons.skip_next_rounded),
+              label: const Text('Next Cue'),
+            ),
+            FilledButton.tonalIcon(
+              key: const Key('seekBackward5Button'),
+              onPressed: onSeekBackward5,
+              icon: const Icon(Icons.replay_30_rounded),
+              label: const Text('-5s'),
+            ),
+            FilledButton.tonalIcon(
+              key: const Key('seekBackward1Button'),
+              onPressed: onSeekBackward1,
+              icon: const Icon(Icons.replay_10_rounded),
+              label: const Text('-1s'),
+            ),
+            FilledButton.tonalIcon(
+              key: const Key('seekForward1Button'),
+              onPressed: onSeekForward1,
+              icon: const Icon(Icons.forward_10_rounded),
+              label: const Text('+1s'),
+            ),
+            FilledButton.tonalIcon(
+              key: const Key('seekForward5Button'),
+              onPressed: onSeekForward5,
+              icon: const Icon(Icons.forward_30_rounded),
+              label: const Text('+5s'),
+            ),
+            OutlinedButton.icon(
+              key: const Key('jumpToEndButton'),
+              onPressed: onJumpToEnd,
+              icon: const Icon(Icons.skip_next_rounded),
+              label: const Text('End'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class _TypingIndicatorItem extends StatelessWidget {
