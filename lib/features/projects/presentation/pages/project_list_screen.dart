@@ -1299,6 +1299,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
     final isSelected = widget.isSelected;
     final onSelectionChanged = widget.onSelectionChanged;
     final controller = ref.read(projectsControllerProvider.notifier);
+    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
 
     return Card(
       key: Key('projectCard_${project.id}'),
@@ -1307,148 +1308,59 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                if (selectionMode) ...[
-                  Checkbox(
-                    key: Key('projectSelectionCheckbox_${project.id}'),
-                    value: isSelected,
-                    onChanged: (value) {
-                      onSelectionChanged(value ?? false);
-                    },
-                  ),
-                  const SizedBox(width: 4),
-                ],
-                Expanded(
-                  child: Text(
-                    project.name,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                if (!selectionMode)
-                  PopupMenuButton<_ProjectMenuAction>(
-                    tooltip: 'Project Menu',
-                    onSelected: (action) async {
-                      switch (action) {
-                        case _ProjectMenuAction.rename:
-                          final newName = await _showRenameDialog(
-                            context,
-                            project,
-                          );
-                          if (newName == null) {
-                            return;
-                          }
-
-                          await controller.renameProject(
-                            projectId: project.id,
-                            newName: newName,
-                          );
-                          return;
-                        case _ProjectMenuAction.duplicate:
-                          await controller.duplicateProject(project.id);
-                          return;
-                        case _ProjectMenuAction.copyJson:
-                          await _copyProjectJson(context, project);
-                          return;
-                        case _ProjectMenuAction.downloadJson:
-                          await _downloadProjectJson(context, project);
-                          return;
-                        case _ProjectMenuAction.setTypeAd:
-                          await controller.setProjectType(
-                            projectId: project.id,
-                            type: ProjectType.ad,
-                          );
-                          return;
-                        case _ProjectMenuAction.setTypeSeries:
-                          await controller.setProjectType(
-                            projectId: project.id,
-                            type: ProjectType.series,
-                          );
-                          return;
-                        case _ProjectMenuAction.setTypeOther:
-                          await controller.setProjectType(
-                            projectId: project.id,
-                            type: ProjectType.other,
-                          );
-                          return;
-                        case _ProjectMenuAction.delete:
-                          await controller.deleteProject(project.id);
-                          return;
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        key: Key('projectMenuRename_${project.id}'),
-                        value: _ProjectMenuAction.rename,
-                        child: const ListTile(
-                          leading: Icon(Icons.edit_rounded),
-                          title: Text('Rename'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        key: Key('projectMenuDuplicate_${project.id}'),
-                        value: _ProjectMenuAction.duplicate,
-                        child: const ListTile(
-                          leading: Icon(Icons.copy_rounded),
-                          title: Text('Duplicate'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        key: Key('projectMenuCopyJson_${project.id}'),
-                        value: _ProjectMenuAction.copyJson,
-                        child: const ListTile(
-                          leading: Icon(Icons.content_copy_rounded),
-                          title: Text('Copy JSON'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        key: Key('projectMenuDownloadJson_${project.id}'),
-                        value: _ProjectMenuAction.downloadJson,
-                        child: const ListTile(
-                          leading: Icon(Icons.download_rounded),
-                          title: Text('Download JSON'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        key: Key('projectMenuSetTypeAd_${project.id}'),
-                        value: _ProjectMenuAction.setTypeAd,
-                        child: const ListTile(
-                          leading: Icon(Icons.campaign_rounded),
-                          title: Text('Set Type: Ad'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        key: Key('projectMenuSetTypeSeries_${project.id}'),
-                        value: _ProjectMenuAction.setTypeSeries,
-                        child: const ListTile(
-                          leading: Icon(Icons.live_tv_rounded),
-                          title: Text('Set Type: Series'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        key: Key('projectMenuSetTypeOther_${project.id}'),
-                        value: _ProjectMenuAction.setTypeOther,
-                        child: const ListTile(
-                          leading: Icon(Icons.category_rounded),
-                          title: Text('Set Type: Other'),
-                        ),
-                      ),
-                      PopupMenuItem(
-                        key: Key('projectMenuDelete_${project.id}'),
-                        value: _ProjectMenuAction.delete,
-                        child: const ListTile(
-                          leading: Icon(Icons.delete_outline_rounded),
-                          title: Text('Delete'),
-                        ),
-                      ),
-                    ],
-                    icon: Icon(
-                      Icons.more_vert,
-                      key: Key('projectMenuButton_${project.id}'),
+            if (isCompactLayout)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (selectionMode) ...[
+                    Checkbox(
+                      key: Key('projectSelectionCheckbox_${project.id}'),
+                      value: isSelected,
+                      onChanged: (value) {
+                        onSelectionChanged(value ?? false);
+                      },
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Expanded(
+                    child: Text(
+                      project.name,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
-              ],
-            ),
+                  if (!selectionMode)
+                    _ProjectMenuButton(
+                      project: project,
+                      controller: controller,
+                    ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  if (selectionMode) ...[
+                    Checkbox(
+                      key: Key('projectSelectionCheckbox_${project.id}'),
+                      value: isSelected,
+                      onChanged: (value) {
+                        onSelectionChanged(value ?? false);
+                      },
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Expanded(
+                    child: Text(
+                      project.name,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  if (!selectionMode)
+                    _ProjectMenuButton(
+                      project: project,
+                      controller: controller,
+                    ),
+                ],
+              ),
             if (_isDemoProject(project)) ...[
               const SizedBox(height: 8),
               const Chip(
@@ -1485,125 +1397,96 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
               label: Text(_projectAttentionState(project).label),
             ),
             const SizedBox(height: 8),
-            OutlinedButton.icon(
-              key: Key('projectAttentionCta_${project.id}'),
-              onPressed: selectionMode
-                  ? null
-                  : () => _projectAttentionState(
-                      project,
-                    ).onPressed(context, project),
-              icon: Icon(_projectAttentionState(project).ctaIcon),
-              label: Text(_projectAttentionState(project).ctaLabel),
-            ),
+            if (isCompactLayout)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: Key('projectAttentionCta_${project.id}'),
+                  onPressed: selectionMode
+                      ? null
+                      : () => _projectAttentionState(
+                          project,
+                        ).onPressed(context, project),
+                  icon: Icon(_projectAttentionState(project).ctaIcon),
+                  label: Text(_projectAttentionState(project).ctaLabel),
+                ),
+              )
+            else
+              OutlinedButton.icon(
+                key: Key('projectAttentionCta_${project.id}'),
+                onPressed: selectionMode
+                    ? null
+                    : () => _projectAttentionState(
+                        project,
+                      ).onPressed(context, project),
+                icon: Icon(_projectAttentionState(project).ctaIcon),
+                label: Text(_projectAttentionState(project).ctaLabel),
+              ),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  key: Key('projectOpenEditor_${project.id}'),
-                  onPressed: selectionMode
-                      ? null
-                      : () => context.goNamed(
-                          'editorProject',
-                          pathParameters: {'projectId': project.id},
-                        ),
-                  icon: const Icon(Icons.edit_note_rounded),
-                  label: const Text('Open Chat Editor'),
-                ),
-                OutlinedButton.icon(
-                  key: Key('projectOpenPlayback_${project.id}'),
-                  onPressed: selectionMode
-                      ? null
-                      : () => context.goNamed(
-                          'playbackProject',
-                          pathParameters: {'projectId': project.id},
-                        ),
-                  icon: const Icon(Icons.play_circle_outline_rounded),
-                  label: const Text('Open Playback'),
-                ),
-              ],
-            ),
+            if (isCompactLayout)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  FilledButton.icon(
+                    key: Key('projectOpenEditor_${project.id}'),
+                    onPressed: selectionMode
+                        ? null
+                        : () => context.goNamed(
+                            'editorProject',
+                            pathParameters: {'projectId': project.id},
+                          ),
+                    icon: const Icon(Icons.edit_note_rounded),
+                    label: const Text('Open Chat Editor'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    key: Key('projectOpenPlayback_${project.id}'),
+                    onPressed: selectionMode
+                        ? null
+                        : () => context.goNamed(
+                            'playbackProject',
+                            pathParameters: {'projectId': project.id},
+                          ),
+                    icon: const Icon(Icons.play_circle_outline_rounded),
+                    label: const Text('Open Playback'),
+                  ),
+                ],
+              )
+            else
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  FilledButton.icon(
+                    key: Key('projectOpenEditor_${project.id}'),
+                    onPressed: selectionMode
+                        ? null
+                        : () => context.goNamed(
+                            'editorProject',
+                            pathParameters: {'projectId': project.id},
+                          ),
+                    icon: const Icon(Icons.edit_note_rounded),
+                    label: const Text('Open Chat Editor'),
+                  ),
+                  OutlinedButton.icon(
+                    key: Key('projectOpenPlayback_${project.id}'),
+                    onPressed: selectionMode
+                        ? null
+                        : () => context.goNamed(
+                            'playbackProject',
+                            pathParameters: {'projectId': project.id},
+                          ),
+                    icon: const Icon(Icons.play_circle_outline_rounded),
+                    label: const Text('Open Playback'),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
     );
   }
 
-  Future<String?> _showRenameDialog(
-    BuildContext context,
-    Project project,
-  ) async {
-    final controller = TextEditingController(text: project.name);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Rename Project'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(labelText: 'Project Name'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-    return result;
-  }
-
-  Future<void> _copyProjectJson(BuildContext context, Project project) async {
-    const encoder = JsonEncoder.withIndent('  ');
-    final jsonText = encoder.convert(project.toJson());
-
-    try {
-      await Clipboard.setData(ClipboardData(text: jsonText));
-    } on PlatformException {
-      if (!context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Project JSON copy failed: clipboard is unavailable.'),
-        ),
-      );
-      return;
-    }
-
-    if (!context.mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Project JSON copied to clipboard.')),
-    );
-  }
-
-  Future<void> _downloadProjectJson(
-    BuildContext context,
-    Project project,
-  ) async {
-    final service = ProjectPackageExportService();
-    final result = await service.exportProjectPackage(project: project);
-    if (!context.mounted) {
-      return;
-    }
-
-    final message = result.isSuccess
-        ? 'Project package exported: ${result.filename}.'
-        : 'Project package export failed: download is not available on this platform.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
 }
 
 class _EmptyProjectState extends StatelessWidget {
@@ -1657,6 +1540,213 @@ class _EmptyProjectState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+Future<String?> _showRenameDialog(
+  BuildContext context,
+  Project project,
+) async {
+  final controller = TextEditingController(text: project.name);
+  final result = await showDialog<String>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Rename Project'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Project Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      );
+    },
+  );
+  return result;
+}
+
+Future<void> _copyProjectJson(BuildContext context, Project project) async {
+  const encoder = JsonEncoder.withIndent('  ');
+  final jsonText = encoder.convert(project.toJson());
+
+  try {
+    await Clipboard.setData(ClipboardData(text: jsonText));
+  } on PlatformException {
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Project JSON copy failed: clipboard is unavailable.'),
+      ),
+    );
+    return;
+  }
+
+  if (!context.mounted) {
+    return;
+  }
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Project JSON copied to clipboard.')),
+  );
+}
+
+Future<void> _downloadProjectJson(
+  BuildContext context,
+  Project project,
+) async {
+  final service = ProjectPackageExportService();
+  final result = await service.exportProjectPackage(project: project);
+  if (!context.mounted) {
+    return;
+  }
+
+  final message = result.isSuccess
+      ? 'Project package exported: ${result.filename}.'
+      : 'Project package export failed: download is not available on this platform.';
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(message)));
+}
+
+class _ProjectMenuButton extends StatelessWidget {
+  const _ProjectMenuButton({
+    required this.project,
+    required this.controller,
+  });
+
+  final Project project;
+  final ProjectsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_ProjectMenuAction>(
+      tooltip: 'Project Menu',
+      onSelected: (action) async {
+        switch (action) {
+          case _ProjectMenuAction.rename:
+            final newName = await _showRenameDialog(context, project);
+            if (newName == null) {
+              return;
+            }
+
+            await controller.renameProject(
+              projectId: project.id,
+              newName: newName,
+            );
+            return;
+          case _ProjectMenuAction.duplicate:
+            await controller.duplicateProject(project.id);
+            return;
+          case _ProjectMenuAction.copyJson:
+            await _copyProjectJson(context, project);
+            return;
+          case _ProjectMenuAction.downloadJson:
+            await _downloadProjectJson(context, project);
+            return;
+          case _ProjectMenuAction.setTypeAd:
+            await controller.setProjectType(
+              projectId: project.id,
+              type: ProjectType.ad,
+            );
+            return;
+          case _ProjectMenuAction.setTypeSeries:
+            await controller.setProjectType(
+              projectId: project.id,
+              type: ProjectType.series,
+            );
+            return;
+          case _ProjectMenuAction.setTypeOther:
+            await controller.setProjectType(
+              projectId: project.id,
+              type: ProjectType.other,
+            );
+            return;
+          case _ProjectMenuAction.delete:
+            await controller.deleteProject(project.id);
+            return;
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          key: Key('projectMenuRename_${project.id}'),
+          value: _ProjectMenuAction.rename,
+          child: const ListTile(
+            leading: Icon(Icons.edit_rounded),
+            title: Text('Rename'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('projectMenuDuplicate_${project.id}'),
+          value: _ProjectMenuAction.duplicate,
+          child: const ListTile(
+            leading: Icon(Icons.copy_rounded),
+            title: Text('Duplicate'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('projectMenuCopyJson_${project.id}'),
+          value: _ProjectMenuAction.copyJson,
+          child: const ListTile(
+            leading: Icon(Icons.content_copy_rounded),
+            title: Text('Copy JSON'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('projectMenuDownloadJson_${project.id}'),
+          value: _ProjectMenuAction.downloadJson,
+          child: const ListTile(
+            leading: Icon(Icons.download_rounded),
+            title: Text('Download JSON'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('projectMenuSetTypeAd_${project.id}'),
+          value: _ProjectMenuAction.setTypeAd,
+          child: const ListTile(
+            leading: Icon(Icons.campaign_rounded),
+            title: Text('Set Type: Ad'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('projectMenuSetTypeSeries_${project.id}'),
+          value: _ProjectMenuAction.setTypeSeries,
+          child: const ListTile(
+            leading: Icon(Icons.live_tv_rounded),
+            title: Text('Set Type: Series'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('projectMenuSetTypeOther_${project.id}'),
+          value: _ProjectMenuAction.setTypeOther,
+          child: const ListTile(
+            leading: Icon(Icons.category_rounded),
+            title: Text('Set Type: Other'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('projectMenuDelete_${project.id}'),
+          value: _ProjectMenuAction.delete,
+          child: const ListTile(
+            leading: Icon(Icons.delete_outline_rounded),
+            title: Text('Delete'),
+          ),
+        ),
+      ],
+      icon: Icon(
+        Icons.more_vert,
+        key: Key('projectMenuButton_${project.id}'),
       ),
     );
   }
