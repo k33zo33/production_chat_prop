@@ -418,27 +418,32 @@ void main() {
       expect(moved, isFalse);
     });
 
-    test('moveMessageInOrder swaps neighboring timestamps without flattening scene timing', () async {
-      await container.read(projectsControllerProvider.future);
+    test(
+      'moveMessageInOrder swaps neighboring timestamps without flattening scene timing',
+      () async {
+        await container.read(projectsControllerProvider.future);
 
-      final moved = await container
-          .read(projectsControllerProvider.notifier)
-          .moveMessageInOrder(
-            projectId: 'p1',
-            sceneId: 's1',
-            messageId: 'm2',
-            direction: -1,
-          );
+        final moved = await container
+            .read(projectsControllerProvider.notifier)
+            .moveMessageInOrder(
+              projectId: 'p1',
+              sceneId: 's1',
+              messageId: 'm2',
+              direction: -1,
+            );
 
-      final projects = await container.read(projectsControllerProvider.future);
-      final messages = projects.first.scenes.first.messages;
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final messages = projects.first.scenes.first.messages;
 
-      expect(moved, isTrue);
-      expect(messages.map((message) => message.id), ['m2', 'm1']);
-      expect(messages.map((message) => message.timestampSeconds), [0, 5]);
-      expect(messages.first.text, 'Message B');
-      expect(messages.last.text, 'Message A');
-    });
+        expect(moved, isTrue);
+        expect(messages.map((message) => message.id), ['m2', 'm1']);
+        expect(messages.map((message) => message.timestampSeconds), [0, 5]);
+        expect(messages.first.text, 'Message B');
+        expect(messages.last.text, 'Message A');
+      },
+    );
 
     test('moveMessageInOrder returns false when already at edge', () async {
       await container.read(projectsControllerProvider.future);
@@ -632,19 +637,24 @@ void main() {
       },
     );
 
-    test('duplicateProject assigns unique copy names on repeated duplication', () async {
-      await container.read(projectsControllerProvider.future);
-      final notifier = container.read(projectsControllerProvider.notifier);
+    test(
+      'duplicateProject assigns unique copy names on repeated duplication',
+      () async {
+        await container.read(projectsControllerProvider.future);
+        final notifier = container.read(projectsControllerProvider.notifier);
 
-      await notifier.duplicateProject('p1');
-      await notifier.duplicateProject('p1');
+        await notifier.duplicateProject('p1');
+        await notifier.duplicateProject('p1');
 
-      final projects = await container.read(projectsControllerProvider.future);
-      final names = projects.map((project) => project.name).toList();
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final names = projects.map((project) => project.name).toList();
 
-      expect(names, contains('Project One Copy'));
-      expect(names, contains('Project One Copy 2'));
-    });
+        expect(names, contains('Project One Copy'));
+        expect(names, contains('Project One Copy 2'));
+      },
+    );
 
     test('duplicateProjectsByIds returns zero for empty selection', () async {
       await container.read(projectsControllerProvider.future);
@@ -857,6 +867,130 @@ void main() {
         expect(result.importedCount, 1);
         expect(projects, hasLength(2));
         expect(projects.last.name, 'Project One (Imported)');
+      },
+    );
+
+    test(
+      'previewProjectImportFromJson uses sanitized fallback name for blank project names',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'id': 'incoming-id',
+          'name': '   ',
+          'type': 'other',
+          'createdAt': DateTime.utc(2026).toIso8601String(),
+          'updatedAt': DateTime.utc(2026).toIso8601String(),
+          'scenes': [
+            {
+              'id': 'scene-1',
+              'title': '   ',
+              'styleId': 'studio_slate',
+              'aspectRatio': 'portrait9x16',
+              'characters': <Object>[],
+              'messages': <Object>[],
+            },
+          ],
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .previewProjectImportFromJson(payload);
+
+        expect(result.status, ProjectJsonImportPreviewStatus.ready);
+        expect(result.importableCount, 1);
+        expect(result.invalidCount, 0);
+        expect(result.projectedNames, ['Imported Project']);
+      },
+    );
+
+    test(
+      'importProjectFromJson sanitizes blank scene data and orphaned messages',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'id': '   ',
+          'name': '   ',
+          'type': 'ad',
+          'createdAt': DateTime.utc(2026).toIso8601String(),
+          'updatedAt': DateTime.utc(2026).toIso8601String(),
+          'scenes': [
+            {
+              'id': '   ',
+              'title': '   ',
+              'styleId': '   ',
+              'aspectRatio': 'portrait9x16',
+              'characters': <Object>[],
+              'messages': [
+                {
+                  'id': '   ',
+                  'characterId': 'missing',
+                  'text': '   ',
+                  'timestampSeconds': 4,
+                  'status': 'sent',
+                  'isIncoming': false,
+                  'showTypingBefore': false,
+                },
+                {
+                  'id': 'm-late',
+                  'characterId': 'missing',
+                  'text': ' Late ',
+                  'timestampSeconds': 5,
+                  'status': 'delivered',
+                  'isIncoming': true,
+                  'showTypingBefore': false,
+                },
+                {
+                  'id': 'm-early',
+                  'characterId': 'missing',
+                  'text': ' Early ',
+                  'timestampSeconds': -2,
+                  'status': 'sent',
+                  'isIncoming': false,
+                  'showTypingBefore': true,
+                },
+              ],
+            },
+          ],
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson(payload);
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final imported = projects.last;
+        final scene = imported.scenes.first;
+
+        expect(result.status, ProjectJsonImportStatus.success);
+        expect(result.importedCount, 1);
+        expect(result.importedProjectName, 'Imported Project');
+        expect(imported.id, isNotEmpty);
+        expect(imported.name, 'Imported Project');
+        expect(imported.type, ProjectType.ad);
+        expect(scene.id, isNotEmpty);
+        expect(scene.title, 'Scene 1');
+        expect(scene.styleId, 'studio_slate');
+        expect(scene.characters, hasLength(1));
+        expect(scene.characters.first.displayName, 'Character 1');
+        expect(scene.messages, hasLength(2));
+        expect(scene.messages.map((message) => message.text), [
+          'Early',
+          'Late',
+        ]);
+        expect(scene.messages.map((message) => message.timestampSeconds), [
+          0,
+          5,
+        ]);
+        expect(
+          scene.messages.every(
+            (message) => message.characterId == scene.characters.first.id,
+          ),
+          isTrue,
+        );
       },
     );
 

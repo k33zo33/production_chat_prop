@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
+import 'package:production_chat_prop/features/projects/data/services/project_sanitizer.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -103,6 +104,7 @@ class ProjectJsonImportResult {
 
 class ProjectsController extends AsyncNotifier<List<Project>> {
   static const _uuid = Uuid();
+  static final _projectSanitizer = ProjectSanitizer(uuid: _uuid);
 
   ProjectRepository get _repository => ref.read(projectRepositoryProvider);
 
@@ -373,15 +375,8 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     var invalidCount = 0;
 
     for (final projectJson in projectJsonList) {
-      Project importedSource;
-      try {
-        importedSource = Project.fromJson(projectJson);
-      } catch (error) {
-        final isRecoverableDataError =
-            error is FormatException || error is TypeError;
-        if (!isRecoverableDataError) {
-          rethrow;
-        }
+      final importedSource = _tryParseImportedProject(projectJson);
+      if (importedSource == null) {
         invalidCount++;
         continue;
       }
@@ -430,15 +425,8 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     var skippedCount = 0;
 
     for (final projectJson in projectJsonList) {
-      Project importedSource;
-      try {
-        importedSource = Project.fromJson(projectJson);
-      } catch (error) {
-        final isRecoverableDataError =
-            error is FormatException || error is TypeError;
-        if (!isRecoverableDataError) {
-          rethrow;
-        }
+      final importedSource = _tryParseImportedProject(projectJson);
+      if (importedSource == null) {
         skippedCount++;
         continue;
       }
@@ -459,9 +447,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
           type: importedSource.type,
           createdAt: now,
           updatedAt: now,
-          scenes: importedSource.scenes.isEmpty
-              ? [_buildEmptyScene(title: 'Scene 1')]
-              : importedSource.scenes,
+          scenes: importedSource.scenes,
         ),
       );
     }
@@ -1495,6 +1481,19 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return casted;
   }
 
+  Project? _tryParseImportedProject(Map<String, dynamic> projectJson) {
+    try {
+      return _projectSanitizer.sanitizeProject(Project.fromJson(projectJson));
+    } catch (error) {
+      final isRecoverableDataError =
+          error is FormatException || error is TypeError;
+      if (isRecoverableDataError) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
   String _buildImportedProjectName({
     required Set<String> existingNames,
     required String sourceName,
@@ -1529,7 +1528,8 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       return _uuid.v4();
     }
 
-    final idAlreadyUsed = currentProjects.any(
+    final idAlreadyUsed =
+        currentProjects.any(
           (project) => project.id == normalizedSourceId,
         ) ||
         importedProjects.any((project) => project.id == normalizedSourceId);
