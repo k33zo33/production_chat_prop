@@ -1,0 +1,42 @@
+name: Flutter CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Run release verification gate
+        env:
+          FLUTTER_BIN: flutter
+        run: ./tool/verify.sh
+
+      - name: Upload web build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-chat-prop-web
+          path: build/web
+          if-no-files-found: error

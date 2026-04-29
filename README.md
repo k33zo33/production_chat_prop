@@ -60,6 +60,8 @@ Za puni lokalni release check koristi:
 ./tool/verify.sh
 ```
 
+Isti verify gate sada vrti i GitHub Actions workflow iz `.github/workflows/flutter_ci.yml`, uključujući `flutter build web` i upload gotovog web artefakta.
+
 Za brzi demo smoke check koristi:
 
 ```bash
