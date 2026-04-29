@@ -20,11 +20,13 @@ final screenshotExportServiceProvider = Provider<ScreenshotExportService>((
   return ScreenshotExportService();
 });
 
-final videoExportFallbackServiceProvider = Provider<VideoExportFallbackService>((
-  ref,
-) {
-  return VideoExportFallbackService();
-});
+final videoExportFallbackServiceProvider = Provider<VideoExportFallbackService>(
+  (
+    ref,
+  ) {
+    return VideoExportFallbackService();
+  },
+);
 
 class PlaybackScreen extends ConsumerWidget {
   const PlaybackScreen({super.key, this.projectId});
@@ -82,11 +84,15 @@ class PlaybackScreen extends ConsumerWidget {
                 snapshot: snapshot,
                 onSceneSelected: (sceneId) {
                   ref
-                          .read(sceneSelectionProvider(activeProjectId).notifier)
+                          .read(
+                            sceneSelectionProvider(activeProjectId).notifier,
+                          )
                           .selectedSceneId =
                       sceneId;
                   ref
-                      .read(playbackControllerProvider(activeProjectId).notifier)
+                      .read(
+                        playbackControllerProvider(activeProjectId).notifier,
+                      )
                       .restart();
                 },
               );
@@ -158,10 +164,16 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   Widget build(BuildContext context) {
     final project = widget.snapshot.project;
     final scene = widget.snapshot.scene;
+    final selectedAspectRatio =
+        scene?.aspectRatio ?? SceneAspectRatio.portrait9x16;
     final sortedMessages = scene == null
         ? <Message>[]
         : sortMessagesByTimeline(scene.messages);
     final palette = resolveChatStylePalette(scene?.styleId ?? 'studio_default');
+    final exportTargetPixelSize =
+        ScreenshotExportService.targetPixelSizeForAspectRatio(
+          selectedAspectRatio,
+        );
     final speakerNameById = _buildSpeakerNameById(project);
     final maxSecond = sortedMessages.isEmpty
         ? 0
@@ -339,6 +351,12 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     Text(
                       'Scene ratio: ${_aspectRatioLabel(scene.aspectRatio)}',
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      key: const Key('exportTargetResolutionLabel'),
+                      'Target screenshot output: '
+                      '${exportTargetPixelSize.width.toInt()}×${exportTargetPixelSize.height.toInt()} PNG',
+                    ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -499,91 +517,18 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
             ),
           ),
           const SizedBox(height: 12),
-          RepaintBoundary(
-            key: _previewBoundaryKey,
-            child: Container(
-              decoration: BoxDecoration(
-                color: _showDeviceFrame ? Colors.black : Colors.transparent,
-                borderRadius: BorderRadius.circular(_showDeviceFrame ? 28 : 0),
-                border: _showDeviceFrame
-                    ? Border.all(color: Colors.black87, width: 6)
-                    : null,
-                boxShadow: _showDeviceFrame
-                    ? const [
-                        BoxShadow(
-                          color: Color(0x22000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 10),
-                        ),
-                      ]
-                    : null,
-              ),
-              padding: EdgeInsets.all(_showDeviceFrame ? 12 : 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(_showDeviceFrame ? 20 : 0),
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  color: palette.surfaceColor,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!_cleanPreview) ...[
-                          Text(
-                            'Playback Timeline (read-only)',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Timeline preview follows timecode: queued messages stay dim until their cue time.',
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        if (_cleanPreview)
-                          Text(
-                            'Preview • ${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)}',
-                            key: const Key('cleanPreviewHeader'),
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                        if (_cleanPreview) const SizedBox(height: 12),
-                        if (sortedMessages.isEmpty)
-                          const Text('No messages available for playback.')
-                        else
-                          for (final message in sortedMessages) ...[
-                            if (_showTypingIndicator(
-                              message: message,
-                              currentSecond: playbackState.currentSecond,
-                            )) ...[
-                              _TypingIndicatorItem(
-                                speakerName: _resolveSpeakerName(
-                                  characterId: message.characterId,
-                                  speakerNameById: speakerNameById,
-                                ),
-                                palette: palette,
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            _TimelineItem(
-                              message: message,
-                              palette: palette,
-                              speakerName: _resolveSpeakerName(
-                                characterId: message.characterId,
-                                speakerNameById: speakerNameById,
-                              ),
-                              isVisibleAtCurrentTime:
-                                  message.timestampSeconds <=
-                                  playbackState.currentSecond,
-                              cleanPreview: _cleanPreview,
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          _PlaybackPreviewCard(
+            boundaryKey: _previewBoundaryKey,
+            aspectRatio: selectedAspectRatio,
+            palette: palette,
+            showDeviceFrame: _showDeviceFrame,
+            cleanPreview: _cleanPreview,
+            currentSecond: playbackState.currentSecond,
+            maxSecond: maxSecond,
+            messages: sortedMessages,
+            speakerNameById: speakerNameById,
+            resolveSpeakerName: _resolveSpeakerName,
+            showTypingIndicator: _showTypingIndicator,
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -631,6 +576,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       boundaryKey: _previewBoundaryKey,
       projectName: project.name,
       sceneTitle: scene.title,
+      aspectRatio: scene.aspectRatio,
     );
     if (!mounted) {
       return;
@@ -815,13 +761,6 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     return currentSecond == typingSecond;
   }
 
-  String _formatTimecode(int seconds) {
-    final safe = seconds < 0 ? 0 : seconds;
-    final minutes = (safe ~/ 60).toString().padLeft(2, '0');
-    final remainingSeconds = (safe % 60).toString().padLeft(2, '0');
-    return '$minutes:$remainingSeconds';
-  }
-
   int _maxSecondForScene(Scene? scene) {
     if (scene == null || scene.messages.isEmpty) {
       return 0;
@@ -910,6 +849,173 @@ enum _ExportState {
   screenshotError,
   videoOk,
   videoError,
+}
+
+class _PlaybackPreviewCard extends StatelessWidget {
+  const _PlaybackPreviewCard({
+    required this.boundaryKey,
+    required this.aspectRatio,
+    required this.palette,
+    required this.showDeviceFrame,
+    required this.cleanPreview,
+    required this.currentSecond,
+    required this.maxSecond,
+    required this.messages,
+    required this.speakerNameById,
+    required this.resolveSpeakerName,
+    required this.showTypingIndicator,
+  });
+
+  final GlobalKey boundaryKey;
+  final SceneAspectRatio aspectRatio;
+  final ChatStylePalette palette;
+  final bool showDeviceFrame;
+  final bool cleanPreview;
+  final int currentSecond;
+  final int maxSecond;
+  final List<Message> messages;
+  final Map<String, String> speakerNameById;
+  final String Function({
+    required String characterId,
+    required Map<String, String> speakerNameById,
+  })
+  resolveSpeakerName;
+  final bool Function({
+    required Message message,
+    required int currentSecond,
+  })
+  showTypingIndicator;
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      key: boundaryKey,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: aspectRatio == SceneAspectRatio.portrait9x16 ? 420 : 720,
+          ),
+          child: AspectRatio(
+            key: const Key('playbackPreviewAspectRatio'),
+            aspectRatio: _aspectRatioValue(aspectRatio),
+            child: Container(
+              decoration: BoxDecoration(
+                color: showDeviceFrame ? Colors.black : Colors.transparent,
+                borderRadius: BorderRadius.circular(showDeviceFrame ? 28 : 0),
+                border: showDeviceFrame
+                    ? Border.all(color: Colors.black87, width: 6)
+                    : null,
+                boxShadow: showDeviceFrame
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x22000000),
+                          blurRadius: 18,
+                          offset: Offset(0, 10),
+                        ),
+                      ]
+                    : null,
+              ),
+              padding: EdgeInsets.all(showDeviceFrame ? 12 : 0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(showDeviceFrame ? 20 : 0),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: palette.surfaceColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!cleanPreview) ...[
+                          Text(
+                            'Playback Timeline (read-only)',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Timeline preview follows timecode: queued messages stay dim until their cue time.',
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        if (cleanPreview)
+                          Text(
+                            'Preview • ${_formatTimecode(currentSecond)} / ${_formatTimecode(maxSecond)}',
+                            key: const Key('cleanPreviewHeader'),
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                        if (cleanPreview) const SizedBox(height: 12),
+                        Expanded(
+                          child: messages.isEmpty
+                              ? const Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Text(
+                                    'No messages available for playback.',
+                                  ),
+                                )
+                              : SingleChildScrollView(
+                                  key: const Key('playbackPreviewScrollView'),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      for (final message in messages) ...[
+                                        if (showTypingIndicator(
+                                          message: message,
+                                          currentSecond: currentSecond,
+                                        )) ...[
+                                          _TypingIndicatorItem(
+                                            speakerName: resolveSpeakerName(
+                                              characterId: message.characterId,
+                                              speakerNameById: speakerNameById,
+                                            ),
+                                            palette: palette,
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+                                        _TimelineItem(
+                                          message: message,
+                                          palette: palette,
+                                          speakerName: resolveSpeakerName(
+                                            characterId: message.characterId,
+                                            speakerNameById: speakerNameById,
+                                          ),
+                                          isVisibleAtCurrentTime:
+                                              message.timestampSeconds <=
+                                              currentSecond,
+                                          cleanPreview: cleanPreview,
+                                        ),
+                                        const SizedBox(height: 8),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+double _aspectRatioValue(SceneAspectRatio aspectRatio) {
+  return switch (aspectRatio) {
+    SceneAspectRatio.portrait9x16 => 9 / 16,
+    SceneAspectRatio.landscape16x9 => 16 / 9,
+  };
+}
+
+String _formatTimecode(int seconds) {
+  final safe = seconds < 0 ? 0 : seconds;
+  final minutes = (safe ~/ 60).toString().padLeft(2, '0');
+  final remainingSeconds = (safe % 60).toString().padLeft(2, '0');
+  return '$minutes:$remainingSeconds';
 }
 
 class _PlaybackExportActions extends StatelessWidget {

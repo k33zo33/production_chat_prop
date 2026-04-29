@@ -9,6 +9,7 @@ import 'package:production_chat_prop/features/chat_editor/presentation/controlle
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
+import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 import 'package:production_chat_prop/features/projects/presentation/pages/project_list_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +24,8 @@ class _FakeScreenshotExportService extends ScreenshotExportService {
     required GlobalKey boundaryKey,
     required String projectName,
     required String sceneTitle,
-    double pixelRatio = 2,
+    required SceneAspectRatio aspectRatio,
+    double? pixelRatio,
   }) async {
     return _result;
   }
@@ -2583,11 +2585,13 @@ void main() {
 
     await _openPlaybackFromProjectList(tester);
 
-    expect(find.textContaining('(00:00 / 00:09)'), findsOneWidget);
+    expect(
+      find.textContaining('(00:00 / 00:09)', skipOffstage: false),
+      findsOneWidget,
+    );
 
     final plusOneButton = find.widgetWithText(FilledButton, '+1s');
-    await tester.ensureVisible(plusOneButton);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(tester, plusOneButton);
     await tester.tap(plusOneButton);
     await tester.pumpAndSettle();
     await tester.tap(plusOneButton);
@@ -2605,8 +2609,7 @@ void main() {
     expect(find.text('Mia is typing...', skipOffstage: false), findsOneWidget);
 
     final endButton = find.widgetWithText(OutlinedButton, 'End');
-    await tester.ensureVisible(endButton);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(tester, endButton);
     await tester.tap(endButton);
     await tester.pumpAndSettle();
 
@@ -2633,18 +2636,23 @@ void main() {
       await _openPlaybackFromProjectList(tester);
 
       expect(
-        find.textContaining('Progress: 0% • Visible messages: 1/3'),
+        find.textContaining(
+          'Progress: 0% • Visible messages: 1/3',
+          skipOffstage: false,
+        ),
         findsOneWidget,
       );
 
       final plusFiveButton = find.byKey(const Key('seekForward5Button'));
-      await tester.ensureVisible(plusFiveButton);
-      await tester.pumpAndSettle();
+      await _ensureFinderVisibleInPrimaryListView(tester, plusFiveButton);
       await tester.tap(plusFiveButton);
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('Progress: 56% • Visible messages: 2/3'),
+        find.textContaining(
+          'Progress: 56% • Visible messages: 2/3',
+          skipOffstage: false,
+        ),
         findsOneWidget,
       );
     },
@@ -2749,12 +2757,8 @@ void main() {
 
     await _openPlaybackFromProjectList(tester);
 
-    final nextCueButton = find.byKey(
-      const Key('nextCueButton'),
-      skipOffstage: false,
-    );
-    await tester.ensureVisible(nextCueButton);
-    await tester.pumpAndSettle();
+    final nextCueButton = find.byKey(const Key('nextCueButton'));
+    await _ensureFinderVisibleInPrimaryListView(tester, nextCueButton);
     await tester.tap(nextCueButton);
     await tester.pumpAndSettle();
 
@@ -2764,8 +2768,7 @@ void main() {
     );
 
     final prevCueButton = find.byKey(const Key('prevCueButton'));
-    await tester.ensureVisible(prevCueButton);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(tester, prevCueButton);
     await tester.tap(prevCueButton);
     await tester.pumpAndSettle();
 
@@ -2790,8 +2793,7 @@ void main() {
     await _openPlaybackFromProjectList(tester);
 
     final plusFiveButton = find.byKey(const Key('seekForward5Button'));
-    await tester.ensureVisible(plusFiveButton);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(tester, plusFiveButton);
     await tester.tap(plusFiveButton);
     await tester.pumpAndSettle();
 
@@ -2801,8 +2803,7 @@ void main() {
     );
 
     final minusFiveButton = find.byKey(const Key('seekBackward5Button'));
-    await tester.ensureVisible(minusFiveButton);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(tester, minusFiveButton);
     await tester.tap(minusFiveButton);
     await tester.pumpAndSettle();
 
@@ -2829,8 +2830,7 @@ void main() {
       await _openPlaybackFromProjectList(tester);
 
       final plusOneButton = find.widgetWithText(FilledButton, '+1s');
-      await tester.ensureVisible(plusOneButton);
-      await tester.pumpAndSettle();
+      await _ensureFinderVisibleInPrimaryListView(tester, plusOneButton);
       await tester.tap(plusOneButton);
       await tester.pumpAndSettle();
       await tester.tap(plusOneButton);
@@ -3007,6 +3007,52 @@ void main() {
     );
   });
 
+  testWidgets(
+    'playback preview surface and export target follow aspect ratio',
+    (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1280, 2200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openPlaybackFromProjectList(tester);
+
+      final previewFinder = find.byKey(const Key('playbackPreviewAspectRatio'));
+      final portraitSize = tester.getSize(previewFinder);
+      expect(portraitSize.height, greaterThan(portraitSize.width));
+      final exportTargetFinder = find.byKey(
+        const Key('exportTargetResolutionLabel'),
+      );
+      await tester.ensureVisible(exportTargetFinder);
+      await tester.pumpAndSettle();
+      final portraitExportTarget =
+          tester.widget<Text>(exportTargetFinder).data ?? '';
+      expect(portraitExportTarget, contains('1080'));
+      expect(portraitExportTarget, contains('1920'));
+
+      await tester.tap(find.byKey(const Key('aspectRatioLandscapeChip')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final landscapeSize = tester.getSize(previewFinder);
+      expect(landscapeSize.width, greaterThan(landscapeSize.height));
+      final landscapeExportTarget =
+          tester.widget<Text>(exportTargetFinder).data ?? '';
+      expect(landscapeExportTarget, contains('1920'));
+      expect(landscapeExportTarget, contains('1080'));
+      expect(landscapeExportTarget, isNot(equals(portraitExportTarget)));
+    },
+  );
+
   testWidgets('playback export buttons are disabled for empty scenes', (
     tester,
   ) async {
@@ -3090,7 +3136,10 @@ void main() {
     await tester.pumpAndSettle();
     await _openPlaybackFromProjectList(tester);
 
-    expect(find.textContaining('Messages: 15'), findsOneWidget);
+    expect(
+      find.textContaining('Messages: 15', skipOffstage: false),
+      findsOneWidget,
+    );
 
     final screenshotButton = tester.widget<FilledButton>(
       find.byKey(const Key('exportScreenshotButton')),
@@ -3103,8 +3152,7 @@ void main() {
     expect(find.textContaining('Export readiness: Ready'), findsOneWidget);
 
     final nextCueButton = find.byKey(const Key('nextCueButton'));
-    await tester.ensureVisible(nextCueButton);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(tester, nextCueButton);
     await tester.tap(nextCueButton);
     await tester.pumpAndSettle();
     expect(
@@ -3127,14 +3175,9 @@ void main() {
 
     await _openPlaybackFromProjectList(tester);
 
-    final plusOneButton = find.widgetWithText(FilledButton, '+1s');
-    await tester.ensureVisible(plusOneButton);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
-    await tester.tap(plusOneButton);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(plusOneButton);
-    await tester.pumpAndSettle();
-    await tester.tap(plusOneButton);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
 
     expect(
@@ -3144,18 +3187,11 @@ void main() {
 
     final aspectRatioLandscapeChip = find.byKey(
       const Key('aspectRatioLandscapeChip'),
-      skipOffstage: false,
     );
-    for (var i = 0; i < 8; i++) {
-      if (aspectRatioLandscapeChip.evaluate().isNotEmpty) {
-        break;
-      }
-      await tester.drag(find.byType(ListView).first, const Offset(0, 220));
-      await tester.pump();
-    }
-    expect(aspectRatioLandscapeChip, findsOneWidget);
-    await tester.ensureVisible(aspectRatioLandscapeChip);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      aspectRatioLandscapeChip,
+    );
     await tester.tap(aspectRatioLandscapeChip);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -3209,18 +3245,20 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.textContaining('Progress: 0% • Visible messages: 1/520'),
+      find.textContaining(
+        'Progress: 0% • Visible messages: 1/520',
+        skipOffstage: false,
+      ),
       findsOneWidget,
     );
 
     final plusFiveButton = find.byKey(const Key('seekForward5Button'));
-    await tester.ensureVisible(plusFiveButton);
-    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(tester, plusFiveButton);
     await tester.tap(plusFiveButton);
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining('Visible messages: 6/520'),
+      find.textContaining('Visible messages: 6/520', skipOffstage: false),
       findsOneWidget,
     );
   });
