@@ -280,24 +280,69 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   Text('Messages: ${sortedMessages.length}'),
                   if (project.scenes.length > 1) ...[
                     const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: scene?.id,
-                      decoration: const InputDecoration(
-                        labelText: 'Selected Scene',
+                    if (isCompactLayout) ...[
+                      ExcludeSemantics(
+                        child: Text(
+                          'Selected Scene',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
                       ),
-                      items: [
-                        for (final item in project.scenes)
-                          DropdownMenuItem(
-                            value: item.id,
-                            child: Text(item.title),
+                      const SizedBox(height: 8),
+                      Semantics(
+                        label: 'Selected Scene',
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                      ],
-                      onChanged: (sceneId) {
-                        if (sceneId != null) {
-                          widget.onSceneSelected(sceneId);
-                        }
-                      },
-                    ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: scene?.id,
+                                isExpanded: true,
+                                items: [
+                                  for (final item in project.scenes)
+                                    DropdownMenuItem(
+                                      value: item.id,
+                                      child: Text(
+                                        item.title,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                ],
+                                onChanged: (sceneId) {
+                                  if (sceneId != null) {
+                                    widget.onSceneSelected(sceneId);
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else
+                      DropdownButtonFormField<String>(
+                        initialValue: scene?.id,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Selected Scene',
+                        ),
+                        items: [
+                          for (final item in project.scenes)
+                            DropdownMenuItem(
+                              value: item.id,
+                              child: Text(item.title),
+                            ),
+                        ],
+                        onChanged: (sceneId) {
+                          if (sceneId != null) {
+                            widget.onSceneSelected(sceneId);
+                          }
+                        },
+                      ),
                   ],
                 ],
               ),

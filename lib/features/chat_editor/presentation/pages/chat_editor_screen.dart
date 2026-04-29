@@ -143,24 +143,69 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                 Text('Scenes: ${project.scenes.length}'),
                 if (project.scenes.length > 1) ...[
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedScene?.id,
-                    decoration: const InputDecoration(
-                      labelText: 'Selected Scene',
+                  if (isCompactLayout) ...[
+                    ExcludeSemantics(
+                      child: Text(
+                        'Selected Scene',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
                     ),
-                    items: [
-                      for (final scene in project.scenes)
-                        DropdownMenuItem(
-                          value: scene.id,
-                          child: Text(scene.title),
+                    const SizedBox(height: 8),
+                    Semantics(
+                      label: 'Selected Scene',
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                    ],
-                    onChanged: (sceneId) {
-                      if (sceneId != null) {
-                        onSceneSelected(sceneId);
-                      }
-                    },
-                  ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedScene?.id,
+                              isExpanded: true,
+                              items: [
+                                for (final scene in project.scenes)
+                                  DropdownMenuItem(
+                                    value: scene.id,
+                                    child: Text(
+                                      scene.title,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                              ],
+                              onChanged: (sceneId) {
+                                if (sceneId != null) {
+                                  onSceneSelected(sceneId);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedScene?.id,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Selected Scene',
+                      ),
+                      items: [
+                        for (final scene in project.scenes)
+                          DropdownMenuItem(
+                            value: scene.id,
+                            child: Text(scene.title),
+                          ),
+                      ],
+                      onChanged: (sceneId) {
+                        if (sceneId != null) {
+                          onSceneSelected(sceneId);
+                        }
+                      },
+                    ),
                 ],
               ],
             ),

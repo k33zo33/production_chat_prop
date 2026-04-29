@@ -7,21 +7,25 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 - [ ] Otvori app u browseru
 - [ ] Potvrdi da browser tab prikazuje `Production Chat Prop`
 - [ ] Potvrdi da nema očitih layout breakova na početnom ekranu
+- [ ] Ponovi kratki pass i na uskom viewportu (~390 px širine) radi compact layout provjere
 
 ## 2. Project list flow
 - [ ] Na početnom ekranu klikni `Load Demo Project`
 - [ ] Potvrdi da se pojavi demo projekt kartica
+- [ ] Na uskom viewportu potvrdi da se prikaže compact overflow meni u app baru
 - [ ] Otvori project menu i provjeri da osnovne akcije postoje
 - [ ] Otvori `Open Chat Editor`
 
 ## 3. Editor flow
 - [ ] Potvrdi da su scene, likovi i poruke vidljivi
+- [ ] Na uskom viewportu potvrdi da su scene akcije dostupne kroz overflow meni
 - [ ] Promijeni barem jednu poruku ili timestamp
 - [ ] Vrati se natrag na project list bez rušenja stanja
 
 ## 4. Playback flow
 - [ ] Otvori `Open Playback`
 - [ ] Provjeri `Play`, `Pause`, `Restart`, slider i cue gumbe
+- [ ] Na uskom viewportu potvrdi da nema očitog overlap/overflow loma u export i transport kontrolama
 - [ ] Provjeri da `Space`, `←`, `→`, `R` rade ako je fokus na appu
 - [ ] Potvrdi da se timecode i visible message summary mijenjaju tijekom playbacka
 

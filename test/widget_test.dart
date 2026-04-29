@@ -1202,6 +1202,94 @@ void main() {
     );
   });
 
+  testWidgets(
+    'compact demo flow stays usable across project list, editor, and playback',
+    (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          screenshotExportServiceProvider.overrideWithValue(
+            _FakeScreenshotExportService(
+              const ScreenshotExportResult.success(
+                filename: 'compact_demo_flow.png',
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const ProjectListScreen(forceCompactAppBar: true),
+      );
+
+      expect(
+        find.byKey(const Key('projectListOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(find.text('Demo Project 1'), findsOneWidget);
+      expect(find.byKey(Key('projectOpenEditor_$projectId')), findsOneWidget);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      expect(find.byKey(const Key('compactAddSceneButton')), findsOneWidget);
+      expect(
+        find.byKey(const Key('sceneActionsOverflowMenuButton')),
+        findsOneWidget,
+      );
+
+      final openPlaybackButton = find.widgetWithText(
+        FilledButton,
+        'Open Playback',
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, openPlaybackButton);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(find.byKey(const Key('exportScreenshotButton')), findsOneWidget);
+      expect(
+        find.text('Keyboard: Space play/pause • ←/→ seek • R restart'),
+        findsNothing,
+      );
+
+      final exportScreenshotButton = find.byKey(
+        const Key('exportScreenshotButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        exportScreenshotButton,
+      );
+      await tester.tap(exportScreenshotButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Screenshot exported as compact_demo_flow.png.'),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('project reset button clears search and filter state', (
     tester,
   ) async {
