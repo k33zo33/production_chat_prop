@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/app/app.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
+import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
+import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 import 'package:production_chat_prop/features/projects/presentation/pages/project_list_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -950,8 +952,14 @@ void main() {
     );
     await _ensureOnProjectList(tester);
 
-    expect(find.byKey(const Key('projectListOverflowMenuButton')), findsOneWidget);
-    expect(find.byKey(const Key('toggleProjectSelectionModeButton')), findsNothing);
+    expect(
+      find.byKey(const Key('projectListOverflowMenuButton')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('toggleProjectSelectionModeButton')),
+      findsNothing,
+    );
 
     await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
     await tester.pumpAndSettle();
@@ -980,7 +988,10 @@ void main() {
     await tester.tap(find.text('Select Projects'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('projectSelectionOverflowMenuButton')), findsOneWidget);
+    expect(
+      find.byKey(const Key('projectSelectionOverflowMenuButton')),
+      findsOneWidget,
+    );
 
     final visibleCheckbox = find.byType(Checkbox).last;
     await tester.ensureVisible(visibleCheckbox);
@@ -988,12 +999,17 @@ void main() {
     await tester.tap(visibleCheckbox);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('projectSelectionOverflowMenuButton')));
+    await tester.tap(
+      find.byKey(const Key('projectSelectionOverflowMenuButton')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Clear Selection'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('projectSelectionOverflowMenuButton')), findsOneWidget);
+    expect(
+      find.byKey(const Key('projectSelectionOverflowMenuButton')),
+      findsOneWidget,
+    );
     expect(find.text('Select Projects'), findsOneWidget);
   });
 
@@ -1019,6 +1035,168 @@ void main() {
     expect(
       find.text('Keyboard: Space play/pause • ←/→ seek • R restart'),
       findsNothing,
+    );
+  });
+
+  testWidgets('compact chat editor keeps scene actions in overflow menu', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final projectId = await _createStarterProjectInContainer(container);
+
+    await _pumpNarrowScreenWithContainer(
+      tester,
+      container: container,
+      child: ChatEditorScreen(
+        projectId: projectId,
+        forceCompactLayout: true,
+      ),
+    );
+
+    expect(find.byKey(const Key('compactAddSceneButton')), findsOneWidget);
+    expect(
+      find.byKey(const Key('sceneActionsOverflowMenuButton')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('sceneActionsOverflowMenuButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Duplicate Scene'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.textContaining('Scene: Scene 1 Copy'), findsOneWidget);
+    expect(find.text('Scenes: 2'), findsOneWidget);
+  });
+
+  testWidgets(
+    'compact chat editor bulk message delete keeps stacked actions usable',
+    (
+      tester,
+    ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      final toggleSelectionButton = find.byKey(
+        const Key('toggleMessageSelectionModeButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        toggleSelectionButton,
+      );
+      await tester.tap(toggleSelectionButton);
+      await tester.pumpAndSettle();
+
+      final firstCheckbox = find.byType(Checkbox).at(0);
+      await tester.ensureVisible(firstCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(firstCheckbox);
+      await tester.pumpAndSettle();
+
+      final secondCheckbox = find.byType(Checkbox).at(1);
+      await tester.ensureVisible(secondCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(secondCheckbox);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete (2)'), findsOneWidget);
+
+      final deleteSelectedButton = find.byKey(
+        const Key('deleteSelectedMessagesButton'),
+      );
+      await tester.ensureVisible(deleteSelectedButton);
+      await tester.pumpAndSettle();
+      await tester.tap(deleteSelectedButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('confirmDeleteSelectedMessagesButton')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.textContaining('Deleted 2 selected messages.'),
+        findsOneWidget,
+      );
+      expect(find.text('Ready for set in 10?'), findsNothing);
+      expect(find.text('Yes, prop phone is prepared.'), findsNothing);
+    },
+  );
+
+  testWidgets('compact playback export and transport controls remain usable', (
+    tester,
+  ) async {
+    final container = ProviderContainer(
+      overrides: [
+        screenshotExportServiceProvider.overrideWithValue(
+          _FakeScreenshotExportService(
+            const ScreenshotExportResult.success(
+              filename: 'compact_capture.png',
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final projectId = await _createStarterProjectInContainer(container);
+
+    await _pumpNarrowScreenWithContainer(
+      tester,
+      container: container,
+      child: PlaybackScreen(projectId: projectId),
+    );
+
+    expect(
+      find.text('Keyboard: Space play/pause • ←/→ seek • R restart'),
+      findsNothing,
+    );
+
+    final exportScreenshotButton = find.byKey(
+      const Key('exportScreenshotButton'),
+    );
+    expect(exportScreenshotButton, findsOneWidget);
+    await tester.ensureVisible(exportScreenshotButton);
+    await tester.pumpAndSettle();
+    await tester.tap(exportScreenshotButton);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Export: Screenshot OK'), findsOneWidget);
+    expect(
+      find.text('Screenshot exported as compact_capture.png.'),
+      findsOneWidget,
+    );
+
+    final plusOneButton = find.byKey(const Key('seekForward1Button'));
+    await _ensureFinderVisibleInPrimaryListView(tester, plusOneButton);
+    await tester.tap(plusOneButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('t=1s / 9 s', skipOffstage: false),
+      findsOneWidget,
     );
   });
 
@@ -1539,46 +1717,51 @@ void main() {
     );
   });
 
-  testWidgets('composer timestamp suggestion follows selected scene by default', (
-    tester,
-  ) async {
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const ProductionChatPropApp(),
-      ),
-    );
-    await _ensureOnProjectList(tester);
-
-    await tester.tap(find.byTooltip('Add Demo Project'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-    final projectId = _projectIdForName(tester, 'Demo Project 1');
-
-    await _openChatEditorFromProjectList(
+  testWidgets(
+    'composer timestamp suggestion follows selected scene by default',
+    (
       tester,
-      projectName: 'Demo Project 1',
-    );
-    await _ensureMessageComposerVisible(tester);
+    ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
 
-    var timestampField = tester.widget<TextField>(
-      find.byKey(const Key('messageTimestampField')),
-    );
-    expect(timestampField.controller?.text, '12');
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
 
-    final snapshot = container.read(sceneSnapshotProvider(projectId)).value!;
-    container.read(sceneSelectionProvider(projectId).notifier).selectedSceneId =
-        snapshot.project.scenes[1].id;
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Add Demo Project'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      final projectId = _projectIdForName(tester, 'Demo Project 1');
 
-    timestampField = tester.widget<TextField>(
-      find.byKey(const Key('messageTimestampField')),
-    );
-    expect(timestampField.controller?.text, '9');
-  });
+      await _openChatEditorFromProjectList(
+        tester,
+        projectName: 'Demo Project 1',
+      );
+      await _ensureMessageComposerVisible(tester);
+
+      var timestampField = tester.widget<TextField>(
+        find.byKey(const Key('messageTimestampField')),
+      );
+      expect(timestampField.controller?.text, '12');
+
+      final snapshot = container.read(sceneSnapshotProvider(projectId)).value!;
+      container
+              .read(sceneSelectionProvider(projectId).notifier)
+              .selectedSceneId =
+          snapshot.project.scenes[1].id;
+      await tester.pumpAndSettle();
+
+      timestampField = tester.widget<TextField>(
+        find.byKey(const Key('messageTimestampField')),
+      );
+      expect(timestampField.controller?.text, '9');
+    },
+  );
 
   testWidgets('composer keeps manual timestamp when switching scenes', (
     tester,
@@ -1793,7 +1976,6 @@ void main() {
       findsOneWidget,
     );
   });
-
 
   testWidgets('scene add rename delete flow in chat editor', (tester) async {
     await tester.pumpWidget(
@@ -2142,7 +2324,6 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
   });
 
-
   testWidgets('shows add-message validation snackbars for invalid input', (
     tester,
   ) async {
@@ -2232,75 +2413,81 @@ void main() {
     expect(afterGreat, lessThan(afterYes));
   });
 
-  testWidgets('bulk select delete asks for confirmation before removing messages', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const ProviderScope(child: ProductionChatPropApp()),
-    );
-    await _ensureOnProjectList(tester);
+  testWidgets(
+    'bulk select delete asks for confirmation before removing messages',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byKey(const Key('newProjectFab')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-
-    await _openChatEditorFromProjectList(tester);
-
-    for (var i = 0; i < 4; i++) {
-      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.tap(find.byKey(const Key('newProjectFab')));
       await tester.pump();
-    }
-    await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
-    final toggleSelectionButton = find.byKey(
-      const Key('toggleMessageSelectionModeButton'),
-    );
-    await tester.ensureVisible(toggleSelectionButton);
-    await tester.pumpAndSettle();
-    await tester.tap(toggleSelectionButton);
-    await tester.pumpAndSettle();
+      await _openChatEditorFromProjectList(tester);
 
-    final firstCheckbox = find.byType(Checkbox).at(0);
-    await tester.ensureVisible(firstCheckbox);
-    await tester.pumpAndSettle();
-    await tester.tap(firstCheckbox);
-    await tester.pumpAndSettle();
-    final secondCheckbox = find.byType(Checkbox).at(1);
-    await tester.ensureVisible(secondCheckbox);
-    await tester.pumpAndSettle();
-    await tester.tap(secondCheckbox);
-    await tester.pumpAndSettle();
+      for (var i = 0; i < 4; i++) {
+        await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
 
-    final deleteSelectedButton = find.byKey(
-      const Key('deleteSelectedMessagesButton'),
-    );
-    await tester.ensureVisible(deleteSelectedButton);
-    await tester.pumpAndSettle();
-    await tester.tap(deleteSelectedButton);
-    await tester.pumpAndSettle();
+      final toggleSelectionButton = find.byKey(
+        const Key('toggleMessageSelectionModeButton'),
+      );
+      await tester.ensureVisible(toggleSelectionButton);
+      await tester.pumpAndSettle();
+      await tester.tap(toggleSelectionButton);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Delete Selected Messages'), findsOneWidget);
-    expect(find.text('Delete 2 selected messages?'), findsOneWidget);
+      final firstCheckbox = find.byType(Checkbox).at(0);
+      await tester.ensureVisible(firstCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(firstCheckbox);
+      await tester.pumpAndSettle();
+      final secondCheckbox = find.byType(Checkbox).at(1);
+      await tester.ensureVisible(secondCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(secondCheckbox);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
-    await tester.pumpAndSettle();
+      final deleteSelectedButton = find.byKey(
+        const Key('deleteSelectedMessagesButton'),
+      );
+      await tester.ensureVisible(deleteSelectedButton);
+      await tester.pumpAndSettle();
+      await tester.tap(deleteSelectedButton);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Delete Selected Messages'), findsNothing);
-    expect(find.text('Ready for set in 10?'), findsOneWidget);
-    expect(find.text('Yes, prop phone is prepared.'), findsOneWidget);
+      expect(find.text('Delete Selected Messages'), findsOneWidget);
+      expect(find.text('Delete 2 selected messages?'), findsOneWidget);
 
-    await tester.tap(deleteSelectedButton);
-    await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(const Key('confirmDeleteSelectedMessagesButton')),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
 
-    expect(find.textContaining('Deleted 2 selected messages.'), findsOneWidget);
-    expect(find.text('Ready for set in 10?'), findsNothing);
-    expect(find.text('Yes, prop phone is prepared.'), findsNothing);
-  });
+      expect(find.text('Delete Selected Messages'), findsNothing);
+      expect(find.text('Ready for set in 10?'), findsOneWidget);
+      expect(find.text('Yes, prop phone is prepared.'), findsOneWidget);
+
+      await tester.tap(deleteSelectedButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('confirmDeleteSelectedMessagesButton')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.textContaining('Deleted 2 selected messages.'),
+        findsOneWidget,
+      );
+      expect(find.text('Ready for set in 10?'), findsNothing);
+      expect(find.text('Yes, prop phone is prepared.'), findsNothing);
+    },
+  );
 
   testWidgets('clear scene chat removes all messages in editor', (
     tester,
@@ -2737,53 +2924,59 @@ void main() {
     expect(find.text('OUTGOING'), findsNothing);
   });
 
-  testWidgets('video export button copies fallback package to clipboard when download is unavailable', (
-    tester,
-  ) async {
-    String? clipboardText;
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          ..setMockMethodCallHandler(SystemChannels.platform, (
-            methodCall,
-          ) async {
-            if (methodCall.method == 'Clipboard.setData') {
-              clipboardText = (methodCall.arguments as Map)['text'] as String?;
+  testWidgets(
+    'video export button copies fallback package to clipboard when download is unavailable',
+    (
+      tester,
+    ) async {
+      String? clipboardText;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            ..setMockMethodCallHandler(SystemChannels.platform, (
+              methodCall,
+            ) async {
+              if (methodCall.method == 'Clipboard.setData') {
+                clipboardText =
+                    (methodCall.arguments as Map)['text'] as String?;
+                return null;
+              }
               return null;
-            }
-            return null;
-          });
-    addTearDown(() {
-      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
-    });
+            });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      });
 
-    await tester.pumpWidget(
-      const ProviderScope(child: ProductionChatPropApp()),
-    );
-    await _ensureOnProjectList(tester);
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
 
-    await tester.tap(find.byKey(const Key('newProjectFab')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-    await _openPlaybackFromProjectList(tester);
+      await _openPlaybackFromProjectList(tester);
 
-    final exportVideoButton = find.byKey(const Key('exportVideoButton'));
-    await tester.ensureVisible(exportVideoButton);
-    await tester.pumpAndSettle();
-    await tester.tap(exportVideoButton);
-    await tester.pumpAndSettle();
+      final exportVideoButton = find.byKey(const Key('exportVideoButton'));
+      await tester.ensureVisible(exportVideoButton);
+      await tester.pumpAndSettle();
+      await tester.tap(exportVideoButton);
+      await tester.pumpAndSettle();
 
-    expect(
-      find.text('Download unavailable. Video fallback JSON copied to clipboard.'),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining('Export: Video OK'),
-      findsOneWidget,
-    );
-    expect(clipboardText, isNotNull);
-    expect(clipboardText, contains('"format": "video_fallback_package"'));
-  });
+      expect(
+        find.text(
+          'Download unavailable. Video fallback JSON copied to clipboard.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Export: Video OK'),
+        findsOneWidget,
+      );
+      expect(clipboardText, isNotNull);
+      expect(clipboardText, contains('"format": "video_fallback_package"'));
+    },
+  );
 
   testWidgets('playback aspect ratio chips update selected scene ratio', (
     tester,
@@ -3046,6 +3239,25 @@ Future<void> _ensureOnProjectList(WidgetTester tester) async {
   }
 }
 
+Future<void> _pumpNarrowScreenWithContainer(
+  WidgetTester tester, {
+  required ProviderContainer container,
+  required Widget child,
+}) async {
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(390, 844)),
+          child: child,
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 Future<void> _scrollProjectListToCards(WidgetTester tester) async {
   final scrollable = find.byType(ListView).first;
   await tester.drag(scrollable, const Offset(0, -220));
@@ -3079,6 +3291,25 @@ Future<void> _ensureMessageComposerVisible(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _ensureFinderVisibleInPrimaryListView(
+  WidgetTester tester,
+  Finder finder,
+) async {
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      finder,
+      220,
+      scrollable: find.byType(Scrollable).first,
+      maxScrolls: 8,
+    );
+    await tester.pumpAndSettle();
+  }
+
+  expect(finder, findsOneWidget);
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+}
+
 Future<Finder> _openMessageActionsForText(
   WidgetTester tester,
   String messageText,
@@ -3099,18 +3330,24 @@ Future<Finder> _openMessageActionsForText(
     fail('Message "$messageText" not found after scrolling.');
   }
 
-  final visibleMessageFinder = find.text(messageText, skipOffstage: false).first;
+  final visibleMessageFinder = find
+      .text(messageText, skipOffstage: false)
+      .first;
   await tester.ensureVisible(visibleMessageFinder);
   await tester.pumpAndSettle();
 
-  final messageCard = find.ancestor(
-    of: visibleMessageFinder,
-    matching: find.byType(Card),
-  ).first;
-  final messageMenuButton = find.descendant(
-    of: messageCard,
-    matching: find.byIcon(Icons.more_horiz_rounded),
-  ).first;
+  final messageCard = find
+      .ancestor(
+        of: visibleMessageFinder,
+        matching: find.byType(Card),
+      )
+      .first;
+  final messageMenuButton = find
+      .descendant(
+        of: messageCard,
+        matching: find.byIcon(Icons.more_horiz_rounded),
+      )
+      .first;
   await tester.ensureVisible(messageMenuButton);
   await tester.pumpAndSettle();
   return messageMenuButton;
@@ -3264,4 +3501,12 @@ String _buildLargeProjectImportPayload({required int messageCount}) {
   };
 
   return jsonEncode(payload);
+}
+
+Future<String> _createStarterProjectInContainer(
+  ProviderContainer container,
+) async {
+  await container.read(projectsControllerProvider.notifier).createProject();
+  final projects = await container.read(projectsControllerProvider.future);
+  return projects.single.id;
 }
