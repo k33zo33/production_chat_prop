@@ -1341,6 +1341,12 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
           ? null
           : widget.characters.first.id;
     }
+    if (widget.latestTimestamp != oldWidget.latestTimestamp) {
+      final currentSuggestedTimestamp = oldWidget.latestTimestamp + 1;
+      if (_timestampController.text == currentSuggestedTimestamp.toString()) {
+        _timestampController.text = (widget.latestTimestamp + 1).toString();
+      }
+    }
   }
 
   @override
@@ -1388,6 +1394,7 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
               Column(
                 children: [
                   TextField(
+                    key: const Key('messageTimestampField'),
                     controller: _timestampController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
@@ -1421,6 +1428,7 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
                 children: [
                   Expanded(
                     child: TextField(
+                      key: const Key('messageTimestampField'),
                       controller: _timestampController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(

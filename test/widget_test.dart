@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/app/app.dart';
+import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
 import 'package:production_chat_prop/features/projects/presentation/pages/project_list_screen.dart';
@@ -996,6 +997,31 @@ void main() {
     expect(find.text('Select Projects'), findsOneWidget);
   });
 
+  testWidgets('compact playback hides keyboard shortcut hint', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: PlaybackScreen(projectId: 'project_1')),
+      ),
+    );
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Keyboard: Space play/pause • ←/→ seek • R restart'),
+      findsNothing,
+    );
+  });
+
   testWidgets('project reset button clears search and filter state', (
     tester,
   ) async {
@@ -1511,6 +1537,85 @@ void main() {
       find.textContaining('Messages: 4', skipOffstage: false),
       findsOneWidget,
     );
+  });
+
+  testWidgets('composer timestamp suggestion follows selected scene by default', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const ProductionChatPropApp(),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    final projectId = _projectIdForName(tester, 'Demo Project 1');
+
+    await _openChatEditorFromProjectList(
+      tester,
+      projectName: 'Demo Project 1',
+    );
+    await _ensureMessageComposerVisible(tester);
+
+    var timestampField = tester.widget<TextField>(
+      find.byKey(const Key('messageTimestampField')),
+    );
+    expect(timestampField.controller?.text, '12');
+
+    final snapshot = container.read(sceneSnapshotProvider(projectId)).value!;
+    container.read(sceneSelectionProvider(projectId).notifier).selectedSceneId =
+        snapshot.project.scenes[1].id;
+    await tester.pumpAndSettle();
+
+    timestampField = tester.widget<TextField>(
+      find.byKey(const Key('messageTimestampField')),
+    );
+    expect(timestampField.controller?.text, '9');
+  });
+
+  testWidgets('composer keeps manual timestamp when switching scenes', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const ProductionChatPropApp(),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    final projectId = _projectIdForName(tester, 'Demo Project 1');
+
+    await _openChatEditorFromProjectList(
+      tester,
+      projectName: 'Demo Project 1',
+    );
+    await _ensureMessageComposerVisible(tester);
+
+    final timestampFieldFinder = find.byKey(const Key('messageTimestampField'));
+    await tester.enterText(timestampFieldFinder, '42');
+    await tester.pumpAndSettle();
+
+    final snapshot = container.read(sceneSnapshotProvider(projectId)).value!;
+    container.read(sceneSelectionProvider(projectId).notifier).selectedSceneId =
+        snapshot.project.scenes[1].id;
+    await tester.pumpAndSettle();
+
+    final timestampField = tester.widget<TextField>(timestampFieldFinder);
+    expect(timestampField.controller?.text, '42');
   });
 
   testWidgets('character add rename delete flow in chat editor', (

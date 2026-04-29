@@ -422,10 +422,12 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     key: const Key('playbackProgressSummary'),
                     'Progress: $progressPercent% • Visible messages: $visibleMessagesCount/${sortedMessages.length}',
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Keyboard: Space play/pause • ←/→ seek • R restart',
-                  ),
+                  if (!isCompactLayout) ...[
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Keyboard: Space play/pause • ←/→ seek • R restart',
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Slider(
                     value: sliderValue,
