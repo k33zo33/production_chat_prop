@@ -1185,6 +1185,94 @@ void main() {
     },
   );
 
+  testWidgets(
+    'compact portfolio readiness stacks summary actions on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildAttentionProjectImportPayload());
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const ProjectListScreen(forceCompactAppBar: true),
+      );
+
+      final continueButton = find.byKey(
+        const Key('portfolioContinueEditingButton'),
+      );
+      final previewButton = find.byKey(
+        const Key('portfolioPreviewReadyButton'),
+      );
+      final reviewButton = find.byKey(
+        const Key('portfolioReviewAttentionButton'),
+      );
+
+      await tester.ensureVisible(reviewButton);
+      await tester.pumpAndSettle();
+
+      final continuePosition = tester.getTopLeft(continueButton);
+      final previewPosition = tester.getTopLeft(previewButton);
+      final reviewPosition = tester.getTopLeft(reviewButton);
+      final continueSize = tester.getSize(continueButton);
+      final previewSize = tester.getSize(previewButton);
+      final reviewSize = tester.getSize(reviewButton);
+
+      expect(previewPosition.dy, greaterThan(continuePosition.dy));
+      expect(reviewPosition.dy, greaterThan(previewPosition.dy));
+      expect(previewPosition.dx, closeTo(continuePosition.dx, 1));
+      expect(reviewPosition.dx, closeTo(previewPosition.dx, 1));
+      expect(previewSize.width, closeTo(continueSize.width, 1));
+      expect(reviewSize.width, closeTo(previewSize.width, 1));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'compact portfolio readiness attention action opens editor on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildAttentionProjectImportPayload());
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      final reviewButton = find.byKey(
+        const Key('portfolioReviewAttentionButton'),
+      );
+      await tester.ensureVisible(reviewButton);
+      await tester.pumpAndSettle();
+      await tester.tap(reviewButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+    },
+  );
+
   testWidgets('compact playback hides keyboard shortcut hint', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -4153,6 +4241,35 @@ String _buildLargeProjectImportPayload({required int messageCount}) {
   };
 
   return jsonEncode(payload);
+}
+
+String _buildAttentionProjectImportPayload({
+  String projectName = 'Compact Attention Project',
+}) {
+  return jsonEncode({
+    'id': 'compact-attention-source-id',
+    'name': projectName,
+    'type': 'other',
+    'createdAt': DateTime.utc(2026, 4, 30, 10).toIso8601String(),
+    'updatedAt': DateTime.utc(2026, 4, 30, 10).toIso8601String(),
+    'scenes': [
+      {
+        'id': 'compact-attention-scene-1',
+        'title': 'Needs Attention',
+        'styleId': 'studio_slate',
+        'aspectRatio': 'portrait9x16',
+        'characters': [
+          {
+            'id': 'compact-attention-char-1',
+            'displayName': 'Taylor',
+            'avatarPath': null,
+            'bubbleColor': '#2E90FA',
+          },
+        ],
+        'messages': <Object>[],
+      },
+    ],
+  });
 }
 
 Future<String> _createStarterProjectInContainer(

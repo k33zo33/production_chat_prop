@@ -1064,65 +1064,98 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                OutlinedButton.icon(
-                                  key: const Key(
-                                    'portfolioContinueEditingButton',
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isCompactActionStack =
+                                    constraints.maxWidth < 560;
+                                final actionButtons = <Widget>[
+                                  OutlinedButton.icon(
+                                    key: const Key(
+                                      'portfolioContinueEditingButton',
+                                    ),
+                                    onPressed:
+                                        readinessSummary.primaryProjectId ==
+                                            null
+                                        ? null
+                                        : () => context.goNamed(
+                                            'editorProject',
+                                            pathParameters: {
+                                              'projectId': readinessSummary
+                                                  .primaryProjectId!,
+                                            },
+                                          ),
+                                    icon: const Icon(Icons.edit_note_rounded),
+                                    label: const Text('Continue Editing'),
                                   ),
-                                  onPressed:
-                                      readinessSummary.primaryProjectId == null
-                                      ? null
-                                      : () => context.goNamed(
-                                          'editorProject',
-                                          pathParameters: {
-                                            'projectId': readinessSummary
-                                                .primaryProjectId!,
-                                          },
-                                        ),
-                                  icon: const Icon(Icons.edit_note_rounded),
-                                  label: const Text('Continue Editing'),
-                                ),
-                                OutlinedButton.icon(
-                                  key: const Key('portfolioPreviewReadyButton'),
-                                  onPressed:
-                                      readinessSummary.firstReadyProjectId ==
-                                          null
-                                      ? null
-                                      : () => context.goNamed(
-                                          'playbackProject',
-                                          pathParameters: {
-                                            'projectId': readinessSummary
-                                                .firstReadyProjectId!,
-                                          },
-                                        ),
-                                  icon: const Icon(
-                                    Icons.play_circle_outline_rounded,
+                                  OutlinedButton.icon(
+                                    key: const Key(
+                                      'portfolioPreviewReadyButton',
+                                    ),
+                                    onPressed:
+                                        readinessSummary.firstReadyProjectId ==
+                                            null
+                                        ? null
+                                        : () => context.goNamed(
+                                            'playbackProject',
+                                            pathParameters: {
+                                              'projectId': readinessSummary
+                                                  .firstReadyProjectId!,
+                                            },
+                                          ),
+                                    icon: const Icon(
+                                      Icons.play_circle_outline_rounded,
+                                    ),
+                                    label: const Text('Preview Ready Project'),
                                   ),
-                                  label: const Text('Preview Ready Project'),
-                                ),
-                                OutlinedButton.icon(
-                                  key: const Key(
-                                    'portfolioReviewAttentionButton',
+                                  OutlinedButton.icon(
+                                    key: const Key(
+                                      'portfolioReviewAttentionButton',
+                                    ),
+                                    onPressed:
+                                        readinessSummary
+                                                .firstNeedsAttentionProjectId ==
+                                            null
+                                        ? null
+                                        : () => context.goNamed(
+                                            'editorProject',
+                                            pathParameters: {
+                                              'projectId': readinessSummary
+                                                  .firstNeedsAttentionProjectId!,
+                                            },
+                                          ),
+                                    icon: const Icon(
+                                      Icons.rule_folder_outlined,
+                                    ),
+                                    label: const Text(
+                                      'Review Attention Project',
+                                    ),
                                   ),
-                                  onPressed:
-                                      readinessSummary
-                                              .firstNeedsAttentionProjectId ==
-                                          null
-                                      ? null
-                                      : () => context.goNamed(
-                                          'editorProject',
-                                          pathParameters: {
-                                            'projectId': readinessSummary
-                                                .firstNeedsAttentionProjectId!,
-                                          },
-                                        ),
-                                  icon: const Icon(Icons.rule_folder_outlined),
-                                  label: const Text('Review Attention Project'),
-                                ),
-                              ],
+                                ];
+
+                                if (isCompactActionStack) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      for (
+                                        var index = 0;
+                                        index < actionButtons.length;
+                                        index += 1
+                                      ) ...[
+                                        actionButtons[index],
+                                        if (index != actionButtons.length - 1)
+                                          const SizedBox(height: 8),
+                                      ],
+                                    ],
+                                  );
+                                }
+
+                                return Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: actionButtons,
+                                );
+                              },
                             ),
                           ],
                         ),
