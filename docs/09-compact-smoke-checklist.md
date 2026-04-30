@@ -27,7 +27,7 @@ Preporučeni viewport:
 - [ ] Potvrdi da export kontrole rade u compact layoutu
 - [ ] Potvrdi da transport kontrole rade bez overlap/overflow loma
 - [ ] Na ~320 px širine provjeri ultra-compact varijantu `Play/Pause`, `Restart`, seek i cue gumba
-- [ ] Skrolaj do dna playback ekrana i potvrdi da `Open Chat Editor` i `Back to Projects` ostaju klikabilni
+- [ ] Skrolaj do dna playback ekrana i potvrdi da `Open Chat Editor` otvara editor, a `Back to Projects` vraća na listu projekata
 - [ ] Promijeni scenu i potvrdi da se progress resetira na novu scenu
 - [ ] Promijeni ratio između `9:16` i `16:9` bez gubitka playback stanja
 

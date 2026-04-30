@@ -1927,6 +1927,43 @@ void main() {
     },
   );
 
+  testWidgets(
+    'ultra-compact playback footer actions expose navigation actions on phone-width screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      final openEditorButton = find.byKey(
+        const Key('playbackOpenEditorButton'),
+      );
+      final backButton = find.byKey(const Key('playbackBackToProjectsButton'));
+      await _ensureFinderVisibleInPrimaryListView(tester, openEditorButton);
+      await _ensureFinderVisibleInPrimaryListView(tester, backButton);
+
+      expect(
+        tester.widget<FilledButton>(openEditorButton).onPressed,
+        isNotNull,
+      );
+      expect(
+        tester.widget<OutlinedButton>(backButton).onPressed,
+        isNotNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('project reset button clears search and filter state', (
     tester,
   ) async {
