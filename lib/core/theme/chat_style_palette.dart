@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+const String kDefaultChatStyleId = 'studio_default';
+
+const Map<String, String> kLegacyChatStyleIdAliases = {
+  'studio_slate': kDefaultChatStyleId,
+};
+
 class ChatStylePalette {
   const ChatStylePalette({
     required this.id,
@@ -24,7 +30,7 @@ class ChatStylePalette {
 
 const List<ChatStylePalette> kChatStylePalettes = [
   ChatStylePalette(
-    id: 'studio_default',
+    id: kDefaultChatStyleId,
     name: 'Studio Default',
     surfaceColor: Color(0xFFF8F9FC),
     incomingBubbleColor: Color(0xFFEAF0FF),
@@ -65,9 +71,28 @@ const List<ChatStylePalette> kChatStylePalettes = [
   ),
 ];
 
+String normalizeChatStyleId(String styleId) {
+  final trimmedStyleId = styleId.trim();
+  if (trimmedStyleId.isEmpty) {
+    return kDefaultChatStyleId;
+  }
+
+  final aliasedStyleId =
+      kLegacyChatStyleIdAliases[trimmedStyleId] ?? trimmedStyleId;
+  final hasKnownPreset = kChatStylePalettes.any(
+    (style) => style.id == aliasedStyleId,
+  );
+  if (!hasKnownPreset) {
+    return kDefaultChatStyleId;
+  }
+
+  return aliasedStyleId;
+}
+
 ChatStylePalette resolveChatStylePalette(String styleId) {
+  final normalizedStyleId = normalizeChatStyleId(styleId);
   return kChatStylePalettes.firstWhere(
-    (style) => style.id == styleId,
+    (style) => style.id == normalizedStyleId,
     orElse: () => kChatStylePalettes.first,
   );
 }

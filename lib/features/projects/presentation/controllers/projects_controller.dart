@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_sanitizer.dart';
@@ -1574,7 +1575,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return Scene(
       id: _uuid.v4(),
       title: 'Scene 1',
-      styleId: 'studio_slate',
+      styleId: kDefaultChatStyleId,
       aspectRatio: SceneAspectRatio.portrait9x16,
       characters: [
         Character(
@@ -1628,7 +1629,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return Scene(
       id: _uuid.v4(),
       title: title,
-      styleId: 'studio_slate',
+      styleId: kDefaultChatStyleId,
       aspectRatio: SceneAspectRatio.portrait9x16,
       characters: [
         Character(

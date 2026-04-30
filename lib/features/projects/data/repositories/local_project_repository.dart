@@ -1,9 +1,12 @@
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
+import 'package:production_chat_prop/features/projects/data/services/project_sanitizer.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/repositories/project_repository.dart';
 
 class LocalProjectRepository implements ProjectRepository {
   const LocalProjectRepository(this._datasource);
+
+  static final _projectSanitizer = ProjectSanitizer();
 
   final LocalProjectDatasource _datasource;
 
@@ -13,7 +16,9 @@ class LocalProjectRepository implements ProjectRepository {
     final projects = <Project>[];
     for (final projectJson in jsonList) {
       try {
-        projects.add(Project.fromJson(projectJson));
+        projects.add(
+          _projectSanitizer.sanitizeProject(Project.fromJson(projectJson)),
+        );
       } catch (error) {
         final isRecoverableDataError =
             error is FormatException || error is TypeError;

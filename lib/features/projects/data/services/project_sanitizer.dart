@@ -1,3 +1,4 @@
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -107,13 +108,12 @@ class ProjectSanitizer {
     }
 
     final trimmedTitle = source.title.trim();
-    final trimmedStyleId = source.styleId.trim();
     return Scene(
       id: sceneId,
       title: trimmedTitle.isEmpty ? fallbackTitle : trimmedTitle,
       characters: sanitizedCharacters,
       messages: sortMessagesByTimeline(sanitizedMessages),
-      styleId: trimmedStyleId.isEmpty ? 'studio_slate' : trimmedStyleId,
+      styleId: normalizeChatStyleId(source.styleId),
       aspectRatio: source.aspectRatio,
     );
   }
@@ -125,7 +125,7 @@ class ProjectSanitizer {
       title: title,
       characters: [fallbackCharacter],
       messages: const [],
-      styleId: 'studio_slate',
+      styleId: kDefaultChatStyleId,
       aspectRatio: SceneAspectRatio.portrait9x16,
     );
   }

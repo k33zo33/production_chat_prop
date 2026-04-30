@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
@@ -35,6 +36,7 @@ void main() {
       expect(loaded.first.name, project.name);
       expect(loaded.first.type, project.type);
       expect(loaded.first.scenes, hasLength(1));
+      expect(loaded.first.scenes.first.styleId, kDefaultChatStyleId);
       expect(loaded.first.scenes.first.characters, hasLength(2));
       expect(loaded.first.scenes.first.messages, hasLength(2));
       expect(loaded.first.scenes.first.messages.first.text, 'Message one');
@@ -85,6 +87,24 @@ void main() {
         519,
       );
     });
+
+    test(
+      'normalizes legacy scene style ids when loading persisted projects',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          'projects_v1',
+          jsonEncode([
+            _sampleProject().toJson(),
+          ]),
+        );
+
+        final loaded = await repository.getAll();
+
+        expect(loaded, hasLength(1));
+        expect(loaded.first.scenes.first.styleId, kDefaultChatStyleId);
+      },
+    );
   });
 }
 

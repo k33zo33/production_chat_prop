@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_sanitizer.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -26,7 +27,7 @@ void main() {
       expect(sanitized.scenes, hasLength(1));
       expect(sanitized.scenes.first.id, isNotEmpty);
       expect(sanitized.scenes.first.title, 'Scene 1');
-      expect(sanitized.scenes.first.styleId, 'studio_slate');
+      expect(sanitized.scenes.first.styleId, kDefaultChatStyleId);
       expect(sanitized.scenes.first.aspectRatio, SceneAspectRatio.portrait9x16);
       expect(sanitized.scenes.first.characters, hasLength(1));
       expect(
@@ -48,7 +49,7 @@ void main() {
             Scene(
               id: '   ',
               title: '   ',
-              styleId: '   ',
+              styleId: 'unknown_style',
               aspectRatio: SceneAspectRatio.landscape16x9,
               characters: [
                 Character(
@@ -107,7 +108,7 @@ void main() {
       expect(sanitized.name, 'Imported');
       expect(scene.id, isNotEmpty);
       expect(scene.title, 'Scene 1');
-      expect(scene.styleId, 'studio_slate');
+      expect(scene.styleId, kDefaultChatStyleId);
       expect(scene.aspectRatio, SceneAspectRatio.landscape16x9);
       expect(scene.characters, hasLength(2));
       expect(characterIds.toSet(), hasLength(2));
@@ -169,6 +170,30 @@ void main() {
       expect(sceneIds.toSet(), hasLength(3));
       expect(sceneIds.first, 'scene-dup');
       expect(sceneIds.skip(1).every((id) => id.isNotEmpty), isTrue);
+    });
+
+    test('maps legacy style ids to the current preset id', () {
+      final sanitized = sanitizer.sanitizeProject(
+        Project(
+          id: 'project-legacy-style',
+          name: 'Imported',
+          type: ProjectType.other,
+          createdAt: DateTime.utc(2026),
+          updatedAt: DateTime.utc(2026),
+          scenes: const [
+            Scene(
+              id: 'scene-1',
+              title: 'Scene 1',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [],
+              messages: [],
+            ),
+          ],
+        ),
+      );
+
+      expect(sanitized.scenes.first.styleId, kDefaultChatStyleId);
     });
   });
 }

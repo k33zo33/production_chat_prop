@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -973,7 +974,7 @@ void main() {
         expect(imported.type, ProjectType.ad);
         expect(scene.id, isNotEmpty);
         expect(scene.title, 'Scene 1');
-        expect(scene.styleId, 'studio_slate');
+        expect(scene.styleId, kDefaultChatStyleId);
         expect(scene.characters, hasLength(1));
         expect(scene.characters.first.displayName, 'Character 1');
         expect(scene.messages, hasLength(2));
