@@ -164,26 +164,32 @@ void main() {
       expect(messages.first.id, 'm2');
     });
 
-    test('addCharacter appends a new character', () async {
-      await container.read(projectsControllerProvider.future);
+    test(
+      'addCharacter appends a new character with the next color preset',
+      () async {
+        await container.read(projectsControllerProvider.future);
 
-      await container
-          .read(projectsControllerProvider.notifier)
-          .addCharacter(
-            projectId: 'p1',
-            sceneId: 's1',
-            displayName: 'Mia',
-          );
+        await container
+            .read(projectsControllerProvider.notifier)
+            .addCharacter(
+              projectId: 'p1',
+              sceneId: 's1',
+              displayName: 'Mia',
+            );
 
-      final projects = await container.read(projectsControllerProvider.future);
-      final characters = projects.first.scenes.first.characters;
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final characters = projects.first.scenes.first.characters;
 
-      expect(characters, hasLength(2));
-      expect(characters.map((character) => character.displayName), [
-        'Alex',
-        'Mia',
-      ]);
-    });
+        expect(characters, hasLength(2));
+        expect(characters.map((character) => character.displayName), [
+          'Alex',
+          'Mia',
+        ]);
+        expect(characters.last.bubbleColor, '#12B76A');
+      },
+    );
 
     test('renameCharacter updates only selected character', () async {
       await container.read(projectsControllerProvider.future);
@@ -219,6 +225,29 @@ void main() {
 
       expect(names, ['Alex', 'Mia Updated']);
     });
+
+    test(
+      'updateCharacterBubbleColor normalizes the selected color only',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        await container
+            .read(projectsControllerProvider.notifier)
+            .updateCharacterBubbleColor(
+              projectId: 'p1',
+              sceneId: 's1',
+              characterId: 'c1',
+              bubbleColor: 'f0447c',
+            );
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final characters = projects.first.scenes.first.characters;
+
+        expect(characters.single.bubbleColor, '#F0447C');
+      },
+    );
 
     test('deleteCharacter removes character and its messages', () async {
       await container.read(projectsControllerProvider.future);

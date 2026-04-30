@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/app/app.dart';
+import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
@@ -2549,6 +2551,79 @@ void main() {
     expect(find.text('Zed'), findsNothing);
   });
 
+  testWidgets('character bubble color updates editor and playback previews', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const ProductionChatPropApp(),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final projectId = _projectIdForName(tester, 'New Project 1');
+    final snapshot = container.read(sceneSnapshotProvider(projectId)).value!;
+    final scene = snapshot.scene!;
+    final alex = scene.characters.first;
+    final firstMessage = scene.messages.first;
+    final palette = resolveChatStylePalette(scene.styleId);
+    final expectedRoseTint = resolveCharacterBubbleTint(
+      rawColor: '#F0447C',
+      baseColor: palette.outgoingBubbleColor,
+    );
+
+    await _openChatEditorFromProjectList(tester);
+
+    final editBubbleColorButton = find.byKey(
+      Key('editCharacterBubbleColor_${alex.id}'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, editBubbleColorButton);
+    await tester.tap(editBubbleColorButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(Key('characterBubbleColorOption_${alex.id}_#F0447C')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bubble Color: Rose'), findsOneWidget);
+
+    final editorBubble = tester.widget<Container>(
+      find.byKey(Key('editorMessageBubble_${firstMessage.id}')),
+    );
+    expect(
+      (editorBubble.decoration! as BoxDecoration).color,
+      expectedRoseTint,
+    );
+
+    final openPlaybackButton = find.byKey(
+      const Key('chatEditorOpenPlaybackButton'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, openPlaybackButton);
+    await tester.tap(openPlaybackButton);
+    await tester.pumpAndSettle();
+
+    final playbackBubbleFinder = find.byKey(
+      Key('playbackMessageBubble_${firstMessage.id}'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, playbackBubbleFinder);
+    final playbackBubble = tester.widget<Container>(playbackBubbleFinder);
+    expect(
+      (playbackBubble.decoration! as BoxDecoration).color,
+      expectedRoseTint,
+    );
+  });
+
   testWidgets('character dialog rejects blank names', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -4037,7 +4112,10 @@ void main() {
       final progressSummary = tester.widget<Text>(
         find.byKey(const Key('playbackProgressSummary')),
       );
-      expect(progressSummary.data, contains('Progress: 0% • Visible messages: 0/0'));
+      expect(
+        progressSummary.data,
+        contains('Progress: 0% • Visible messages: 0/0'),
+      );
       expect(
         find.textContaining('Status: playing', skipOffstage: false),
         findsNothing,
@@ -4335,11 +4413,11 @@ Future<void> _ensureFinderVisibleInPrimaryListView(
 ) async {
   if (finder.evaluate().isEmpty) {
     final listView = find.byType(ListView).first;
-    for (var i = 0; i < 8 && finder.evaluate().isEmpty; i += 1) {
+    for (var i = 0; i < 16 && finder.evaluate().isEmpty; i += 1) {
       await tester.drag(listView, const Offset(0, -220));
       await tester.pumpAndSettle();
     }
-    for (var i = 0; i < 8 && finder.evaluate().isEmpty; i += 1) {
+    for (var i = 0; i < 16 && finder.evaluate().isEmpty; i += 1) {
       await tester.drag(listView, const Offset(0, 220));
       await tester.pumpAndSettle();
     }

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_sanitizer.dart';
@@ -567,7 +568,11 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                     id: _uuid.v4(),
                     displayName: trimmedName,
                     avatarPath: null,
-                    bubbleColor: '#9E77ED',
+                    bubbleColor: suggestNextCharacterBubbleColor(
+                      scene.characters.map(
+                        (character) => character.bubbleColor,
+                      ),
+                    ),
                   ),
                 ];
 
@@ -631,6 +636,69 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                         displayName: trimmedName,
                         avatarPath: character.avatarPath,
                         bubbleColor: character.bubbleColor,
+                      );
+                    })
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: updatedCharacters,
+                  messages: scene.messages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
+  Future<void> updateCharacterBubbleColor({
+    required String projectId,
+    required String sceneId,
+    required String characterId,
+    required String bubbleColor,
+  }) async {
+    final normalizedBubbleColor = normalizeCharacterBubbleColorHex(
+      bubbleColor,
+    );
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedCharacters = scene.characters
+                    .map((character) {
+                      if (character.id != characterId) {
+                        return character;
+                      }
+
+                      return Character(
+                        id: character.id,
+                        displayName: character.displayName,
+                        avatarPath: character.avatarPath,
+                        bubbleColor: normalizedBubbleColor,
                       );
                     })
                     .toList(growable: false);

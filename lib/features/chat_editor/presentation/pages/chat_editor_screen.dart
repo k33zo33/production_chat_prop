@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
@@ -952,6 +953,10 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
   Widget build(BuildContext context) {
     final palette = resolveChatStylePalette(widget.sceneStyleId);
     final speakerNameById = _buildSpeakerNameById(widget.sceneProject);
+    final characterBubbleColorById = {
+      for (final character in widget.sceneCharacters)
+        character.id: character.bubbleColor,
+    };
     final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
 
     return Card(
@@ -1103,6 +1108,11 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                     characterId: widget.sceneMessages[i].characterId,
                     speakerNameById: speakerNameById,
                   ),
+                  characterBubbleColor:
+                      characterBubbleColorById[widget
+                          .sceneMessages[i]
+                          .characterId] ??
+                      kDefaultCharacterBubbleColorHex,
                   canMoveEarlier: i > 0,
                   canMoveLater: i < widget.sceneMessages.length - 1,
                   selectionMode: _selectionMode,
@@ -1302,6 +1312,7 @@ class _MessageRow extends StatelessWidget {
     required this.palette,
     required this.characters,
     required this.speakerName,
+    required this.characterBubbleColor,
     required this.canMoveEarlier,
     required this.canMoveLater,
     required this.selectionMode,
@@ -1316,6 +1327,7 @@ class _MessageRow extends StatelessWidget {
   final ChatStylePalette palette;
   final List<Character> characters;
   final String speakerName;
+  final String characterBubbleColor;
   final bool canMoveEarlier;
   final bool canMoveLater;
   final bool selectionMode;
@@ -1325,13 +1337,18 @@ class _MessageRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final bubbleColor = resolveCharacterBubbleTint(
+      rawColor: characterBubbleColor,
+      baseColor: message.isIncoming
+          ? palette.incomingBubbleColor
+          : palette.outgoingBubbleColor,
+    );
 
     return Container(
+      key: Key('editorMessageBubble_${message.id}'),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: message.isIncoming
-            ? palette.incomingBubbleColor
-            : palette.outgoingBubbleColor,
+        color: bubbleColor,
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.all(12),
@@ -2154,6 +2171,70 @@ class _CharacterManagerCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final controller = ref.read(projectsControllerProvider.notifier);
+
+    Future<void> addCharacter() async {
+      final newName = await _showCharacterNameDialog(
+        context,
+        title: 'Add Character',
+      );
+      if (newName == null) {
+        return;
+      }
+
+      await controller.addCharacter(
+        projectId: projectId,
+        sceneId: sceneId,
+        displayName: newName,
+      );
+    }
+
+    Future<void> renameCharacter(Character character) async {
+      final updatedName = await _showCharacterNameDialog(
+        context,
+        title: 'Rename Character',
+        initialValue: character.displayName,
+      );
+      if (updatedName == null) {
+        return;
+      }
+
+      await controller.renameCharacter(
+        projectId: projectId,
+        sceneId: sceneId,
+        characterId: character.id,
+        newDisplayName: updatedName,
+      );
+    }
+
+    Future<void> updateBubbleColor(Character character) async {
+      final nextColor = await _showCharacterBubbleColorDialog(
+        context,
+        character: character,
+      );
+      if (nextColor == null) {
+        return;
+      }
+
+      await controller.updateCharacterBubbleColor(
+        projectId: projectId,
+        sceneId: sceneId,
+        characterId: character.id,
+        bubbleColor: nextColor,
+      );
+    }
+
+    Future<void> deleteCharacter(Character character) async {
+      if (characters.length == 1) {
+        return;
+      }
+
+      await controller.deleteCharacter(
+        projectId: projectId,
+        sceneId: sceneId,
+        characterId: character.id,
+      );
+    }
 
     return Card(
       child: Padding(
@@ -2173,23 +2254,7 @@ class _CharacterManagerCard extends ConsumerWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: () async {
-                        final newName = await _showCharacterNameDialog(
-                          context,
-                          title: 'Add Character',
-                        );
-                        if (newName == null) {
-                          return;
-                        }
-
-                        await ref
-                            .read(projectsControllerProvider.notifier)
-                            .addCharacter(
-                              projectId: projectId,
-                              sceneId: sceneId,
-                              displayName: newName,
-                            );
-                      },
+                      onPressed: addCharacter,
                       icon: const Icon(Icons.person_add_alt_1_rounded),
                       label: const Text('Add Character'),
                     ),
@@ -2205,23 +2270,7 @@ class _CharacterManagerCard extends ConsumerWidget {
                   ),
                   const Spacer(),
                   FilledButton.icon(
-                    onPressed: () async {
-                      final newName = await _showCharacterNameDialog(
-                        context,
-                        title: 'Add Character',
-                      );
-                      if (newName == null) {
-                        return;
-                      }
-
-                      await ref
-                          .read(projectsControllerProvider.notifier)
-                          .addCharacter(
-                            projectId: projectId,
-                            sceneId: sceneId,
-                            displayName: newName,
-                          );
-                    },
+                    onPressed: addCharacter,
                     icon: const Icon(Icons.person_add_alt_1_rounded),
                     label: const Text('Add'),
                   ),
@@ -2237,22 +2286,20 @@ class _CharacterManagerCard extends ConsumerWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Chip(label: Text(character.displayName)),
+                          child: Chip(
+                            key: Key('characterChip_${character.id}'),
+                            avatar: _CharacterBubbleAvatar(
+                              bubbleColor: character.bubbleColor,
+                            ),
+                            label: Text(character.displayName),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         IconButton(
                           tooltip: 'Delete ${character.displayName}',
                           onPressed: characters.length == 1
                               ? null
-                              : () async {
-                                  await ref
-                                      .read(projectsControllerProvider.notifier)
-                                      .deleteCharacter(
-                                        projectId: projectId,
-                                        sceneId: sceneId,
-                                        characterId: character.id,
-                                      );
-                                },
+                              : () => deleteCharacter(character),
                           icon: const Icon(Icons.person_remove_rounded),
                         ),
                       ],
@@ -2268,20 +2315,12 @@ class _CharacterManagerCard extends ConsumerWidget {
                 children: [
                   for (final character in characters)
                     Chip(
+                      key: Key('characterChip_${character.id}'),
+                      avatar: _CharacterBubbleAvatar(
+                        bubbleColor: character.bubbleColor,
+                      ),
                       label: Text(character.displayName),
-                      onDeleted: () async {
-                        if (characters.length == 1) {
-                          return;
-                        }
-
-                        await ref
-                            .read(projectsControllerProvider.notifier)
-                            .deleteCharacter(
-                              projectId: projectId,
-                              sceneId: sceneId,
-                              characterId: character.id,
-                            );
-                      },
+                      onDeleted: () => deleteCharacter(character),
                       deleteIcon: const Icon(Icons.person_remove_rounded),
                     ),
                 ],
@@ -2296,33 +2335,31 @@ class _CharacterManagerCard extends ConsumerWidget {
               const SizedBox(height: 8),
               if (isCompactLayout)
                 Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final character in characters) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final updatedName = await _showCharacterNameDialog(
-                              context,
-                              title: 'Rename Character',
-                              initialValue: character.displayName,
-                            );
-                            if (updatedName == null) {
-                              return;
-                            }
-
-                            await ref
-                                .read(projectsControllerProvider.notifier)
-                                .renameCharacter(
-                                  projectId: projectId,
-                                  sceneId: sceneId,
-                                  characterId: character.id,
-                                  newDisplayName: updatedName,
-                                );
-                          },
-                          icon: const Icon(Icons.edit_rounded),
-                          label: Text('Rename ${character.displayName}'),
-                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => renameCharacter(character),
+                            icon: const Icon(Icons.edit_rounded),
+                            label: const Text('Rename'),
+                          ),
+                          OutlinedButton.icon(
+                            key: Key(
+                              'editCharacterBubbleColor_${character.id}',
+                            ),
+                            onPressed: () => updateBubbleColor(character),
+                            icon: _CharacterBubbleAvatar(
+                              bubbleColor: character.bubbleColor,
+                            ),
+                            label: Text(
+                              'Color: ${describeCharacterBubbleColor(character.bubbleColor)}',
+                            ),
+                          ),
+                        ],
                       ),
                       if (character != characters.last)
                         const SizedBox(height: 8),
@@ -2331,32 +2368,32 @@ class _CharacterManagerCard extends ConsumerWidget {
                 )
               else
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
                     for (final character in characters)
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final updatedName = await _showCharacterNameDialog(
-                            context,
-                            title: 'Rename Character',
-                            initialValue: character.displayName,
-                          );
-                          if (updatedName == null) {
-                            return;
-                          }
-
-                          await ref
-                              .read(projectsControllerProvider.notifier)
-                              .renameCharacter(
-                                projectId: projectId,
-                                sceneId: sceneId,
-                                characterId: character.id,
-                                newDisplayName: updatedName,
-                              );
-                        },
-                        icon: const Icon(Icons.edit_rounded),
-                        label: Text('Rename ${character.displayName}'),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => renameCharacter(character),
+                            icon: const Icon(Icons.edit_rounded),
+                            label: Text('Rename ${character.displayName}'),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            key: Key(
+                              'editCharacterBubbleColor_${character.id}',
+                            ),
+                            onPressed: () => updateBubbleColor(character),
+                            icon: _CharacterBubbleAvatar(
+                              bubbleColor: character.bubbleColor,
+                            ),
+                            label: Text(
+                              'Bubble Color: ${describeCharacterBubbleColor(character.bubbleColor)}',
+                            ),
+                          ),
+                        ],
                       ),
                   ],
                 ),
@@ -2378,6 +2415,94 @@ class _CharacterManagerCard extends ConsumerWidget {
       labelText: 'Character Name',
       initialValue: initialValue,
       emptyErrorText: 'Character name cannot be empty.',
+    );
+  }
+
+  Future<String?> _showCharacterBubbleColorDialog(
+    BuildContext context, {
+    required Character character,
+  }) async {
+    var selectedColor = normalizeCharacterBubbleColorHex(character.bubbleColor);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return ResponsiveAlertDialog(
+              title: Text('Bubble Color for ${character.displayName}'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Choose the accent used to tint this character's messages.",
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final option in kCharacterBubbleColorOptions)
+                        ChoiceChip(
+                          key: Key(
+                            'characterBubbleColorOption_${character.id}_${option.hexColor}',
+                          ),
+                          avatar: _CharacterBubbleAvatar(
+                            bubbleColor: option.hexColor,
+                          ),
+                          label: Text(option.label),
+                          selected: selectedColor == option.hexColor,
+                          onSelected: (selected) {
+                            if (!selected) {
+                              return;
+                            }
+                            setState(() {
+                              selectedColor = option.hexColor;
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(selectedColor),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return result;
+  }
+}
+
+class _CharacterBubbleAvatar extends StatelessWidget {
+  const _CharacterBubbleAvatar({required this.bubbleColor});
+
+  final String bubbleColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(
+        color: resolveCharacterBubbleColor(bubbleColor),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.6),
+        ),
+      ),
     );
   }
 }

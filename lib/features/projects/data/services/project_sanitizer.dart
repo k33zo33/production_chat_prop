@@ -1,4 +1,5 @@
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -148,11 +149,7 @@ class ProjectSanitizer {
   }
 
   String _normalizeBubbleColor(String rawColor) {
-    final trimmedColor = rawColor.trim();
-    if (trimmedColor.isEmpty) {
-      return '#2E90FA';
-    }
-    return trimmedColor;
+    return normalizeCharacterBubbleColorHex(rawColor);
   }
 
   String _normalizeId(String rawId) {

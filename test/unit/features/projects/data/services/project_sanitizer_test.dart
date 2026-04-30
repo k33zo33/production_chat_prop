@@ -172,6 +172,44 @@ void main() {
       expect(sceneIds.skip(1).every((id) => id.isNotEmpty), isTrue);
     });
 
+    test('normalizes imported character bubble colors to safe hex values', () {
+      final sanitized = sanitizer.sanitizeProject(
+        Project(
+          id: 'project-colors',
+          name: 'Imported',
+          type: ProjectType.other,
+          createdAt: DateTime.utc(2026),
+          updatedAt: DateTime.utc(2026),
+          scenes: const [
+            Scene(
+              id: 'scene-1',
+              title: 'Scene 1',
+              styleId: 'studio_default',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'c1',
+                  displayName: 'Alex',
+                  avatarPath: null,
+                  bubbleColor: '12b76a',
+                ),
+                Character(
+                  id: 'c2',
+                  displayName: 'Mia',
+                  avatarPath: null,
+                  bubbleColor: 'not-a-color',
+                ),
+              ],
+              messages: [],
+            ),
+          ],
+        ),
+      );
+
+      expect(sanitized.scenes.first.characters.first.bubbleColor, '#12B76A');
+      expect(sanitized.scenes.first.characters.last.bubbleColor, '#2E90FA');
+    });
+
     test('maps legacy style ids to the current preset id', () {
       final sanitized = sanitizer.sanitizeProject(
         Project(

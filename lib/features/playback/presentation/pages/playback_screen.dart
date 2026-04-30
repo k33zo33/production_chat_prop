@@ -6,12 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/data/services/video_export_fallback_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
+import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
@@ -192,6 +194,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           selectedAspectRatio,
         );
     final speakerNameById = _buildSpeakerNameById(project);
+    final characterBubbleColorById = {
+      for (final character in scene?.characters ?? const <Character>[])
+        character.id: character.bubbleColor,
+    };
     final maxSecond = sortedMessages.isEmpty
         ? 0
         : sortedMessages.last.timestampSeconds;
@@ -210,8 +216,8 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final hasPlaybackMessages = sortedMessages.isNotEmpty;
     final exportReadiness = hasPlaybackMessages
         ? _isExporting
-            ? 'Export in progress'
-            : 'Ready'
+              ? 'Export in progress'
+              : 'Ready'
         : 'No messages in scene';
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final isCompactLayout = viewportWidth < 720;
@@ -543,7 +549,9 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -588,8 +596,8 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     onPause: playbackState.isPlaying
                         ? playbackController.pause
                         : null,
-                    onRestart: hasPlaybackMessages ||
-                            playbackState.currentSecond > 0
+                    onRestart:
+                        hasPlaybackMessages || playbackState.currentSecond > 0
                         ? playbackController.restart
                         : null,
                     onSeekForward1: maxSecond == 0
@@ -626,6 +634,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
             maxSecond: maxSecond,
             messages: sortedMessages,
             speakerNameById: speakerNameById,
+            characterBubbleColorById: characterBubbleColorById,
             resolveSpeakerName: _resolveSpeakerName,
             showTypingIndicator: _showTypingIndicator,
           ),
@@ -962,6 +971,7 @@ class _PlaybackPreviewCard extends StatefulWidget {
     required this.maxSecond,
     required this.messages,
     required this.speakerNameById,
+    required this.characterBubbleColorById,
     required this.resolveSpeakerName,
     required this.showTypingIndicator,
   });
@@ -976,6 +986,7 @@ class _PlaybackPreviewCard extends StatefulWidget {
   final int maxSecond;
   final List<Message> messages;
   final Map<String, String> speakerNameById;
+  final Map<String, String> characterBubbleColorById;
   final String Function({
     required String characterId,
     required Map<String, String> speakerNameById,
@@ -1229,6 +1240,11 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
                                                       speakerNameById: widget
                                                           .speakerNameById,
                                                     ),
+                                                characterBubbleColor:
+                                                    widget
+                                                        .characterBubbleColorById[message
+                                                        .characterId] ??
+                                                    kDefaultCharacterBubbleColorHex,
                                                 isVisibleAtCurrentTime:
                                                     message.timestampSeconds <=
                                                     widget.currentSecond,
@@ -1683,6 +1699,7 @@ class _TimelineItem extends StatelessWidget {
     required this.message,
     required this.palette,
     required this.speakerName,
+    required this.characterBubbleColor,
     required this.isVisibleAtCurrentTime,
     this.cleanPreview = false,
     this.isActiveCue = false,
@@ -1691,6 +1708,7 @@ class _TimelineItem extends StatelessWidget {
   final Message message;
   final ChatStylePalette palette;
   final String speakerName;
+  final String characterBubbleColor;
   final bool isVisibleAtCurrentTime;
   final bool cleanPreview;
   final bool isActiveCue;
@@ -1705,14 +1723,20 @@ class _TimelineItem extends StatelessWidget {
       MessageStatus.seen => Icons.visibility_rounded,
     };
 
+    final bubbleColor = resolveCharacterBubbleTint(
+      rawColor: characterBubbleColor,
+      baseColor: message.isIncoming
+          ? palette.incomingBubbleColor
+          : palette.outgoingBubbleColor,
+    );
+
     return Opacity(
       opacity: isVisibleAtCurrentTime ? 1 : 0.45,
       child: Container(
+        key: Key('playbackMessageBubble_${message.id}'),
         width: double.infinity,
         decoration: BoxDecoration(
-          color: message.isIncoming
-              ? palette.incomingBubbleColor
-              : palette.outgoingBubbleColor,
+          color: bubbleColor,
           borderRadius: BorderRadius.circular(12),
           border: isActiveCue
               ? Border.all(
