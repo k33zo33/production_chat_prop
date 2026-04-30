@@ -1204,6 +1204,64 @@ void main() {
   });
 
   testWidgets(
+    'compact playback scene selector switches demo scenes and resets progress',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('compactPlaybackSceneDropdown')),
+        findsOneWidget,
+      );
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+
+      container
+          .read(playbackControllerProvider(projectId).notifier)
+          .seekBy(delta: 5, maxSecond: 11);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('t=5s / 11 s', skipOffstage: false),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('compactPlaybackSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        find.textContaining('Scene ratio: 16:9', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('t=0s / 8 s', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Progress: 0% • Visible messages: 1/3'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'compact demo flow stays usable across project list, editor, and playback',
     (tester) async {
       final container = ProviderContainer(

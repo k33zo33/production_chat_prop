@@ -145,21 +145,34 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncPlaybackWithScene(
-        previousSceneId: null,
-        currentSceneId: widget.snapshot.scene?.id,
-      );
-    });
+    _schedulePlaybackSync(
+      previousSceneId: null,
+      currentSceneId: widget.snapshot.scene?.id,
+    );
   }
 
   @override
   void didUpdateWidget(covariant _PlaybackTimeline oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncPlaybackWithScene(
+    _schedulePlaybackSync(
       previousSceneId: oldWidget.snapshot.scene?.id,
       currentSceneId: widget.snapshot.scene?.id,
     );
+  }
+
+  void _schedulePlaybackSync({
+    required String? previousSceneId,
+    required String? currentSceneId,
+  }) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _syncPlaybackWithScene(
+        previousSceneId: previousSceneId,
+        currentSceneId: currentSceneId,
+      );
+    });
   }
 
   @override
@@ -303,6 +316,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
+                                key: const Key('compactPlaybackSceneDropdown'),
                                 value: scene?.id,
                                 isExpanded: true,
                                 items: [
@@ -327,6 +341,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       ),
                     ] else
                       DropdownButtonFormField<String>(
+                        key: const Key('playbackSceneDropdown'),
                         initialValue: scene?.id,
                         isExpanded: true,
                         decoration: const InputDecoration(
