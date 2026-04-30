@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -563,6 +565,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           ),
           const SizedBox(height: 12),
           _PlaybackPreviewCard(
+            sceneId: scene?.id,
             boundaryKey: _previewBoundaryKey,
             aspectRatio: selectedAspectRatio,
             palette: palette,
@@ -896,8 +899,9 @@ enum _ExportState {
   videoError,
 }
 
-class _PlaybackPreviewCard extends StatelessWidget {
+class _PlaybackPreviewCard extends StatefulWidget {
   const _PlaybackPreviewCard({
+    required this.sceneId,
     required this.boundaryKey,
     required this.aspectRatio,
     required this.palette,
@@ -911,6 +915,7 @@ class _PlaybackPreviewCard extends StatelessWidget {
     required this.showTypingIndicator,
   });
 
+  final String? sceneId;
   final GlobalKey boundaryKey;
   final SceneAspectRatio aspectRatio;
   final ChatStylePalette palette;
@@ -932,26 +937,140 @@ class _PlaybackPreviewCard extends StatelessWidget {
   showTypingIndicator;
 
   @override
+  State<_PlaybackPreviewCard> createState() => _PlaybackPreviewCardState();
+}
+
+class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _activeCueKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncAutoFollow(previousCurrentSecond: null, sceneChanged: false);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlaybackPreviewCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncAutoFollow(
+        previousCurrentSecond: oldWidget.currentSecond,
+        sceneChanged: oldWidget.sceneId != widget.sceneId,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _syncAutoFollow({
+    required int? previousCurrentSecond,
+    required bool sceneChanged,
+  }) {
+    if (!mounted || !_scrollController.hasClients || widget.messages.isEmpty) {
+      return;
+    }
+
+    if (sceneChanged ||
+        (previousCurrentSecond != null &&
+            widget.currentSecond == 0 &&
+            previousCurrentSecond != 0)) {
+      _scrollController.jumpTo(0);
+      return;
+    }
+
+    final movedForward = previousCurrentSecond == null
+        ? widget.currentSecond > 0
+        : widget.currentSecond > previousCurrentSecond;
+    if (!movedForward) {
+      return;
+    }
+
+    final activeContext = _activeCueKey.currentContext;
+    if (activeContext == null) {
+      return;
+    }
+
+    unawaited(
+      Scrollable.ensureVisible(
+        activeContext,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        alignment: 0.92,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+      ),
+    );
+  }
+
+  String? _activeCueId() {
+    for (final message in widget.messages) {
+      if (widget.showTypingIndicator(
+        message: message,
+        currentSecond: widget.currentSecond,
+      )) {
+        return 'typing-${message.id}';
+      }
+    }
+
+    for (var index = widget.messages.length - 1; index >= 0; index -= 1) {
+      final message = widget.messages[index];
+      if (message.timestampSeconds <= widget.currentSecond) {
+        return 'message-${message.id}';
+      }
+    }
+
+    return null;
+  }
+
+  Widget _wrapCue({
+    required String cueId,
+    required bool isActiveCue,
+    required Widget child,
+  }) {
+    return Container(
+      key: isActiveCue ? const Key('activePreviewCue') : ValueKey(cueId),
+      child: Container(
+        key: isActiveCue ? _activeCueKey : null,
+        child: child,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final activeCueId = _activeCueId();
+
     return RepaintBoundary(
-      key: boundaryKey,
+      key: widget.boundaryKey,
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: aspectRatio == SceneAspectRatio.portrait9x16 ? 420 : 720,
+            maxWidth: widget.aspectRatio == SceneAspectRatio.portrait9x16
+                ? 420
+                : 720,
           ),
           child: AspectRatio(
             key: const Key('playbackPreviewAspectRatio'),
-            aspectRatio: _aspectRatioValue(aspectRatio),
+            aspectRatio: _aspectRatioValue(widget.aspectRatio),
             child: Container(
               decoration: BoxDecoration(
-                color: showDeviceFrame ? Colors.black : Colors.transparent,
-                borderRadius: BorderRadius.circular(showDeviceFrame ? 28 : 0),
-                border: showDeviceFrame
+                color: widget.showDeviceFrame
+                    ? Colors.black
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(
+                  widget.showDeviceFrame ? 28 : 0,
+                ),
+                border: widget.showDeviceFrame
                     ? Border.all(color: Colors.black87, width: 6)
                     : null,
-                boxShadow: showDeviceFrame
+                boxShadow: widget.showDeviceFrame
                     ? const [
                         BoxShadow(
                           color: Color(0x22000000),
@@ -961,18 +1080,20 @@ class _PlaybackPreviewCard extends StatelessWidget {
                       ]
                     : null,
               ),
-              padding: EdgeInsets.all(showDeviceFrame ? 12 : 0),
+              padding: EdgeInsets.all(widget.showDeviceFrame ? 12 : 0),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(showDeviceFrame ? 20 : 0),
+                borderRadius: BorderRadius.circular(
+                  widget.showDeviceFrame ? 20 : 0,
+                ),
                 child: Card(
                   margin: EdgeInsets.zero,
-                  color: palette.surfaceColor,
+                  color: widget.palette.surfaceColor,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (!cleanPreview) ...[
+                        if (!widget.cleanPreview) ...[
                           Text(
                             'Playback Timeline (read-only)',
                             style: Theme.of(context).textTheme.titleMedium,
@@ -983,15 +1104,15 @@ class _PlaybackPreviewCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                         ],
-                        if (cleanPreview)
+                        if (widget.cleanPreview)
                           Text(
-                            'Preview • ${_formatTimecode(currentSecond)} / ${_formatTimecode(maxSecond)}',
+                            'Preview • ${_formatTimecode(widget.currentSecond)} / ${_formatTimecode(widget.maxSecond)}',
                             key: const Key('cleanPreviewHeader'),
                             style: Theme.of(context).textTheme.labelLarge,
                           ),
-                        if (cleanPreview) const SizedBox(height: 12),
+                        if (widget.cleanPreview) const SizedBox(height: 12),
                         Expanded(
-                          child: messages.isEmpty
+                          child: widget.messages.isEmpty
                               ? const Align(
                                   alignment: Alignment.topLeft,
                                   child: Text(
@@ -1000,35 +1121,60 @@ class _PlaybackPreviewCard extends StatelessWidget {
                                 )
                               : SingleChildScrollView(
                                   key: const Key('playbackPreviewScrollView'),
+                                  controller: _scrollController,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      for (final message in messages) ...[
-                                        if (showTypingIndicator(
+                                      for (final message in widget.messages) ...[
+                                        if (widget.showTypingIndicator(
                                           message: message,
-                                          currentSecond: currentSecond,
+                                          currentSecond: widget.currentSecond,
                                         )) ...[
-                                          _TypingIndicatorItem(
-                                            speakerName: resolveSpeakerName(
-                                              characterId: message.characterId,
-                                              speakerNameById: speakerNameById,
+                                          _wrapCue(
+                                            cueId: 'typing-${message.id}',
+                                            isActiveCue:
+                                                activeCueId ==
+                                                'typing-${message.id}',
+                                            child: _TypingIndicatorItem(
+                                              speakerName:
+                                                  widget.resolveSpeakerName(
+                                                    characterId:
+                                                        message.characterId,
+                                                    speakerNameById:
+                                                        widget.speakerNameById,
+                                                  ),
+                                              palette: widget.palette,
+                                              isActiveCue:
+                                                  activeCueId ==
+                                                  'typing-${message.id}',
                                             ),
-                                            palette: palette,
                                           ),
                                           const SizedBox(height: 8),
                                         ],
-                                        _TimelineItem(
-                                          message: message,
-                                          palette: palette,
-                                          speakerName: resolveSpeakerName(
-                                            characterId: message.characterId,
-                                            speakerNameById: speakerNameById,
+                                        _wrapCue(
+                                          cueId: 'message-${message.id}',
+                                          isActiveCue:
+                                              activeCueId ==
+                                              'message-${message.id}',
+                                          child: _TimelineItem(
+                                            message: message,
+                                            palette: widget.palette,
+                                            speakerName:
+                                                widget.resolveSpeakerName(
+                                                  characterId:
+                                                      message.characterId,
+                                                  speakerNameById:
+                                                      widget.speakerNameById,
+                                                ),
+                                            isVisibleAtCurrentTime:
+                                                message.timestampSeconds <=
+                                                widget.currentSecond,
+                                            cleanPreview: widget.cleanPreview,
+                                            isActiveCue:
+                                                activeCueId ==
+                                                'message-${message.id}',
                                           ),
-                                          isVisibleAtCurrentTime:
-                                              message.timestampSeconds <=
-                                              currentSecond,
-                                          cleanPreview: cleanPreview,
                                         ),
                                         const SizedBox(height: 8),
                                       ],
@@ -1318,10 +1464,12 @@ class _TypingIndicatorItem extends StatelessWidget {
   const _TypingIndicatorItem({
     required this.speakerName,
     required this.palette,
+    this.isActiveCue = false,
   });
 
   final String speakerName;
   final ChatStylePalette palette;
+  final bool isActiveCue;
 
   @override
   Widget build(BuildContext context) {
@@ -1331,6 +1479,18 @@ class _TypingIndicatorItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: palette.typingColor,
         borderRadius: BorderRadius.circular(12),
+        border: isActiveCue
+            ? Border.all(color: Colors.white.withValues(alpha: 0.92), width: 2)
+            : null,
+        boxShadow: isActiveCue
+            ? const [
+                BoxShadow(
+                  color: Color(0x22000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 6),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
@@ -1353,6 +1513,7 @@ class _TimelineItem extends StatelessWidget {
     required this.speakerName,
     required this.isVisibleAtCurrentTime,
     this.cleanPreview = false,
+    this.isActiveCue = false,
   });
 
   final Message message;
@@ -1360,6 +1521,7 @@ class _TimelineItem extends StatelessWidget {
   final String speakerName;
   final bool isVisibleAtCurrentTime;
   final bool cleanPreview;
+  final bool isActiveCue;
 
   @override
   Widget build(BuildContext context) {
@@ -1380,6 +1542,18 @@ class _TimelineItem extends StatelessWidget {
               ? palette.incomingBubbleColor
               : palette.outgoingBubbleColor,
           borderRadius: BorderRadius.circular(12),
+          border: isActiveCue
+              ? Border.all(color: Colors.white.withValues(alpha: 0.92), width: 2)
+              : null,
+          boxShadow: isActiveCue
+              ? const [
+                  BoxShadow(
+                    color: Color(0x22000000),
+                    blurRadius: 12,
+                    offset: Offset(0, 6),
+                  ),
+                ]
+              : null,
         ),
         padding: const EdgeInsets.all(12),
         child: Row(

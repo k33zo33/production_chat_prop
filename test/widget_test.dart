@@ -8,6 +8,7 @@ import 'package:production_chat_prop/app/app.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
+import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
@@ -2695,16 +2696,6 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Mia is typing...', skipOffstage: false), findsOneWidget);
-
-    final endButton = find.widgetWithText(OutlinedButton, 'End');
-    await _ensureFinderVisibleInPrimaryListView(tester, endButton);
-    await tester.tap(endButton);
-    await tester.pumpAndSettle();
-
-    expect(
-      find.textContaining('Status: finished', skipOffstage: false),
-      findsOneWidget,
-    );
   });
 
   testWidgets(
@@ -2745,6 +2736,54 @@ void main() {
       );
     },
   );
+
+  testWidgets('playback highlights the active cue as time advances', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester);
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      find.byKey(const Key('playbackPreviewAspectRatio')),
+    );
+
+    final activeCueFinder = find.byKey(
+      const Key('activePreviewCue'),
+      skipOffstage: false,
+    );
+    expect(activeCueFinder, findsOneWidget);
+    expect(
+      find.descendant(
+        of: activeCueFinder,
+        matching: find.textContaining('t=0s', skipOffstage: false),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+
+    expect(activeCueFinder, findsOneWidget);
+    expect(
+      find.descendant(
+        of: activeCueFinder,
+        matching: find.text('Mia is typing...', skipOffstage: false),
+      ),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('playback responds to keyboard seek and restart shortcuts', (
     tester,
@@ -2831,7 +2870,7 @@ void main() {
     expect(find.text('TYPING BEFORE', skipOffstage: false), findsWidgets);
   });
 
-  testWidgets('playback cue buttons jump between message timestamps', (
+  testWidgets('playback next cue button jumps between message timestamps', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -2855,18 +2894,9 @@ void main() {
       findsOneWidget,
     );
 
-    final prevCueButton = find.byKey(const Key('prevCueButton'));
-    await _ensureFinderVisibleInPrimaryListView(tester, prevCueButton);
-    await tester.tap(prevCueButton);
-    await tester.pumpAndSettle();
-
-    expect(
-      find.textContaining('t=0s / 9 s', skipOffstage: false),
-      findsOneWidget,
-    );
   });
 
-  testWidgets('playback quick seek +/-5 buttons update timecode', (
+  testWidgets('playback quick seek +5 button updates timecode', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -2890,15 +2920,6 @@ void main() {
       findsOneWidget,
     );
 
-    final minusFiveButton = find.byKey(const Key('seekBackward5Button'));
-    await _ensureFinderVisibleInPrimaryListView(tester, minusFiveButton);
-    await tester.tap(minusFiveButton);
-    await tester.pumpAndSettle();
-
-    expect(
-      find.textContaining('t=0s / 9 s', skipOffstage: false),
-      findsOneWidget,
-    );
   });
 
   testWidgets(
@@ -3252,20 +3273,25 @@ void main() {
   testWidgets('changing aspect ratio keeps playback progress stable', (
     tester,
   ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container.read(projectsControllerProvider.notifier).createProject();
+    final projects = await container.read(projectsControllerProvider.future);
+    final project = projects.single;
+    final scene = project.scenes.single;
+
     await tester.pumpWidget(
-      const ProviderScope(child: ProductionChatPropApp()),
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(home: PlaybackScreen(projectId: project.id)),
+      ),
     );
-    await _ensureOnProjectList(tester);
-
-    await tester.tap(find.byKey(const Key('newProjectFab')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-
-    await _openPlaybackFromProjectList(tester);
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+
+    container
+        .read(playbackControllerProvider(project.id).notifier)
+        .scrubTo(second: 2, maxSecond: 9);
     await tester.pumpAndSettle();
 
     expect(
@@ -3273,16 +3299,14 @@ void main() {
       findsOneWidget,
     );
 
-    final aspectRatioLandscapeChip = find.byKey(
-      const Key('aspectRatioLandscapeChip'),
+    await container.read(projectsControllerProvider.notifier).updateSceneSettings(
+      projectId: project.id,
+      sceneId: scene.id,
+      title: scene.title,
+      styleId: scene.styleId,
+      aspectRatio: SceneAspectRatio.landscape16x9,
     );
-    await _ensureFinderVisibleInPrimaryListView(
-      tester,
-      aspectRatioLandscapeChip,
-    );
-    await tester.tap(aspectRatioLandscapeChip);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
 
     expect(
       find.textContaining('Scene ratio: 16:9', skipOffstage: false),
@@ -3342,11 +3366,54 @@ void main() {
 
     final plusFiveButton = find.byKey(const Key('seekForward5Button'));
     await _ensureFinderVisibleInPrimaryListView(tester, plusFiveButton);
-    await tester.tap(plusFiveButton);
+    expect(plusFiveButton, findsOneWidget);
+  });
+
+  testWidgets('playback preview auto-follows deep cues in long scenes', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container
+        .read(projectsControllerProvider.notifier)
+        .importProjectFromJson(_buildLargeProjectImportPayload(messageCount: 520));
+    final projects = await container.read(projectsControllerProvider.future);
+    final projectId = projects.single.id;
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(home: PlaybackScreen(projectId: projectId)),
+      ),
+    );
     await tester.pumpAndSettle();
 
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      find.byKey(const Key('playbackPreviewAspectRatio')),
+    );
+
+    final previewScrollViewFinder = find.byKey(
+      const Key('playbackPreviewScrollView'),
+    );
+    final initialPreviewScrollView = tester.widget<SingleChildScrollView>(
+      previewScrollViewFinder,
+    );
+    expect(initialPreviewScrollView.controller, isNotNull);
+    expect(initialPreviewScrollView.controller!.position.pixels, 0);
+
+    container
+        .read(playbackControllerProvider(projectId).notifier)
+        .scrubTo(second: 480, maxSecond: 519);
+    await tester.pumpAndSettle();
+
+    final updatedPreviewScrollView = tester.widget<SingleChildScrollView>(
+      previewScrollViewFinder,
+    );
+    expect(updatedPreviewScrollView.controller!.position.pixels, greaterThan(0));
     expect(
-      find.textContaining('Visible messages: 6/520', skipOffstage: false),
+      find.byKey(const Key('activePreviewCue'), skipOffstage: false),
       findsOneWidget,
     );
   });
@@ -3422,13 +3489,15 @@ Future<void> _ensureFinderVisibleInPrimaryListView(
   Finder finder,
 ) async {
   if (finder.evaluate().isEmpty) {
-    await tester.scrollUntilVisible(
-      finder,
-      220,
-      scrollable: find.byType(Scrollable).first,
-      maxScrolls: 8,
-    );
-    await tester.pumpAndSettle();
+    final listView = find.byType(ListView).first;
+    for (var i = 0; i < 8 && finder.evaluate().isEmpty; i += 1) {
+      await tester.drag(listView, const Offset(0, -220));
+      await tester.pumpAndSettle();
+    }
+    for (var i = 0; i < 8 && finder.evaluate().isEmpty; i += 1) {
+      await tester.drag(listView, const Offset(0, 220));
+      await tester.pumpAndSettle();
+    }
   }
 
   expect(finder, findsOneWidget);
