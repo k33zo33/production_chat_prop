@@ -1279,6 +1279,66 @@ void main() {
   });
 
   testWidgets(
+    'ultra-compact playback actions stay usable on phone-width screens',
+    (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          screenshotExportServiceProvider.overrideWithValue(
+            _FakeScreenshotExportService(
+              const ScreenshotExportResult.success(
+                filename: 'ultra_compact_capture.png',
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(tester.takeException(), isNull);
+
+      final playButton = find.byKey(const Key('playButton'));
+      await _ensureFinderVisibleInPrimaryListView(tester, playButton);
+      expect(find.byKey(const Key('pauseButton')), findsNothing);
+      await tester.tap(playButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('playButton')), findsNothing);
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('pauseButton')),
+      );
+
+      final restartButton = find.byKey(const Key('restartButton'));
+      await _ensureFinderVisibleInPrimaryListView(tester, restartButton);
+      await tester.tap(restartButton);
+      await tester.pumpAndSettle();
+
+      final plusFiveButton = find.byKey(const Key('seekForward5Button'));
+      await _ensureFinderVisibleInPrimaryListView(tester, plusFiveButton);
+      await tester.tap(plusFiveButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('t=5s / 9 s', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'compact playback scene selector switches demo scenes and resets progress',
     (tester) async {
       final container = ProviderContainer();
@@ -3636,13 +3696,14 @@ Future<void> _pumpNarrowScreenWithContainer(
   WidgetTester tester, {
   required ProviderContainer container,
   required Widget child,
+  Size size = const Size(390, 844),
 }) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
         home: MediaQuery(
-          data: const MediaQueryData(size: Size(390, 844)),
+          data: MediaQueryData(size: size),
           child: child,
         ),
       ),

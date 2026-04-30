@@ -210,7 +210,9 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
         : _isExporting
         ? 'Export in progress'
         : 'Ready';
-    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final isCompactLayout = viewportWidth < 720;
+    final isUltraCompactLayout = viewportWidth < 360;
     final visibleMessagesCount = _countVisibleMessages(
       messages: sortedMessages,
       currentSecond: playbackState.currentSecond,
@@ -464,6 +466,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   const SizedBox(height: 12),
                   _PlaybackExportActions(
                     isCompactLayout: isCompactLayout,
+                    isUltraCompactLayout: isUltraCompactLayout,
                     isDisabled: sortedMessages.isEmpty || _isExporting,
                     onExportScreenshot: () async => _exportScreenshot(
                       project: project,
@@ -522,6 +525,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   const SizedBox(height: 8),
                   _PlaybackTransportControls(
                     isCompactLayout: isCompactLayout,
+                    isUltraCompactLayout: isUltraCompactLayout,
                     isPlaying: playbackState.isPlaying,
                     previousCue: previousCue,
                     nextCue: nextCue,
@@ -1227,12 +1231,14 @@ String _formatTimecode(int seconds) {
 class _PlaybackExportActions extends StatelessWidget {
   const _PlaybackExportActions({
     required this.isCompactLayout,
+    required this.isUltraCompactLayout,
     required this.isDisabled,
     required this.onExportScreenshot,
     required this.onExportVideo,
   });
 
   final bool isCompactLayout;
+  final bool isUltraCompactLayout;
   final bool isDisabled;
   final Future<void> Function() onExportScreenshot;
   final Future<void> Function() onExportVideo;
@@ -1255,6 +1261,27 @@ class _PlaybackExportActions extends StatelessWidget {
             onPressed: isDisabled ? null : onExportVideo,
             icon: const Icon(Icons.videocam_outlined),
             label: const Text('Export Video'),
+          ),
+        ],
+      );
+    }
+
+    if (isUltraCompactLayout) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FilledButton.icon(
+            key: const Key('exportScreenshotButton'),
+            onPressed: isDisabled ? null : onExportScreenshot,
+            icon: const Icon(Icons.photo_camera_outlined),
+            label: const Text('Screenshot'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            key: const Key('exportVideoButton'),
+            onPressed: isDisabled ? null : onExportVideo,
+            icon: const Icon(Icons.videocam_outlined),
+            label: const Text('Video'),
           ),
         ],
       );
@@ -1287,6 +1314,7 @@ class _PlaybackExportActions extends StatelessWidget {
 class _PlaybackTransportControls extends StatelessWidget {
   const _PlaybackTransportControls({
     required this.isCompactLayout,
+    required this.isUltraCompactLayout,
     required this.isPlaying,
     required this.previousCue,
     required this.nextCue,
@@ -1303,6 +1331,7 @@ class _PlaybackTransportControls extends StatelessWidget {
   });
 
   final bool isCompactLayout;
+  final bool isUltraCompactLayout;
   final bool isPlaying;
   final int? previousCue;
   final int? nextCue;
@@ -1339,13 +1368,13 @@ class _PlaybackTransportControls extends StatelessWidget {
           FilledButton.tonalIcon(
             key: const Key('seekBackward5Button'),
             onPressed: onSeekBackward5,
-            icon: const Icon(Icons.replay_30_rounded),
+            icon: const Icon(Icons.replay_rounded),
             label: const Text('-5s'),
           ),
           FilledButton.tonalIcon(
             key: const Key('seekBackward1Button'),
             onPressed: onSeekBackward1,
-            icon: const Icon(Icons.replay_10_rounded),
+            icon: const Icon(Icons.replay_rounded),
             label: const Text('-1s'),
           ),
           FilledButton.icon(
@@ -1369,13 +1398,13 @@ class _PlaybackTransportControls extends StatelessWidget {
           FilledButton.tonalIcon(
             key: const Key('seekForward1Button'),
             onPressed: onSeekForward1,
-            icon: const Icon(Icons.forward_10_rounded),
+            icon: const Icon(Icons.forward_rounded),
             label: const Text('+1s'),
           ),
           FilledButton.tonalIcon(
             key: const Key('seekForward5Button'),
             onPressed: onSeekForward5,
-            icon: const Icon(Icons.forward_30_rounded),
+            icon: const Icon(Icons.forward_rounded),
             label: const Text('+5s'),
           ),
           OutlinedButton.icon(
@@ -1383,6 +1412,84 @@ class _PlaybackTransportControls extends StatelessWidget {
             onPressed: onJumpToEnd,
             icon: const Icon(Icons.skip_next_rounded),
             label: const Text('End'),
+          ),
+        ],
+      );
+    }
+
+    if (isUltraCompactLayout) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (isPlaying)
+            OutlinedButton.icon(
+              key: const Key('pauseButton'),
+              onPressed: onPause,
+              icon: const Icon(Icons.pause_rounded),
+              label: const Text('Pause'),
+            )
+          else
+            FilledButton.icon(
+              key: const Key('playButton'),
+              onPressed: onPlay,
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Play'),
+            ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            key: const Key('restartButton'),
+            onPressed: onRestart,
+            icon: const Icon(Icons.restart_alt_rounded),
+            label: const Text('Restart'),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                key: const Key('prevCueButton'),
+                onPressed: onPrevCue,
+                icon: const Icon(Icons.skip_previous_rounded),
+                label: const Text('Prev'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('nextCueButton'),
+                onPressed: onNextCue,
+                icon: const Icon(Icons.skip_next_rounded),
+                label: const Text('Next'),
+              ),
+              FilledButton.tonalIcon(
+                key: const Key('seekBackward5Button'),
+                onPressed: onSeekBackward5,
+                icon: const Icon(Icons.replay_rounded),
+                label: const Text('-5s'),
+              ),
+              FilledButton.tonalIcon(
+                key: const Key('seekBackward1Button'),
+                onPressed: onSeekBackward1,
+                icon: const Icon(Icons.replay_rounded),
+                label: const Text('-1s'),
+              ),
+              FilledButton.tonalIcon(
+                key: const Key('seekForward1Button'),
+                onPressed: onSeekForward1,
+                icon: const Icon(Icons.forward_rounded),
+                label: const Text('+1s'),
+              ),
+              FilledButton.tonalIcon(
+                key: const Key('seekForward5Button'),
+                onPressed: onSeekForward5,
+                icon: const Icon(Icons.forward_rounded),
+                label: const Text('+5s'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('jumpToEndButton'),
+                onPressed: onJumpToEnd,
+                icon: const Icon(Icons.skip_next_rounded),
+                label: const Text('End'),
+              ),
+            ],
           ),
         ],
       );
@@ -1441,25 +1548,25 @@ class _PlaybackTransportControls extends StatelessWidget {
             FilledButton.tonalIcon(
               key: const Key('seekBackward5Button'),
               onPressed: onSeekBackward5,
-              icon: const Icon(Icons.replay_30_rounded),
+              icon: const Icon(Icons.replay_rounded),
               label: const Text('-5s'),
             ),
             FilledButton.tonalIcon(
               key: const Key('seekBackward1Button'),
               onPressed: onSeekBackward1,
-              icon: const Icon(Icons.replay_10_rounded),
+              icon: const Icon(Icons.replay_rounded),
               label: const Text('-1s'),
             ),
             FilledButton.tonalIcon(
               key: const Key('seekForward1Button'),
               onPressed: onSeekForward1,
-              icon: const Icon(Icons.forward_10_rounded),
+              icon: const Icon(Icons.forward_rounded),
               label: const Text('+1s'),
             ),
             FilledButton.tonalIcon(
               key: const Key('seekForward5Button'),
               onPressed: onSeekForward5,
-              icon: const Icon(Icons.forward_30_rounded),
+              icon: const Icon(Icons.forward_rounded),
               label: const Text('+5s'),
             ),
             OutlinedButton.icon(
@@ -1511,9 +1618,13 @@ class _TypingIndicatorItem extends StatelessWidget {
         children: [
           Icon(Icons.more_horiz_rounded, size: 18, color: palette.textColor),
           const SizedBox(width: 8),
-          Text(
-            '$speakerName is typing...',
-            style: TextStyle(color: palette.textColor),
+          Expanded(
+            child: Text(
+              '$speakerName is typing...',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: palette.textColor),
+            ),
           ),
         ],
       ),
@@ -1571,71 +1682,90 @@ class _TimelineItem extends StatelessWidget {
               : null,
         ),
         padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              't=${message.timestampSeconds}s',
-              style: TextStyle(color: palette.textColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final shouldStackMetadata = constraints.maxWidth < 220;
+            final messageContent = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  speakerName,
+                  style: TextStyle(color: palette.textColor),
+                ),
+                if (!cleanPreview) ...[
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Chip(
+                        backgroundColor: palette.chipColor,
+                        visualDensity: VisualDensity.compact,
+                        avatar: Icon(
+                          statusIcon,
+                          size: 14,
+                          color: palette.textColor,
+                        ),
+                        label: Text(
+                          statusLabel,
+                          style: TextStyle(color: palette.textColor),
+                        ),
+                      ),
+                      Chip(
+                        backgroundColor: palette.chipColor,
+                        visualDensity: VisualDensity.compact,
+                        label: Text(
+                          directionLabel,
+                          style: TextStyle(color: palette.textColor),
+                        ),
+                      ),
+                      if (message.showTypingBefore)
+                        Chip(
+                          backgroundColor: palette.chipColor,
+                          visualDensity: VisualDensity.compact,
+                          label: Text(
+                            'TYPING BEFORE',
+                            style: TextStyle(color: palette.textColor),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                ] else
+                  const SizedBox(height: 6),
+                Text(
+                  message.text,
+                  style: TextStyle(color: palette.textColor),
+                ),
+              ],
+            );
+
+            if (shouldStackMetadata) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    speakerName,
+                    't=${message.timestampSeconds}s',
                     style: TextStyle(color: palette.textColor),
                   ),
-                  if (!cleanPreview) ...[
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        Chip(
-                          backgroundColor: palette.chipColor,
-                          visualDensity: VisualDensity.compact,
-                          avatar: Icon(
-                            statusIcon,
-                            size: 14,
-                            color: palette.textColor,
-                          ),
-                          label: Text(
-                            statusLabel,
-                            style: TextStyle(color: palette.textColor),
-                          ),
-                        ),
-                        Chip(
-                          backgroundColor: palette.chipColor,
-                          visualDensity: VisualDensity.compact,
-                          label: Text(
-                            directionLabel,
-                            style: TextStyle(color: palette.textColor),
-                          ),
-                        ),
-                        if (message.showTypingBefore)
-                          Chip(
-                            backgroundColor: palette.chipColor,
-                            visualDensity: VisualDensity.compact,
-                            label: Text(
-                              'TYPING BEFORE',
-                              style: TextStyle(color: palette.textColor),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                  ] else
-                    const SizedBox(height: 6),
-                  Text(
-                    message.text,
-                    style: TextStyle(color: palette.textColor),
-                  ),
+                  const SizedBox(height: 8),
+                  messageContent,
                 ],
-              ),
-            ),
-          ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  't=${message.timestampSeconds}s',
+                  style: TextStyle(color: palette.textColor),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: messageContent),
+              ],
+            );
+          },
         ),
       ),
     );
