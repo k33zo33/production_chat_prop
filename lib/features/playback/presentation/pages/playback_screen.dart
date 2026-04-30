@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -76,6 +77,7 @@ class PlaybackScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: AppContentFrame(
+          maxWidth: 1280,
           child: snapshotState.when(
             data: (snapshot) {
               if (snapshot == null) {
@@ -420,6 +422,12 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       key: const Key('exportTargetResolutionLabel'),
                       'Target screenshot output: '
                       '${exportTargetPixelSize.width.toInt()}×${exportTargetPixelSize.height.toInt()} PNG',
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Preview scales to fit this screen. Export stays full resolution.',
+                      key: const Key('exportPreviewScaleHintLabel'),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -1067,148 +1075,162 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
 
     return RepaintBoundary(
       key: widget.boundaryKey,
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: widget.aspectRatio == SceneAspectRatio.portrait9x16
-                ? 420
-                : 720,
-          ),
-          child: AspectRatio(
-            key: const Key('playbackPreviewAspectRatio'),
-            aspectRatio: _aspectRatioValue(widget.aspectRatio),
-            child: Container(
-              decoration: BoxDecoration(
-                color: widget.showDeviceFrame
-                    ? Colors.black
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(
-                  widget.showDeviceFrame ? 28 : 0,
-                ),
-                border: widget.showDeviceFrame
-                    ? Border.all(color: Colors.black87, width: 6)
-                    : null,
-                boxShadow: widget.showDeviceFrame
-                    ? const [
-                        BoxShadow(
-                          color: Color(0x22000000),
-                          blurRadius: 18,
-                          offset: Offset(0, 10),
-                        ),
-                      ]
-                    : null,
-              ),
-              padding: EdgeInsets.all(widget.showDeviceFrame ? 12 : 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  widget.showDeviceFrame ? 20 : 0,
-                ),
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  color: widget.palette.surfaceColor,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!widget.cleanPreview) ...[
-                          Text(
-                            'Playback Timeline (read-only)',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Timeline preview follows timecode: queued messages stay dim until their cue time.',
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        if (widget.cleanPreview)
-                          Text(
-                            'Preview • ${_formatTimecode(widget.currentSecond)} / ${_formatTimecode(widget.maxSecond)}',
-                            key: const Key('cleanPreviewHeader'),
-                            style: Theme.of(context).textTheme.labelLarge,
-                          ),
-                        if (widget.cleanPreview) const SizedBox(height: 12),
-                        Expanded(
-                          child: widget.messages.isEmpty
-                              ? const Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Text(
-                                    'No messages available for playback.',
-                                  ),
-                                )
-                              : SingleChildScrollView(
-                                  key: const Key('playbackPreviewScrollView'),
-                                  controller: _scrollController,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      for (final message in widget.messages) ...[
-                                        if (widget.showTypingIndicator(
-                                          message: message,
-                                          currentSecond: widget.currentSecond,
-                                        )) ...[
-                                          _wrapCue(
-                                            cueId: 'typing-${message.id}',
-                                            isActiveCue:
-                                                activeCueId ==
-                                                'typing-${message.id}',
-                                            child: _TypingIndicatorItem(
-                                              speakerName:
-                                                  widget.resolveSpeakerName(
-                                                    characterId:
-                                                        message.characterId,
-                                                    speakerNameById:
-                                                        widget.speakerNameById,
-                                                  ),
-                                              palette: widget.palette,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final targetPreviewWidth = switch (widget.aspectRatio) {
+            SceneAspectRatio.portrait9x16 => 500.0,
+            SceneAspectRatio.landscape16x9 => 880.0,
+          };
+          final availableWidth = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : targetPreviewWidth;
+          final previewWidth = math.min(targetPreviewWidth, availableWidth);
+
+          return Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: previewWidth,
+              child: AspectRatio(
+                key: const Key('playbackPreviewAspectRatio'),
+                aspectRatio: _aspectRatioValue(widget.aspectRatio),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: widget.showDeviceFrame
+                        ? Colors.black
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(
+                      widget.showDeviceFrame ? 28 : 0,
+                    ),
+                    border: widget.showDeviceFrame
+                        ? Border.all(color: Colors.black87, width: 6)
+                        : null,
+                    boxShadow: widget.showDeviceFrame
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x22000000),
+                              blurRadius: 18,
+                              offset: Offset(0, 10),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  padding: EdgeInsets.all(widget.showDeviceFrame ? 12 : 0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(
+                      widget.showDeviceFrame ? 20 : 0,
+                    ),
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      color: widget.palette.surfaceColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!widget.cleanPreview) ...[
+                              Text(
+                                'Playback Timeline (read-only)',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Timeline preview follows timecode: queued messages stay dim until their cue time.',
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            if (widget.cleanPreview)
+                              Text(
+                                'Preview • ${_formatTimecode(widget.currentSecond)} / ${_formatTimecode(widget.maxSecond)}',
+                                key: const Key('cleanPreviewHeader'),
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                            if (widget.cleanPreview) const SizedBox(height: 12),
+                            Expanded(
+                              child: widget.messages.isEmpty
+                                  ? const Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text(
+                                        'No messages available for playback.',
+                                      ),
+                                    )
+                                  : SingleChildScrollView(
+                                      key: const Key(
+                                        'playbackPreviewScrollView',
+                                      ),
+                                      controller: _scrollController,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          for (final message
+                                              in widget.messages) ...[
+                                            if (widget.showTypingIndicator(
+                                              message: message,
+                                              currentSecond:
+                                                  widget.currentSecond,
+                                            )) ...[
+                                              _wrapCue(
+                                                cueId: 'typing-${message.id}',
+                                                isActiveCue:
+                                                    activeCueId ==
+                                                    'typing-${message.id}',
+                                                child: _TypingIndicatorItem(
+                                                  speakerName: widget
+                                                      .resolveSpeakerName(
+                                                        characterId:
+                                                            message.characterId,
+                                                        speakerNameById: widget
+                                                            .speakerNameById,
+                                                      ),
+                                                  palette: widget.palette,
+                                                  isActiveCue:
+                                                      activeCueId ==
+                                                      'typing-${message.id}',
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                            ],
+                                            _wrapCue(
+                                              cueId: 'message-${message.id}',
                                               isActiveCue:
                                                   activeCueId ==
-                                                  'typing-${message.id}',
+                                                  'message-${message.id}',
+                                              child: _TimelineItem(
+                                                message: message,
+                                                palette: widget.palette,
+                                                speakerName: widget
+                                                    .resolveSpeakerName(
+                                                      characterId:
+                                                          message.characterId,
+                                                      speakerNameById: widget
+                                                          .speakerNameById,
+                                                    ),
+                                                isVisibleAtCurrentTime:
+                                                    message.timestampSeconds <=
+                                                    widget.currentSecond,
+                                                cleanPreview:
+                                                    widget.cleanPreview,
+                                                isActiveCue:
+                                                    activeCueId ==
+                                                    'message-${message.id}',
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 8),
+                                            const SizedBox(height: 8),
+                                          ],
                                         ],
-                                        _wrapCue(
-                                          cueId: 'message-${message.id}',
-                                          isActiveCue:
-                                              activeCueId ==
-                                              'message-${message.id}',
-                                          child: _TimelineItem(
-                                            message: message,
-                                            palette: widget.palette,
-                                            speakerName:
-                                                widget.resolveSpeakerName(
-                                                  characterId:
-                                                      message.characterId,
-                                                  speakerNameById:
-                                                      widget.speakerNameById,
-                                                ),
-                                            isVisibleAtCurrentTime:
-                                                message.timestampSeconds <=
-                                                widget.currentSecond,
-                                            cleanPreview: widget.cleanPreview,
-                                            isActiveCue:
-                                                activeCueId ==
-                                                'message-${message.id}',
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                      ],
-                                    ],
-                                  ),
-                                ),
+                                      ),
+                                    ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -1669,7 +1691,10 @@ class _TimelineItem extends StatelessWidget {
               : palette.outgoingBubbleColor,
           borderRadius: BorderRadius.circular(12),
           border: isActiveCue
-              ? Border.all(color: Colors.white.withValues(alpha: 0.92), width: 2)
+              ? Border.all(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  width: 2,
+                )
               : null,
           boxShadow: isActiveCue
               ? const [

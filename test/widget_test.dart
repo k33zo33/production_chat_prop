@@ -1390,7 +1390,10 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('Progress: 0% • Visible messages: 1/3'),
+        find.textContaining(
+          'Progress: 0% • Visible messages: 1/3',
+          skipOffstage: false,
+        ),
         findsOneWidget,
       );
     },
@@ -3370,6 +3373,45 @@ void main() {
   });
 
   testWidgets(
+    'playback preview expands on wide layouts and clarifies export scaling',
+    (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1600, 2200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openPlaybackFromProjectList(tester);
+
+      expect(
+        find.byKey(const Key('exportPreviewScaleHintLabel')),
+        findsOneWidget,
+      );
+
+      final previewFinder = find.byKey(const Key('playbackPreviewAspectRatio'));
+      final portraitSize = tester.getSize(previewFinder);
+      expect(portraitSize.width, greaterThan(420));
+      expect(portraitSize.height, greaterThan(portraitSize.width));
+
+      await tester.tap(find.byKey(const Key('aspectRatioLandscapeChip')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final landscapeSize = tester.getSize(previewFinder);
+      expect(landscapeSize.width, greaterThan(720));
+      expect(landscapeSize.width, greaterThan(landscapeSize.height));
+    },
+  );
+
+  testWidgets(
     'playback preview surface and export target follow aspect ratio',
     (
       tester,
@@ -3653,6 +3695,7 @@ void main() {
 
     final previewScrollViewFinder = find.byKey(
       const Key('playbackPreviewScrollView'),
+      skipOffstage: false,
     );
     final initialPreviewScrollView = tester.widget<SingleChildScrollView>(
       previewScrollViewFinder,
