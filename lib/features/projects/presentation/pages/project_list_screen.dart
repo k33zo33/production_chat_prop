@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
@@ -329,7 +330,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     if (updatedCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Selected projects are already type ${type.name}.'),
+          content: Text('Selected projects are already type ${type.label}.'),
         ),
       );
       return;
@@ -338,7 +339,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Updated $updatedCount selected project${updatedCount == 1 ? '' : 's'} to type ${type.name}.',
+          'Updated $updatedCount selected project${updatedCount == 1 ? '' : 's'} to type ${type.label}.',
         ),
       ),
     );
@@ -572,9 +573,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         ),
         IconButton(
           tooltip: 'Add Demo Project',
-          onPressed: () => ref
-              .read(projectsControllerProvider.notifier)
-              .createDemoProject(),
+          onPressed: () =>
+              ref.read(projectsControllerProvider.notifier).createDemoProject(),
           icon: const Icon(Icons.auto_awesome_rounded),
         ),
         IconButton(
@@ -874,7 +874,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       .where((project) {
                         final matchesQuery =
                             normalizedQuery.isEmpty ||
-                            project.name.toLowerCase().contains(normalizedQuery);
+                            project.name.toLowerCase().contains(
+                              normalizedQuery,
+                            );
                         final matchesType =
                             _selectedTypeFilter == null ||
                             project.type == _selectedTypeFilter;
@@ -932,7 +934,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             ChoiceChip(
                               key: Key('projectTypeFilter_${type.name}'),
                               label: Text(
-                                '${_typeLabel(type)} (${typeCounts[type] ?? 0})',
+                                '${type.label} (${typeCounts[type] ?? 0})',
                               ),
                               selected: _selectedTypeFilter == type,
                               onSelected: (selected) {
@@ -953,29 +955,30 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final isCompactControls = constraints.maxWidth < 480;
-                        final sortDropdown = DropdownButtonFormField<_ProjectSortMode>(
-                          key: const Key('projectSortDropdown'),
-                          isExpanded: isCompactControls,
-                          initialValue: _selectedSortMode,
-                          decoration: const InputDecoration(
-                            labelText: 'Sort Projects',
-                          ),
-                          items: [
-                            for (final sort in _ProjectSortMode.values)
-                              DropdownMenuItem(
-                                value: sort,
-                                child: Text(_projectSortLabel(sort)),
+                        final sortDropdown =
+                            DropdownButtonFormField<_ProjectSortMode>(
+                              key: const Key('projectSortDropdown'),
+                              isExpanded: isCompactControls,
+                              initialValue: _selectedSortMode,
+                              decoration: const InputDecoration(
+                                labelText: 'Sort Projects',
                               ),
-                          ],
-                          onChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedSortMode = value;
-                            });
-                          },
-                        );
+                              items: [
+                                for (final sort in _ProjectSortMode.values)
+                                  DropdownMenuItem(
+                                    value: sort,
+                                    child: Text(_projectSortLabel(sort)),
+                                  ),
+                              ],
+                              onChanged: (value) {
+                                if (value == null) {
+                                  return;
+                                }
+                                setState(() {
+                                  _selectedSortMode = value;
+                                });
+                              },
+                            );
                         final resetButton = OutlinedButton(
                           key: const Key('projectResetFiltersButton'),
                           onPressed: () {
@@ -1028,7 +1031,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              key: const Key('projectPortfolioReadinessSummary'),
+                              key: const Key(
+                                'projectPortfolioReadinessSummary',
+                              ),
                               'Projects: ${filteredProjects.length} • '
                               'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
                               'Empty scenes: ${readinessSummary.emptyScenes} • '
@@ -1078,8 +1083,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                       : () => context.goNamed(
                                           'editorProject',
                                           pathParameters: {
-                                            'projectId':
-                                                readinessSummary.primaryProjectId!,
+                                            'projectId': readinessSummary
+                                                .primaryProjectId!,
                                           },
                                         ),
                                   icon: const Icon(Icons.edit_note_rounded),
@@ -1107,7 +1112,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                   key: const Key(
                                     'portfolioReviewAttentionButton',
                                   ),
-                                  onPressed: readinessSummary
+                                  onPressed:
+                                      readinessSummary
                                               .firstNeedsAttentionProjectId ==
                                           null
                                       ? null
@@ -1211,14 +1217,6 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       ),
     );
   }
-}
-
-String _typeLabel(ProjectType type) {
-  return switch (type) {
-    ProjectType.ad => 'Ad',
-    ProjectType.series => 'Series',
-    ProjectType.other => 'Other',
-  };
 }
 
 enum _ProjectSortMode {
@@ -1370,7 +1368,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
               ),
             ],
             const SizedBox(height: 8),
-            Text('Type: ${project.type.name}'),
+            Text('Type: ${project.type.label}'),
             const SizedBox(height: 4),
             Text('Updated: ${_formatDateTime(project.updatedAt)}'),
             const SizedBox(height: 4),
@@ -1486,7 +1484,6 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
       ),
     );
   }
-
 }
 
 class _EmptyProjectState extends StatelessWidget {

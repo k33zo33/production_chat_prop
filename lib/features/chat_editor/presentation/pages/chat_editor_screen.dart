@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
@@ -69,7 +70,9 @@ class ChatEditorScreen extends ConsumerWidget {
                 forceCompactLayout: forceCompactLayout,
                 onSceneSelected: (sceneId) {
                   ref
-                          .read(sceneSelectionProvider(activeProjectId).notifier)
+                          .read(
+                            sceneSelectionProvider(activeProjectId).notifier,
+                          )
                           .selectedSceneId =
                       sceneId;
                 },
@@ -138,7 +141,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
-                Text('Project type: ${project.type.name}'),
+                Text('Project type: ${project.type.label}'),
                 const SizedBox(height: 4),
                 Text('Scenes: ${project.scenes.length}'),
                 if (project.scenes.length > 1) ...[
@@ -232,7 +235,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Style: ${selectedScene.styleId} • Aspect: ${selectedScene.aspectRatio.name}',
+                    'Style: ${resolveChatStylePalette(selectedScene.styleId).name} • Aspect: ${selectedScene.aspectRatio.label}',
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -316,7 +319,6 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
       ],
     );
   }
-
 }
 
 class _SceneActionSection extends ConsumerWidget {
@@ -389,19 +391,23 @@ class _SceneActionSection extends ConsumerWidget {
         return;
       }
 
-      await ref.read(projectsControllerProvider.notifier).renameScene(
-        projectId: project.id,
-        sceneId: selectedScene.id,
-        newTitle: updatedName,
-      );
+      await ref
+          .read(projectsControllerProvider.notifier)
+          .renameScene(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+            newTitle: updatedName,
+          );
     }
 
     Future<void> moveScene(int direction) async {
-      final moved = await ref.read(projectsControllerProvider.notifier).moveScene(
-        projectId: project.id,
-        sceneId: selectedScene.id,
-        direction: direction,
-      );
+      final moved = await ref
+          .read(projectsControllerProvider.notifier)
+          .moveScene(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+            direction: direction,
+          );
       if (moved) {
         onSceneSelected(selectedScene.id);
       }
@@ -416,10 +422,12 @@ class _SceneActionSection extends ConsumerWidget {
         return;
       }
 
-      final deleted = await ref.read(projectsControllerProvider.notifier).deleteScene(
-        projectId: project.id,
-        sceneId: selectedScene.id,
-      );
+      final deleted = await ref
+          .read(projectsControllerProvider.notifier)
+          .deleteScene(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+          );
       if (!deleted) {
         return;
       }
@@ -433,18 +441,23 @@ class _SceneActionSection extends ConsumerWidget {
     }
 
     Future<void> editSceneSettings() async {
-      final input = await _showSceneSettingsDialog(context, scene: selectedScene);
+      final input = await _showSceneSettingsDialog(
+        context,
+        scene: selectedScene,
+      );
       if (input == null) {
         return;
       }
 
-      await ref.read(projectsControllerProvider.notifier).updateSceneSettings(
-        projectId: project.id,
-        sceneId: selectedScene.id,
-        title: input.title,
-        styleId: input.styleId,
-        aspectRatio: input.aspectRatio,
-      );
+      await ref
+          .read(projectsControllerProvider.notifier)
+          .updateSceneSettings(
+            projectId: project.id,
+            sceneId: selectedScene.id,
+            title: input.title,
+            styleId: input.styleId,
+            aspectRatio: input.aspectRatio,
+          );
     }
 
     if (!isCompactLayout) {
@@ -488,7 +501,8 @@ class _SceneActionSection extends ConsumerWidget {
           ),
           OutlinedButton.icon(
             key: const Key('moveSceneDownButton'),
-            onPressed: selectedSceneIndex < 0 ||
+            onPressed:
+                selectedSceneIndex < 0 ||
                     selectedSceneIndex >= project.scenes.length - 1
                 ? null
                 : () => moveScene(1),
@@ -567,7 +581,8 @@ class _SceneActionSection extends ConsumerWidget {
             ),
             PopupMenuItem(
               value: _CompactSceneAction.moveDown,
-              enabled: selectedSceneIndex >= 0 &&
+              enabled:
+                  selectedSceneIndex >= 0 &&
                   selectedSceneIndex < project.scenes.length - 1,
               child: const Text('Move Scene Down'),
             ),
@@ -695,11 +710,13 @@ Future<_SceneSettingsInput?> _showSceneSettingsDialog(
                   DropdownButtonFormField<String>(
                     initialValue:
                         kChatStylePalettes.any(
-                              (style) => style.id == selectedStyleId,
-                            )
-                            ? selectedStyleId
-                            : null,
-                    decoration: const InputDecoration(labelText: 'Style Preset'),
+                          (style) => style.id == selectedStyleId,
+                        )
+                        ? selectedStyleId
+                        : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Style Preset',
+                    ),
                     items: [
                       for (final style in kChatStylePalettes)
                         DropdownMenuItem(
@@ -745,7 +762,9 @@ Future<_SceneSettingsInput?> _showSceneSettingsDialog(
                   const SizedBox(height: 8),
                   DropdownButtonFormField<SceneAspectRatio>(
                     initialValue: selectedAspectRatio,
-                    decoration: const InputDecoration(labelText: 'Aspect Ratio'),
+                    decoration: const InputDecoration(
+                      labelText: 'Aspect Ratio',
+                    ),
                     items: SceneAspectRatio.values
                         .map(
                           (ratio) => DropdownMenuItem(
@@ -920,7 +939,9 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                       });
                       messenger.showSnackBar(
                         SnackBar(
-                          content: Text('Cleared $removed messages from scene.'),
+                          content: Text(
+                            'Cleared $removed messages from scene.',
+                          ),
                         ),
                       );
                     },
@@ -1162,7 +1183,9 @@ class _MessageTimelineHeader extends StatelessWidget {
       onPressed: onDeleteSelected,
       icon: const Icon(Icons.delete_sweep_rounded),
       label: Text(
-        isCompactLayout ? 'Delete ($selectedCount)' : 'Delete Selected ($selectedCount)',
+        isCompactLayout
+            ? 'Delete ($selectedCount)'
+            : 'Delete Selected ($selectedCount)',
       ),
     );
 
@@ -2238,7 +2261,8 @@ class _CharacterManagerCard extends ConsumerWidget {
                           label: Text('Rename ${character.displayName}'),
                         ),
                       ),
-                      if (character != characters.last) const SizedBox(height: 8),
+                      if (character != characters.last)
+                        const SizedBox(height: 8),
                     ],
                   ],
                 )

@@ -61,7 +61,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Demo Project 1'), findsOneWidget);
-    expect(find.text('Type: ad'), findsOneWidget);
+    expect(find.text('Type: Ad'), findsOneWidget);
     expect(find.byKey(const Key('demoProjectBadge')), findsOneWidget);
     expect(
       find.textContaining('Scenes: 2 • Messages: 7 • Max: 11s'),
@@ -99,7 +99,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Demo Project 1'), findsOneWidget);
-    expect(find.text('Type: ad'), findsOneWidget);
+    expect(find.text('Type: Ad'), findsOneWidget);
   });
 
   testWidgets('empty state create button creates starter project', (
@@ -115,7 +115,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('New Project 1'), findsOneWidget);
-    expect(find.text('Type: other'), findsOneWidget);
+    expect(find.text('Type: Other'), findsOneWidget);
   });
 
   testWidgets('export all projects action shows empty portfolio feedback', (
@@ -352,7 +352,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(
-      find.textContaining('Updated 2 selected projects to type ad.'),
+      find.textContaining('Updated 2 selected projects to type Ad.'),
       findsOneWidget,
     );
     await tester.tap(find.byKey(const Key('exitProjectSelectionModeButton')));
@@ -534,7 +534,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Imported Via JSON'), findsOneWidget);
-    expect(find.text('Type: ad'), findsOneWidget);
+    expect(find.text('Type: Ad'), findsOneWidget);
     expect(find.text('Imported project: Imported Via JSON.'), findsOneWidget);
   });
 
@@ -728,7 +728,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('Imported From File'), findsOneWidget);
-      expect(find.text('Type: series'), findsOneWidget);
+      expect(find.text('Type: Series'), findsOneWidget);
       expect(
         find.text('Imported project: Imported From File.'),
         findsOneWidget,
@@ -863,7 +863,7 @@ void main() {
 
     await _scrollProjectListToCards(tester);
 
-    expect(find.text('Type: other'), findsOneWidget);
+    expect(find.text('Type: Other'), findsOneWidget);
     expect(find.text('Ad (0)'), findsOneWidget);
 
     await _openProjectMenuForProject(tester, 'New Project 1');
@@ -872,7 +872,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Type: ad'), findsOneWidget);
+    expect(find.text('Type: Ad'), findsOneWidget);
     expect(find.text('Ad (1)'), findsOneWidget);
     expect(find.text('Other (0)'), findsOneWidget);
   });
@@ -2055,7 +2055,7 @@ void main() {
 
     expect(find.textContaining('Scene: Act 2'), findsOneWidget);
     expect(
-      find.textContaining('Style: cleanroom_day'),
+      find.textContaining('Style: Cleanroom Day • Aspect: 9:16'),
       findsOneWidget,
     );
     expect(
@@ -2121,7 +2121,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(
-      find.textContaining('Style: night_shift'),
+      find.textContaining('Style: Night Shift • Aspect: 9:16'),
       findsOneWidget,
     );
   });
@@ -2951,7 +2951,6 @@ void main() {
       find.textContaining('t=4s / 9 s', skipOffstage: false),
       findsOneWidget,
     );
-
   });
 
   testWidgets('playback quick seek +5 button updates timecode', (
@@ -2977,7 +2976,6 @@ void main() {
       find.textContaining('t=5s / 9 s', skipOffstage: false),
       findsOneWidget,
     );
-
   });
 
   testWidgets(
@@ -3357,13 +3355,15 @@ void main() {
       findsOneWidget,
     );
 
-    await container.read(projectsControllerProvider.notifier).updateSceneSettings(
-      projectId: project.id,
-      sceneId: scene.id,
-      title: scene.title,
-      styleId: scene.styleId,
-      aspectRatio: SceneAspectRatio.landscape16x9,
-    );
+    await container
+        .read(projectsControllerProvider.notifier)
+        .updateSceneSettings(
+          projectId: project.id,
+          sceneId: scene.id,
+          title: scene.title,
+          styleId: scene.styleId,
+          aspectRatio: SceneAspectRatio.landscape16x9,
+        );
     await tester.pumpAndSettle();
 
     expect(
@@ -3435,7 +3435,9 @@ void main() {
 
     await container
         .read(projectsControllerProvider.notifier)
-        .importProjectFromJson(_buildLargeProjectImportPayload(messageCount: 520));
+        .importProjectFromJson(
+          _buildLargeProjectImportPayload(messageCount: 520),
+        );
     final projects = await container.read(projectsControllerProvider.future);
     final projectId = projects.single.id;
 
@@ -3469,7 +3471,10 @@ void main() {
     final updatedPreviewScrollView = tester.widget<SingleChildScrollView>(
       previewScrollViewFinder,
     );
-    expect(updatedPreviewScrollView.controller!.position.pixels, greaterThan(0));
+    expect(
+      updatedPreviewScrollView.controller!.position.pixels,
+      greaterThan(0),
+    );
     expect(
       find.byKey(const Key('activePreviewCue'), skipOffstage: false),
       findsOneWidget,
