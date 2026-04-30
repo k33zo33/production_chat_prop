@@ -3961,6 +3961,90 @@ void main() {
     );
   });
 
+  testWidgets(
+    'empty playback scene shows recovery guidance and disables transport controls',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openChatEditorFromProjectList(tester);
+
+      for (var i = 0; i < 4; i++) {
+        await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+
+      final clearSceneButton = find.byKey(
+        const Key('clearSceneMessagesButton'),
+      );
+      await tester.ensureVisible(clearSceneButton);
+      await tester.pumpAndSettle();
+      await tester.tap(clearSceneButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Clear').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Back to Projects').first);
+      await tester.pumpAndSettle();
+      await _openPlaybackFromProjectList(tester);
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -280));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('playbackEmptyStateHint')), findsOneWidget);
+      expect(
+        find.text(
+          'Add at least one timed message in Chat Editor to enable playback and export.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'No messages available for playback yet',
+          skipOffstage: false,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Keyboard: Space play/pause', skipOffstage: false),
+        findsNothing,
+      );
+
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      final restartButton = tester.widget<OutlinedButton>(
+        find.byKey(const Key('restartButton')),
+      );
+      final playButton = tester.widget<FilledButton>(
+        find.byKey(const Key('playButton')),
+      );
+
+      expect(slider.onChanged, isNull);
+      expect(restartButton.onPressed, isNull);
+      expect(playButton.onPressed, isNull);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+
+      final progressSummary = tester.widget<Text>(
+        find.byKey(const Key('playbackProgressSummary')),
+      );
+      expect(progressSummary.data, contains('Progress: 0% • Visible messages: 0/0'));
+      expect(
+        find.textContaining('Status: playing', skipOffstage: false),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('long chat scene keeps playback controls and export available', (
     tester,
   ) async {

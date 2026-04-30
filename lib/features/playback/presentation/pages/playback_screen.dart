@@ -207,11 +207,12 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       videoExportFallbackServiceProvider,
     );
 
-    final exportReadiness = sortedMessages.isEmpty
-        ? 'No messages in scene'
-        : _isExporting
-        ? 'Export in progress'
-        : 'Ready';
+    final hasPlaybackMessages = sortedMessages.isNotEmpty;
+    final exportReadiness = hasPlaybackMessages
+        ? _isExporting
+            ? 'Export in progress'
+            : 'Ready'
+        : 'No messages in scene';
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final isCompactLayout = viewportWidth < 720;
     final isUltraCompactLayout = viewportWidth < 360;
@@ -274,6 +275,9 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
         }
 
         if (event.logicalKey == LogicalKeyboardKey.keyR) {
+          if (!hasPlaybackMessages && playbackState.currentSecond == 0) {
+            return KeyEventResult.handled;
+          }
           playbackController.restart();
           return KeyEventResult.handled;
         }
@@ -513,7 +517,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     key: const Key('playbackProgressSummary'),
                     'Progress: $progressPercent% • Visible messages: $visibleMessagesCount/${sortedMessages.length}',
                   ),
-                  if (!isCompactLayout) ...[
+                  if (!isCompactLayout && hasPlaybackMessages) ...[
                     const SizedBox(height: 4),
                     const Text(
                       'Keyboard: Space play/pause • ←/→ seek • R restart',
@@ -523,14 +527,31 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   Slider(
                     value: sliderValue,
                     max: sliderMax,
-                    onChanged: (value) {
-                      playbackController.scrubTo(
-                        second: value.round(),
-                        maxSecond: maxSecond,
-                      );
-                    },
+                    onChanged: hasPlaybackMessages
+                        ? (value) {
+                            playbackController.scrubTo(
+                              second: value.round(),
+                              maxSecond: maxSecond,
+                            );
+                          }
+                        : null,
                   ),
                   const SizedBox(height: 8),
+                  if (!hasPlaybackMessages) ...[
+                    Container(
+                      key: const Key('playbackEmptyStateHint'),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Add at least one timed message in Chat Editor to enable playback and export.',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   _PlaybackTransportControls(
                     isCompactLayout: isCompactLayout,
                     isUltraCompactLayout: isUltraCompactLayout,
@@ -567,7 +588,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     onPause: playbackState.isPlaying
                         ? playbackController.pause
                         : null,
-                    onRestart: playbackController.restart,
+                    onRestart: hasPlaybackMessages ||
+                            playbackState.currentSecond > 0
+                        ? playbackController.restart
+                        : null,
                     onSeekForward1: maxSecond == 0
                         ? null
                         : () => playbackController.seekBy(
@@ -1150,7 +1174,7 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
                                   ? const Align(
                                       alignment: Alignment.topLeft,
                                       child: Text(
-                                        'No messages available for playback.',
+                                        'No messages available for playback yet. Add messages in Chat Editor to build the preview.',
                                       ),
                                     )
                                   : SingleChildScrollView(
@@ -1363,7 +1387,7 @@ class _PlaybackTransportControls extends StatelessWidget {
   final VoidCallback? onSeekBackward1;
   final VoidCallback? onPlay;
   final VoidCallback? onPause;
-  final VoidCallback onRestart;
+  final VoidCallback? onRestart;
   final VoidCallback? onSeekForward1;
   final VoidCallback? onSeekForward5;
   final VoidCallback? onJumpToEnd;
