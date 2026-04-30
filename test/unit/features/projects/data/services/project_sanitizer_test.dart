@@ -125,5 +125,50 @@ void main() {
         isTrue,
       );
     });
+
+    test('assigns unique scene ids across imported scenes', () {
+      final sanitized = sanitizer.sanitizeProject(
+        Project(
+          id: 'project-1',
+          name: 'Imported',
+          type: ProjectType.other,
+          createdAt: DateTime.utc(2026),
+          updatedAt: DateTime.utc(2026),
+          scenes: const [
+            Scene(
+              id: 'scene-dup',
+              title: 'Scene A',
+              styleId: 'studio_default',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [],
+              messages: [],
+            ),
+            Scene(
+              id: 'scene-dup',
+              title: 'Scene B',
+              styleId: 'night_shift',
+              aspectRatio: SceneAspectRatio.landscape16x9,
+              characters: [],
+              messages: [],
+            ),
+            Scene(
+              id: '   ',
+              title: 'Scene C',
+              styleId: 'studio_default',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [],
+              messages: [],
+            ),
+          ],
+        ),
+      );
+
+      final sceneIds = sanitized.scenes.map((scene) => scene.id).toList();
+
+      expect(sceneIds, hasLength(3));
+      expect(sceneIds.toSet(), hasLength(3));
+      expect(sceneIds.first, 'scene-dup');
+      expect(sceneIds.skip(1).every((id) => id.isNotEmpty), isTrue);
+    });
   });
 }

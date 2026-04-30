@@ -12,13 +12,22 @@ class ProjectSanitizer {
 
   Project sanitizeProject(Project source) {
     final sanitizedScenes = <Scene>[];
+    final usedSceneIds = <String>{};
     final sourceScenes = source.scenes;
     if (sourceScenes.isEmpty) {
       sanitizedScenes.add(_buildFallbackScene(title: 'Scene 1'));
     } else {
       for (var i = 0; i < sourceScenes.length; i++) {
+        final sourceScene = sourceScenes[i];
         sanitizedScenes.add(
-          _sanitizeScene(sourceScenes[i], fallbackTitle: 'Scene ${i + 1}'),
+          _sanitizeScene(
+            sourceScene,
+            sceneId: _normalizeUniqueId(
+              rawId: sourceScene.id,
+              usedIds: usedSceneIds,
+            ),
+            fallbackTitle: 'Scene ${i + 1}',
+          ),
         );
       }
     }
@@ -34,7 +43,11 @@ class ProjectSanitizer {
     );
   }
 
-  Scene _sanitizeScene(Scene source, {required String fallbackTitle}) {
+  Scene _sanitizeScene(
+    Scene source, {
+    required String sceneId,
+    required String fallbackTitle,
+  }) {
     final characterIdMap = <String, String>{};
     final usedCharacterIds = <String>{};
     final sanitizedCharacters = <Character>[];
@@ -96,7 +109,7 @@ class ProjectSanitizer {
     final trimmedTitle = source.title.trim();
     final trimmedStyleId = source.styleId.trim();
     return Scene(
-      id: _normalizeId(source.id),
+      id: sceneId,
       title: trimmedTitle.isEmpty ? fallbackTitle : trimmedTitle,
       characters: sanitizedCharacters,
       messages: sortMessagesByTimeline(sanitizedMessages),

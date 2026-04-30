@@ -995,6 +995,56 @@ void main() {
     );
 
     test(
+      'importProjectFromJson sanitizes duplicate scene ids across imported scenes',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'id': 'imported-project',
+          'name': 'Imported Scenes',
+          'type': 'other',
+          'createdAt': DateTime.utc(2026).toIso8601String(),
+          'updatedAt': DateTime.utc(2026).toIso8601String(),
+          'scenes': [
+            {
+              'id': 'scene-dup',
+              'title': 'Scene A',
+              'styleId': 'studio_default',
+              'aspectRatio': 'portrait9x16',
+              'characters': <Object>[],
+              'messages': <Object>[],
+            },
+            {
+              'id': 'scene-dup',
+              'title': 'Scene B',
+              'styleId': 'night_shift',
+              'aspectRatio': 'landscape16x9',
+              'characters': <Object>[],
+              'messages': <Object>[],
+            },
+          ],
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson(payload);
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final imported = projects.last;
+        final sceneIds = imported.scenes.map((scene) => scene.id).toList();
+
+        expect(result.status, ProjectJsonImportStatus.success);
+        expect(result.importedCount, 1);
+        expect(imported.name, 'Imported Scenes');
+        expect(sceneIds, hasLength(2));
+        expect(sceneIds.toSet(), hasLength(2));
+        expect(sceneIds.first, 'scene-dup');
+      },
+    );
+
+    test(
       'importProjectFromJson supports multi-project payload and reports skipped entries',
       () async {
         await container.read(projectsControllerProvider.future);
