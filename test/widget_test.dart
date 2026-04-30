@@ -1016,6 +1016,81 @@ void main() {
     expect(find.text('Select Projects'), findsOneWidget);
   });
 
+  testWidgets('compact import project dialog stays usable on narrow screens', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await _pumpNarrowScreenWithContainer(
+      tester,
+      container: container,
+      child: const ProjectListScreen(forceCompactAppBar: true),
+    );
+
+    final payload = jsonEncode({
+      'id': 'compact-import-project',
+      'name': 'Compact Import Project',
+      'type': 'series',
+      'createdAt': DateTime.utc(2026, 4, 30).toIso8601String(),
+      'updatedAt': DateTime.utc(2026, 4, 30).toIso8601String(),
+      'scenes': [
+        {
+          'id': 'compact-scene-1',
+          'title': 'Compact Scene',
+          'styleId': 'studio_slate',
+          'aspectRatio': 'portrait9x16',
+          'characters': [
+            {
+              'id': 'compact-char-1',
+              'displayName': 'Taylor',
+              'avatarPath': null,
+              'bubbleColor': '#2E90FA',
+            },
+          ],
+          'messages': [
+            {
+              'id': 'compact-message-1',
+              'characterId': 'compact-char-1',
+              'text': 'Compact dialog import',
+              'timestampSeconds': 2,
+              'isIncoming': true,
+              'status': 'sent',
+              'showTypingBefore': false,
+            },
+          ],
+        },
+      ],
+    });
+
+    await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Import Project JSON'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.byKey(const Key('confirmImportFromJsonButton')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Compact Import Project'), findsOneWidget);
+  });
+
   testWidgets('compact playback hides keyboard shortcut hint', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -2340,6 +2415,68 @@ void main() {
 
     expect(find.text('Edited from dialog'), findsOneWidget);
     expect(find.textContaining('t=1s'), findsOneWidget);
+  });
+
+  testWidgets('compact edit message dialog stays usable on narrow screens', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container
+        .read(projectsControllerProvider.notifier)
+        .createDemoProject();
+    final projects = await container.read(projectsControllerProvider.future);
+    final projectId = projects.single.id;
+
+    await _pumpNarrowScreenWithContainer(
+      tester,
+      container: container,
+      child: ChatEditorScreen(
+        projectId: projectId,
+        forceCompactLayout: true,
+      ),
+    );
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -250));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    final messageMenuButton = find.byIcon(Icons.more_horiz_rounded).first;
+    await tester.ensureVisible(messageMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(messageMenuButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Message'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+
+    final dialogFinder = find.byType(AlertDialog);
+    await tester.enterText(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Text'),
+      ),
+      'Compact dialog edit',
+    );
+    await tester.enterText(
+      find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Timestamp (seconds)'),
+      ),
+      '11',
+    );
+    await tester.tap(
+      find.descendant(of: dialogFinder, matching: find.text('Save')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Compact dialog edit'), findsOneWidget);
+    expect(find.textContaining('t=11s'), findsWidgets);
   });
 
   testWidgets('delete message asks for confirmation before removing it', (

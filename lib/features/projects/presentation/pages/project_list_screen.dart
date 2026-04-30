@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_portfolio_export_service.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -223,7 +224,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveAlertDialog(
           title: Text(
             'Delete ${selectedIds.length} selected project${selectedIds.length == 1 ? '' : 's'}?',
           ),
@@ -350,23 +351,20 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveAlertDialog(
           title: const Text('Import Project JSON'),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: TextField(
-              key: const Key('importProjectJsonField'),
-              autofocus: true,
-              minLines: 10,
-              maxLines: 18,
-              onChanged: (value) {
-                draftJson = value;
-              },
-              decoration: const InputDecoration(
-                labelText: 'Project JSON',
-                alignLabelWithHint: true,
-                hintText: '{\n  "name": "My project",\n  ...\n}',
-              ),
+          content: TextField(
+            key: const Key('importProjectJsonField'),
+            autofocus: true,
+            minLines: 10,
+            maxLines: 18,
+            onChanged: (value) {
+              draftJson = value;
+            },
+            decoration: const InputDecoration(
+              labelText: 'Project JSON',
+              alignLabelWithHint: true,
+              hintText: '{\n  "name": "My project",\n  ...\n}',
             ),
           ),
           actions: [
@@ -421,36 +419,33 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveAlertDialog(
           title: Text(
             'Import ${preview.importableCount} project${preview.importableCount == 1 ? '' : 's'}?',
           ),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Projects that will be imported:'),
-                const SizedBox(height: 8),
-                for (final name in previewNames)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Text('• $name'),
-                  ),
-                if (hasMore)
-                  Text(
-                    '• +${projectedNames.length - previewNames.length} more',
-                  ),
-                if (preview.invalidCount > 0) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Invalid entries to skip: ${preview.invalidCount}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Projects that will be imported:'),
+              const SizedBox(height: 8),
+              for (final name in previewNames)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text('• $name'),
+                ),
+              if (hasMore)
+                Text(
+                  '• +${projectedNames.length - previewNames.length} more',
+                ),
+              if (preview.invalidCount > 0) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Invalid entries to skip: ${preview.invalidCount}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
-            ),
+            ],
           ),
           actions: [
             TextButton(
@@ -1550,7 +1545,7 @@ Future<String?> _showRenameDialog(
   final result = await showDialog<String>(
     context: context,
     builder: (context) {
-      return AlertDialog(
+      return ResponsiveAlertDialog(
         title: const Text('Rename Project'),
         content: TextField(
           controller: controller,

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -622,7 +623,7 @@ Future<String?> _showSceneNameDialog(
   final result = await showDialog<String>(
     context: context,
     builder: (context) {
-      return AlertDialog(
+      return ResponsiveAlertDialog(
         title: Text(title),
         content: TextField(
           controller: controller,
@@ -652,7 +653,7 @@ Future<bool> _showDeleteSceneDialog(
   final result = await showDialog<bool>(
     context: context,
     builder: (context) {
-      return AlertDialog(
+      return ResponsiveAlertDialog(
         title: const Text('Delete Scene'),
         content: Text('Delete "$sceneTitle"? This removes all its messages.'),
         actions: [
@@ -687,102 +688,100 @@ Future<_SceneSettingsInput?> _showSceneSettingsDialog(
       return StatefulBuilder(
         builder: (context, setState) {
           final selectedPalette = resolveChatStylePalette(selectedStyleId);
-          return AlertDialog(
+          return ResponsiveAlertDialog(
             title: const Text('Edit Scene Settings'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: titleController,
-                    autofocus: true,
-                    decoration: const InputDecoration(labelText: 'Scene Title'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Scene Title'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: styleIdController,
+                  decoration: const InputDecoration(labelText: 'Style ID'),
+                  onChanged: (value) {
+                    selectedStyleId = value.trim();
+                  },
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue:
+                      kChatStylePalettes.any(
+                        (style) => style.id == selectedStyleId,
+                      )
+                      ? selectedStyleId
+                      : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Style Preset',
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: styleIdController,
-                    decoration: const InputDecoration(labelText: 'Style ID'),
-                    onChanged: (value) {
-                      selectedStyleId = value.trim();
-                    },
+                  items: [
+                    for (final style in kChatStylePalettes)
+                      DropdownMenuItem(
+                        value: style.id,
+                        child: Text('${style.name} (${style.id})'),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedStyleId = value;
+                        styleIdController.text = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  key: const Key('sceneStylePreviewRow'),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: selectedPalette.surfaceColor,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    initialValue:
-                        kChatStylePalettes.any(
-                          (style) => style.id == selectedStyleId,
-                        )
-                        ? selectedStyleId
-                        : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Style Preset',
-                    ),
-                    items: [
-                      for (final style in kChatStylePalettes)
-                        DropdownMenuItem(
-                          value: style.id,
-                          child: Text('${style.name} (${style.id})'),
+                  child: Row(
+                    children: [
+                      _StyleDot(color: selectedPalette.incomingBubbleColor),
+                      const SizedBox(width: 8),
+                      _StyleDot(color: selectedPalette.outgoingBubbleColor),
+                      const SizedBox(width: 8),
+                      _StyleDot(color: selectedPalette.typingColor),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          selectedPalette.name,
+                          style: TextStyle(color: selectedPalette.textColor),
                         ),
+                      ),
                     ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          selectedStyleId = value;
-                          styleIdController.text = value;
-                        });
-                      }
-                    },
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    key: const Key('sceneStylePreviewRow'),
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: selectedPalette.surfaceColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        _StyleDot(color: selectedPalette.incomingBubbleColor),
-                        const SizedBox(width: 8),
-                        _StyleDot(color: selectedPalette.outgoingBubbleColor),
-                        const SizedBox(width: 8),
-                        _StyleDot(color: selectedPalette.typingColor),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            selectedPalette.name,
-                            style: TextStyle(color: selectedPalette.textColor),
-                          ),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<SceneAspectRatio>(
+                  initialValue: selectedAspectRatio,
+                  decoration: const InputDecoration(
+                    labelText: 'Aspect Ratio',
+                  ),
+                  items: SceneAspectRatio.values
+                      .map(
+                        (ratio) => DropdownMenuItem(
+                          value: ratio,
+                          child: Text(ratio.name),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<SceneAspectRatio>(
-                    initialValue: selectedAspectRatio,
-                    decoration: const InputDecoration(
-                      labelText: 'Aspect Ratio',
-                    ),
-                    items: SceneAspectRatio.values
-                        .map(
-                          (ratio) => DropdownMenuItem(
-                            value: ratio,
-                            child: Text(ratio.name),
-                          ),
-                        )
-                        .toList(growable: false),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          selectedAspectRatio = value;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
+                      )
+                      .toList(growable: false),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedAspectRatio = value;
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
             actions: [
               TextButton(
@@ -1090,7 +1089,7 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveAlertDialog(
           title: const Text('Clear Scene Messages'),
           content: const Text('Delete all messages in this scene?'),
           actions: [
@@ -1116,7 +1115,7 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveAlertDialog(
           title: const Text('Delete Selected Messages'),
           content: Text('Delete $selectedCount selected messages?'),
           actions: [
@@ -1855,7 +1854,7 @@ class _MessageActions extends ConsumerWidget {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveAlertDialog(
           title: const Text('Delete Message'),
           content: Text(
             'Delete this message? "${message.text}"',
@@ -1911,89 +1910,87 @@ class _MessageActions extends ConsumerWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
+            return ResponsiveAlertDialog(
               title: const Text('Edit Message'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCharacterId,
-                      decoration: const InputDecoration(labelText: 'Character'),
-                      items: [
-                        for (final character in characters)
-                          DropdownMenuItem(
-                            value: character.id,
-                            child: Text(character.displayName),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedCharacterId,
+                    decoration: const InputDecoration(labelText: 'Character'),
+                    items: [
+                      for (final character in characters)
+                        DropdownMenuItem(
+                          value: character.id,
+                          child: Text(character.displayName),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedCharacterId = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: textController,
+                    autofocus: true,
+                    minLines: 1,
+                    maxLines: 3,
+                    decoration: const InputDecoration(labelText: 'Text'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: timestampController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Timestamp (seconds)',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<MessageStatus>(
+                    initialValue: selectedStatus,
+                    decoration: const InputDecoration(labelText: 'Status'),
+                    items: MessageStatus.values
+                        .map(
+                          (status) => DropdownMenuItem(
+                            value: status,
+                            child: Text(status.name),
                           ),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedCharacterId = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: textController,
-                      autofocus: true,
-                      minLines: 1,
-                      maxLines: 3,
-                      decoration: const InputDecoration(labelText: 'Text'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: timestampController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Timestamp (seconds)',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<MessageStatus>(
-                      initialValue: selectedStatus,
-                      decoration: const InputDecoration(labelText: 'Status'),
-                      items: MessageStatus.values
-                          .map(
-                            (status) => DropdownMenuItem(
-                              value: status,
-                              child: Text(status.name),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedStatus = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      value: isIncoming,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Incoming'),
-                      onChanged: (value) {
+                        )
+                        .toList(growable: false),
+                    onChanged: (value) {
+                      if (value != null) {
                         setState(() {
-                          isIncoming = value;
+                          selectedStatus = value;
                         });
-                      },
-                    ),
-                    SwitchListTile(
-                      value: showTypingBefore,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Show typing before'),
-                      onChanged: (value) {
-                        setState(() {
-                          showTypingBefore = value;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    value: isIncoming,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Incoming'),
+                    onChanged: (value) {
+                      setState(() {
+                        isIncoming = value;
+                      });
+                    },
+                  ),
+                  SwitchListTile(
+                    value: showTypingBefore,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Show typing before'),
+                    onChanged: (value) {
+                      setState(() {
+                        showTypingBefore = value;
+                      });
+                    },
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
@@ -2313,7 +2310,7 @@ class _CharacterManagerCard extends ConsumerWidget {
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveAlertDialog(
           title: Text(title),
           content: TextField(
             controller: controller,
