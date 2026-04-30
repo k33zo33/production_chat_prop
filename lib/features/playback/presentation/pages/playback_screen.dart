@@ -244,6 +244,21 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       messages: sortedMessages,
       currentSecond: playbackState.currentSecond,
     );
+    final openChatEditorButton = FilledButton.icon(
+      key: const Key('playbackOpenEditorButton'),
+      onPressed: () => context.goNamed(
+        'editorProject',
+        pathParameters: {'projectId': project.id},
+      ),
+      icon: const Icon(Icons.chat_bubble_outline_rounded),
+      label: const Text('Open Chat Editor'),
+    );
+    final backToProjectsButton = OutlinedButton.icon(
+      key: const Key('playbackBackToProjectsButton'),
+      onPressed: () => context.goNamed('projects'),
+      icon: const Icon(Icons.list_alt_rounded),
+      label: const Text('Back to Projects'),
+    );
 
     return Focus(
       autofocus: true,
@@ -639,25 +654,21 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
             showTypingIndicator: _showTypingIndicator,
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              FilledButton.icon(
-                onPressed: () => context.goNamed(
-                  'editorProject',
-                  pathParameters: {'projectId': project.id},
-                ),
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
-                label: const Text('Open Chat Editor'),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => context.goNamed('projects'),
-                icon: const Icon(Icons.list_alt_rounded),
-                label: const Text('Back to Projects'),
-              ),
-            ],
-          ),
+          if (isUltraCompactLayout)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                openChatEditorButton,
+                const SizedBox(height: 8),
+                backToProjectsButton,
+              ],
+            )
+          else
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [openChatEditorButton, backToProjectsButton],
+            ),
         ],
       ),
     );
