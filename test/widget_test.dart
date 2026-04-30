@@ -1091,6 +1091,100 @@ void main() {
     expect(find.text('Compact Import Project'), findsOneWidget);
   });
 
+  testWidgets(
+    'compact project list filters and sort controls stay usable on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const ProjectListScreen(forceCompactAppBar: true),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
+      expect(find.text('Demo Project 1'), findsOneWidget);
+
+      final sortDropdown = find.byKey(const Key('projectSortDropdown'));
+      await tester.ensureVisible(sortDropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(sortDropdown);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Updated (Oldest)').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Updated (Oldest)'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('projectResetFiltersButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'compact selection overflow keeps bulk actions reachable on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const ProjectListScreen(forceCompactAppBar: true),
+      );
+
+      await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Select Projects'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('projectSelectionOverflowMenuButton')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Select All Projects'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('projectSelectionOverflowMenuButton')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Export Selected Projects JSON'), findsOneWidget);
+
+      await tester.tap(find.text('Set Type: Series'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Updated 2 selected projects to type Series.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('exitProjectSelectionModeButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Type: Series'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('compact playback hides keyboard shortcut hint', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -1150,6 +1244,65 @@ void main() {
 
     expect(find.textContaining('Scene: Scene 1 Copy'), findsOneWidget);
     expect(find.text('Scenes: 2'), findsOneWidget);
+  });
+
+  testWidgets('compact scene settings dialog stays usable on narrow screens', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final projectId = await _createStarterProjectInContainer(container);
+
+    await _pumpNarrowScreenWithContainer(
+      tester,
+      container: container,
+      child: ChatEditorScreen(
+        projectId: projectId,
+        forceCompactLayout: true,
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('sceneActionsOverflowMenuButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit Scene Settings'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+
+    final dialogFinder = find.byType(AlertDialog);
+    final presetDropdown = find.descendant(
+      of: dialogFinder,
+      matching: find.widgetWithText(InputDecorator, 'Style Preset'),
+    );
+    await tester.tap(presetDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Warm Paper (warm_paper)').last);
+    await tester.pumpAndSettle();
+
+    final aspectRatioDropdown = find.descendant(
+      of: dialogFinder,
+      matching: find.widgetWithText(InputDecorator, 'Aspect Ratio'),
+    );
+    await tester.tap(aspectRatioDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('landscape16x9').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(of: dialogFinder, matching: find.text('Save')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Style: Warm Paper • Aspect: 16:9'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

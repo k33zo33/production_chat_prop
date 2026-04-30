@@ -708,6 +708,7 @@ Future<_SceneSettingsInput?> _showSceneSettingsDialog(
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue:
                       kChatStylePalettes.any(
                         (style) => style.id == selectedStyleId,
@@ -761,6 +762,7 @@ Future<_SceneSettingsInput?> _showSceneSettingsDialog(
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<SceneAspectRatio>(
+                  isExpanded: true,
                   initialValue: selectedAspectRatio,
                   decoration: const InputDecoration(
                     labelText: 'Aspect Ratio',

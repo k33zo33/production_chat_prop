@@ -68,6 +68,10 @@ Za brzi demo smoke check koristi:
 ./tool/demo_smoke.sh
 ```
 
+Za ručni compact/mobile pass koristi:
+
+- `docs/09-compact-smoke-checklist.md`
+
 ## Demo Flow
 
 Za 2-3 minute walkthrough koristi:
@@ -106,3 +110,5 @@ Izvor istine za scope i arhitekturu nalazi se u `docs/`:
 - `04-export-qa-checklist.md`
 - `06-product-description.md`
 - `07-demo-script.md`
+- `08-web-smoke-checklist.md`
+- `09-compact-smoke-checklist.md`

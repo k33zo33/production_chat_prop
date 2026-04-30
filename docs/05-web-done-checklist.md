@@ -53,14 +53,15 @@ These are not current blockers for the automated web gate, but are sensible next
 ## Recommended verification order
 
 1. Run the quick browser pass from `08-web-smoke-checklist.md`
-2. Run the focused export pass from `04-export-qa-checklist.md`
-3. If both are clean, treat web MVP as functionally ready and choose between:
+2. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
+3. Run the focused export pass from `04-export-qa-checklist.md`
+4. If all three are clean, treat web MVP as functionally ready and choose between:
    - mobile kickoff, or
    - one final web polish-only pass
 
 ## Recommended next step
 
-Do one manual browser verification pass using the smoke checklist first, then the export checklist.
+Do one manual browser verification pass, then the compact/mobile smoke pass, then the export checklist.
 
 ## Latest verification snapshot
 
