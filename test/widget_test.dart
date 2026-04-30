@@ -771,6 +771,36 @@ void main() {
     expect(find.text('New Project 1'), findsNothing);
   });
 
+  testWidgets('rename project dialog rejects blank names', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _scrollProjectListToCards(tester);
+    await _openProjectMenuForProject(tester, 'New Project 1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename').last);
+    await tester.pumpAndSettle();
+
+    final dialogFinder = find.byType(AlertDialog);
+    final nameField = find.descendant(
+      of: dialogFinder,
+      matching: find.widgetWithText(TextField, 'Project Name'),
+    );
+    await tester.enterText(nameField, '   ');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Project name cannot be empty.'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('New Project 1'), findsOneWidget);
+  });
+
   testWidgets('project list search filters cards by name', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -2491,6 +2521,37 @@ void main() {
     expect(find.text('Zed'), findsNothing);
   });
 
+  testWidgets('character dialog rejects blank names', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    final addCharacterButton = find
+        .widgetWithText(FilledButton, 'Add', skipOffstage: false)
+        .first;
+    await tester.ensureVisible(addCharacterButton);
+    await tester.pumpAndSettle();
+    await tester.tap(addCharacterButton);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Character Name'),
+      '   ',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Character name cannot be empty.'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+  });
+
   testWidgets('edit scene settings updates scene header info', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -2661,6 +2722,31 @@ void main() {
       find.textContaining('Scene summary: 2 characters • 3 messages • max 9s'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('scene dialog rejects blank titles', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Add Scene'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Scene Title'),
+      '   ',
+    );
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Scene title cannot be empty.'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
   });
 
   testWidgets('scene move up changes selected scene position', (tester) async {

@@ -1574,30 +1574,72 @@ Future<String?> _showRenameDialog(
   BuildContext context,
   Project project,
 ) async {
-  final controller = TextEditingController(text: project.name);
+  return _showValidatedSingleTextDialog(
+    context,
+    title: 'Rename Project',
+    labelText: 'Project Name',
+    initialValue: project.name,
+    emptyErrorText: 'Project name cannot be empty.',
+  );
+}
+
+Future<String?> _showValidatedSingleTextDialog(
+  BuildContext context, {
+  required String title,
+  required String labelText,
+  required String emptyErrorText,
+  String? initialValue,
+}) async {
+  final controller = TextEditingController(text: initialValue ?? '');
+  String? errorText;
+
   final result = await showDialog<String>(
     context: context,
     builder: (context) {
-      return ResponsiveAlertDialog(
-        title: const Text('Rename Project'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Project Name'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Save'),
-          ),
-        ],
+      return StatefulBuilder(
+        builder: (context, setState) {
+          void submit() {
+            final trimmedValue = controller.text.trim();
+            if (trimmedValue.isEmpty) {
+              setState(() {
+                errorText = emptyErrorText;
+              });
+              return;
+            }
+            Navigator.of(context).pop(trimmedValue);
+          }
+
+          return ResponsiveAlertDialog(
+            title: Text(title),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              onSubmitted: (_) => submit(),
+              onChanged: (value) {
+                if (errorText != null && value.trim().isNotEmpty) {
+                  setState(() {
+                    errorText = null;
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                labelText: labelText,
+                errorText: errorText,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(onPressed: submit, child: const Text('Save')),
+            ],
+          );
+        },
       );
     },
   );
+
   return result;
 }
 
