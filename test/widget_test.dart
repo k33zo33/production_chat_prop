@@ -1461,6 +1461,108 @@ void main() {
     },
   );
 
+  testWidgets(
+    'ultra-compact chat editor stacks bulk actions vertically on phone-width screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      final toggleSelectionButton = find.byKey(
+        const Key('toggleMessageSelectionModeButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        toggleSelectionButton,
+      );
+      await tester.tap(toggleSelectionButton);
+      await tester.pumpAndSettle();
+
+      final firstCheckbox = find.byType(Checkbox).at(0);
+      await tester.ensureVisible(firstCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(firstCheckbox);
+      await tester.pumpAndSettle();
+
+      final clearButton = find.byKey(const Key('clearSceneMessagesButton'));
+      final deleteButton = find.byKey(
+        const Key('deleteSelectedMessagesButton'),
+      );
+      await tester.ensureVisible(clearButton);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(deleteButton);
+      await tester.pumpAndSettle();
+
+      final selectionPosition = tester.getTopLeft(toggleSelectionButton);
+      final clearPosition = tester.getTopLeft(clearButton);
+      final deletePosition = tester.getTopLeft(deleteButton);
+      final clearSize = tester.getSize(clearButton);
+      final deleteSize = tester.getSize(deleteButton);
+
+      expect(clearPosition.dy, greaterThan(selectionPosition.dy));
+      expect(deletePosition.dy, greaterThan(clearPosition.dy));
+      expect(deletePosition.dx, closeTo(clearPosition.dx, 1));
+      expect(deleteSize.width, closeTo(clearSize.width, 1));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'ultra-compact chat editor footer actions stack on phone-width screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      final openPlaybackButton = find.byKey(
+        const Key('chatEditorOpenPlaybackButton'),
+      );
+      final backButton = find.byKey(
+        const Key('chatEditorBackToProjectsButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, openPlaybackButton);
+      await _ensureFinderVisibleInPrimaryListView(tester, backButton);
+
+      final openPlaybackPosition = tester.getTopLeft(openPlaybackButton);
+      final backPosition = tester.getTopLeft(backButton);
+      final openPlaybackSize = tester.getSize(openPlaybackButton);
+      final backSize = tester.getSize(backButton);
+
+      expect(backPosition.dy, greaterThan(openPlaybackPosition.dy));
+      expect(backPosition.dx, closeTo(openPlaybackPosition.dx, 1));
+      expect(backSize.width, closeTo(openPlaybackSize.width, 1));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('compact playback export and transport controls remain usable', (
     tester,
   ) async {

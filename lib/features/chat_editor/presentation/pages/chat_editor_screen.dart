@@ -12,6 +12,8 @@ import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
+const _kUltraCompactWidth = 360.0;
+
 class ChatEditorScreen extends ConsumerWidget {
   const ChatEditorScreen({super.key, this.projectId, this.forceCompactLayout});
 
@@ -127,6 +129,23 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
         : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
     final isCompactLayout =
         forceCompactLayout ?? MediaQuery.sizeOf(context).width < 720;
+    final isUltraCompactLayout =
+        MediaQuery.sizeOf(context).width < _kUltraCompactWidth;
+    final openPlaybackButton = FilledButton.icon(
+      key: const Key('chatEditorOpenPlaybackButton'),
+      onPressed: () => context.goNamed(
+        'playbackProject',
+        pathParameters: {'projectId': project.id},
+      ),
+      icon: const Icon(Icons.play_circle_outline_rounded),
+      label: const Text('Open Playback'),
+    );
+    final backToProjectsButton = OutlinedButton.icon(
+      key: const Key('chatEditorBackToProjectsButton'),
+      onPressed: () => context.goNamed('projects'),
+      icon: const Icon(Icons.list_alt_rounded),
+      label: const Text('Back to Projects'),
+    );
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -298,25 +317,21 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          children: [
-            FilledButton.icon(
-              onPressed: () => context.goNamed(
-                'playbackProject',
-                pathParameters: {'projectId': project.id},
-              ),
-              icon: const Icon(Icons.play_circle_outline_rounded),
-              label: const Text('Open Playback'),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => context.goNamed('projects'),
-              icon: const Icon(Icons.list_alt_rounded),
-              label: const Text('Back to Projects'),
-            ),
-          ],
-        ),
+        if (isUltraCompactLayout)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              openPlaybackButton,
+              const SizedBox(height: 8),
+              backToProjectsButton,
+            ],
+          )
+        else
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [openPlaybackButton, backToProjectsButton],
+          ),
       ],
     );
   }
@@ -1159,6 +1174,8 @@ class _MessageTimelineHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isUltraCompactLayout =
+        MediaQuery.sizeOf(context).width < _kUltraCompactWidth;
     final title = Text(
       'Messages',
       style: Theme.of(context).textTheme.titleSmall,
@@ -1215,15 +1232,20 @@ class _MessageTimelineHeader extends StatelessWidget {
       children: [
         title,
         const SizedBox(height: 8),
-        Row(children: [Expanded(child: selectionButton)]),
+        SizedBox(width: double.infinity, child: selectionButton),
         const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(child: clearButton),
-            const SizedBox(width: 8),
-            Expanded(child: deleteButton),
-          ],
-        ),
+        if (isUltraCompactLayout) ...[
+          SizedBox(width: double.infinity, child: clearButton),
+          const SizedBox(height: 8),
+          SizedBox(width: double.infinity, child: deleteButton),
+        ] else
+          Row(
+            children: [
+              Expanded(child: clearButton),
+              const SizedBox(width: 8),
+              Expanded(child: deleteButton),
+            ],
+          ),
       ],
     );
   }
