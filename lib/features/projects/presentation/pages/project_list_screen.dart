@@ -82,6 +82,15 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     });
   }
 
+  void _showProjectListSnackBar(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   void _setProjectSelected({
     required String projectId,
     required bool isSelected,
@@ -114,9 +123,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       return;
     }
     if (rawJson == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No JSON file selected.')));
+      _showProjectListSnackBar('No JSON file selected.');
       return;
     }
     await _runJsonImportFlow(rawJson);
@@ -140,21 +147,15 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            copied
-                ? 'Download unavailable. Project portfolio JSON copied to clipboard.'
-                : _portfolioExportResultMessage(result),
-          ),
-        ),
+      _showProjectListSnackBar(
+        copied
+            ? 'Download unavailable. Project portfolio JSON copied to clipboard.'
+            : _portfolioExportResultMessage(result),
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_portfolioExportResultMessage(result))),
-    );
+    _showProjectListSnackBar(_portfolioExportResultMessage(result));
   }
 
   Future<void> _onExportSelectedProjectsPressed(List<Project> projects) async {
@@ -166,9 +167,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No selected projects to export.')),
-      );
+      _showProjectListSnackBar('No selected projects to export.');
       return;
     }
 
@@ -184,20 +183,14 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            copied
-                ? 'Download unavailable. Selected project JSON copied to clipboard.'
-                : _selectedPortfolioExportResultMessage(result),
-          ),
-        ),
+      _showProjectListSnackBar(
+        copied
+            ? 'Download unavailable. Selected project JSON copied to clipboard.'
+            : _selectedPortfolioExportResultMessage(result),
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_selectedPortfolioExportResultMessage(result))),
-    );
+    _showProjectListSnackBar(_selectedPortfolioExportResultMessage(result));
   }
 
   Future<bool> _copyTextToClipboard(String text) async {
@@ -215,9 +208,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No selected projects to delete.')),
-      );
+      _showProjectListSnackBar('No selected projects to delete.');
       return;
     }
 
@@ -257,18 +248,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
     _clearProjectSelection(exitMode: true);
     if (removedCount == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No selected projects were deleted.')),
-      );
+      _showProjectListSnackBar('No selected projects were deleted.');
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Deleted $removedCount selected project${removedCount == 1 ? '' : 's'}.',
-        ),
-      ),
+    _showProjectListSnackBar(
+      'Deleted $removedCount selected project${removedCount == 1 ? '' : 's'}.',
     );
   }
 
@@ -280,9 +265,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No selected projects to duplicate.')),
-      );
+      _showProjectListSnackBar('No selected projects to duplicate.');
       return;
     }
 
@@ -293,17 +276,11 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       return;
     }
     if (duplicatedCount == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No selected projects were duplicated.')),
-      );
+      _showProjectListSnackBar('No selected projects were duplicated.');
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Duplicated $duplicatedCount selected project${duplicatedCount == 1 ? '' : 's'}.',
-        ),
-      ),
+    _showProjectListSnackBar(
+      'Duplicated $duplicatedCount selected project${duplicatedCount == 1 ? '' : 's'}.',
     );
   }
 
@@ -316,9 +293,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No selected projects to update.')),
-      );
+      _showProjectListSnackBar('No selected projects to update.');
       return;
     }
 
@@ -329,20 +304,14 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       return;
     }
     if (updatedCount == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Selected projects are already type ${type.label}.'),
-        ),
+      _showProjectListSnackBar(
+        'Selected projects are already type ${type.label}.',
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Updated $updatedCount selected project${updatedCount == 1 ? '' : 's'} to type ${type.label}.',
-        ),
-      ),
+    _showProjectListSnackBar(
+      'Updated $updatedCount selected project${updatedCount == 1 ? '' : 's'} to type ${type.label}.',
     );
   }
 
@@ -390,9 +359,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       return;
     }
     if (preview.status != ProjectJsonImportPreviewStatus.ready) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_importPreviewErrorMessage(preview))),
-      );
+      _showProjectListSnackBar(_importPreviewErrorMessage(preview));
       return;
     }
 
@@ -405,9 +372,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_importResultMessage(result))),
-    );
+    _showProjectListSnackBar(_importResultMessage(result));
   }
 
   Future<bool> _showImportPreviewDialog(

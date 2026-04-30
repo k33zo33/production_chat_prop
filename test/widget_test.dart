@@ -279,6 +279,34 @@ void main() {
     );
   });
 
+  testWidgets('bulk project selection shows unchanged-type feedback', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byKey(const Key('toggleProjectSelectionModeButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('setSelectedProjectsTypeButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Set Type: Other').last);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Selected projects are already type Other.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('bulk project selection deletes multiple projects', (
     tester,
   ) async {
