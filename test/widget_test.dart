@@ -1196,6 +1196,36 @@ void main() {
   );
 
   testWidgets(
+    'ultra-compact project list avoids overflow and keeps summary visible',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: const ProjectListScreen(forceCompactAppBar: true),
+      );
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.drag(scrollable, const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Showing 2 of 2 projects'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'compact selection overflow keeps bulk actions reachable on narrow screens',
     (tester) async {
       final container = ProviderContainer();

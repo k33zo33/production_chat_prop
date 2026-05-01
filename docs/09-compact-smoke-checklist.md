@@ -4,13 +4,13 @@ Svrha: kratki ručni pass za phone-width layout prije beta demoa ili release odl
 
 Preporučeni viewport:
 - ~390 px širine za standardni compact layout
-- ~320 px širine za ultra-compact playback provjeru
+- ~320 px širine za ultra-compact playback i project-list provjeru
 
 ## 1. Project list
 - [ ] Otvori app na uskom viewportu
 - [ ] Potvrdi da app bar koristi overflow meni umjesto širokog seta akcija
 - [ ] Klikni `Load Demo Project` ili `Add Demo Project`
-- [ ] Provjeri da su project kartice čitljive bez očitog overflowa
+- [ ] Na ~320 px potvrdi da project list ostaje scrollabilan i da nema očitog overflowa u gornjim kontrolama ili summary kartici
 - [ ] Probaj search, type filter i sort dropdown
 - [ ] Uđi u `Select Projects` i potvrdi da bulk akcije ostaju dostupne kroz overflow meni
 
