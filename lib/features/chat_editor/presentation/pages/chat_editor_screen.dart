@@ -1501,7 +1501,9 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final isCompactLayout = viewportWidth < 720;
+    final isUltraCompactLayout = viewportWidth < _kUltraCompactWidth;
 
     return Card(
       child: Padding(
@@ -1553,6 +1555,8 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<MessageStatus>(
+                    key: const Key('messageStatusDropdown'),
+                    isExpanded: isUltraCompactLayout,
                     initialValue: _status,
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: MessageStatus.values
@@ -2262,19 +2266,46 @@ class _CharacterManagerCard extends ConsumerWidget {
                 ],
               )
             else
-              Row(
-                children: [
-                  Text(
-                    'Characters',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const Spacer(),
-                  FilledButton.icon(
-                    onPressed: addCharacter,
-                    icon: const Icon(Icons.person_add_alt_1_rounded),
-                    label: const Text('Add'),
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final shouldStackHeader = constraints.maxWidth < 260;
+
+                  if (shouldStackHeader) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Characters',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: addCharacter,
+                            icon: const Icon(Icons.person_add_alt_1_rounded),
+                            label: const Text('Add'),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Text(
+                        'Characters',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const Spacer(),
+                      FilledButton.icon(
+                        onPressed: addCharacter,
+                        icon: const Icon(Icons.person_add_alt_1_rounded),
+                        label: const Text('Add'),
+                      ),
+                    ],
+                  );
+                },
               ),
             const SizedBox(height: 12),
             if (characters.isEmpty)

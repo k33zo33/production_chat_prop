@@ -1653,6 +1653,41 @@ void main() {
     },
   );
 
+  testWidgets(
+    'ultra-compact chat editor composer stays usable on phone-width screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      final statusDropdown = find.byKey(const Key('messageStatusDropdown'));
+      await _ensureFinderVisibleInPrimaryListView(tester, statusDropdown);
+      expect(statusDropdown, findsOneWidget);
+
+      final addCharacterButton = find.widgetWithText(
+        FilledButton,
+        'Add Character',
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, addCharacterButton);
+      expect(addCharacterButton, findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('compact playback export and transport controls remain usable', (
     tester,
   ) async {
