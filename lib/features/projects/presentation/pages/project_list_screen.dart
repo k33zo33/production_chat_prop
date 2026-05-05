@@ -1069,7 +1069,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                   key: const Key(
                                     'portfolioReviewAttentionButton',
                                   ),
-                                  onPressed: readinessSummary
+                                  onPressed:
+                                      readinessSummary
                                               .firstNeedsAttentionProjectId ==
                                           null
                                       ? null
@@ -1131,6 +1132,22 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 ),
               ];
 
+              Widget buildProjectCard(Project project) {
+                return _ProjectCard(
+                  project: project,
+                  selectionMode: _isSelectionMode,
+                  isSelected: selectedIdsForCurrentProjects.contains(
+                    project.id,
+                  ),
+                  onSelectionChanged: (isSelected) {
+                    _setProjectSelected(
+                      projectId: project.id,
+                      isSelected: isSelected,
+                    );
+                  },
+                );
+              }
+
               final projectsList = filteredProjects.isEmpty
                   ? const Center(
                       child: Padding(
@@ -1139,23 +1156,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       ),
                     )
                   : ListView.separated(
+                      key: const Key('projectCardsListView'),
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
-                      itemBuilder: (context, index) {
-                        final project = filteredProjects[index];
-                        return _ProjectCard(
-                          project: project,
-                          selectionMode: _isSelectionMode,
-                          isSelected: selectedIdsForCurrentProjects.contains(
-                            project.id,
-                          ),
-                          onSelectionChanged: (isSelected) {
-                            _setProjectSelected(
-                              projectId: project.id,
-                              isSelected: isSelected,
-                            );
-                          },
-                        );
-                      },
+                      itemBuilder: (context, index) =>
+                          buildProjectCard(filteredProjects[index]),
                       separatorBuilder: (_, index) =>
                           const SizedBox(height: 12),
                       itemCount: filteredProjects.length,
@@ -1165,11 +1169,38 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   MediaQuery.sizeOf(context).width < 360;
 
               if (useSingleScrollColumn) {
-                return ListView(
-                  padding: const EdgeInsets.only(bottom: 180),
-                  children: [
-                    ...headerContent,
-                    SizedBox(height: 360, child: projectsList),
+                return CustomScrollView(
+                  key: const Key('projectListScrollView'),
+                  slivers: [
+                    for (final header in headerContent)
+                      SliverToBoxAdapter(child: header),
+                    if (filteredProjects.isEmpty)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Center(
+                            child: Text('No projects match current filters.'),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              if (index.isOdd) {
+                                return const SizedBox(height: 12);
+                              }
+                              final projectIndex = index ~/ 2;
+                              return buildProjectCard(
+                                filteredProjects[projectIndex],
+                              );
+                            },
+                            childCount: filteredProjects.length * 2 - 1,
+                          ),
+                        ),
+                      ),
                   ],
                 );
               }

@@ -262,8 +262,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Delete New Project 1?'), findsOneWidget);
-      expect(find.byKey(const Key('cancelDeleteProjectButton')), findsOneWidget);
-      expect(find.byKey(const Key('confirmDeleteProjectButton')), findsOneWidget);
+      expect(
+        find.byKey(const Key('cancelDeleteProjectButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('confirmDeleteProjectButton')),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.byKey(const Key('confirmDeleteProjectButton')));
@@ -1237,7 +1243,7 @@ void main() {
   );
 
   testWidgets(
-    'ultra-compact project list avoids overflow and keeps summary visible',
+    'ultra-compact project list uses one scroll and keeps lower cards reachable',
     (tester) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -1248,7 +1254,11 @@ void main() {
       await container
           .read(projectsControllerProvider.notifier)
           .createDemoProject();
-      await container.read(projectsControllerProvider.notifier).createProject();
+      for (var index = 0; index < 4; index += 1) {
+        await container
+            .read(projectsControllerProvider.notifier)
+            .createProject();
+      }
 
       await _pumpNarrowScreenWithContainer(
         tester,
@@ -1257,11 +1267,17 @@ void main() {
         child: const ProjectListScreen(forceCompactAppBar: true),
       );
 
-      final scrollable = find.byType(Scrollable).first;
-      await tester.drag(scrollable, const Offset(0, -300));
+      expect(find.byKey(const Key('projectListScrollView')), findsOneWidget);
+      expect(find.byKey(const Key('projectCardsListView')), findsNothing);
+      expect(find.text('Portfolio Readiness'), findsOneWidget);
+
+      await tester.drag(
+        find.byKey(const Key('projectListScrollView')),
+        const Offset(0, -1200),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Showing 2 of 2 projects'), findsOneWidget);
+      expect(find.text('New Project 5'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
