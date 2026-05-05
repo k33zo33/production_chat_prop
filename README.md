@@ -74,6 +74,14 @@ Za fokusirani compact/export regresijski pass koristi:
 ./tool/compact_smoke.sh
 ```
 
+Za release-gate export/reliability preflight koristi:
+
+```bash
+./tool/release_smoke.sh
+```
+
+To je namjerno brži pass, ne zamjena za puni `./tool/verify.sh` prije release odluke.
+
 Za ručni compact/mobile pass koristi:
 
 - `docs/09-compact-smoke-checklist.md`

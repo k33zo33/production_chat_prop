@@ -52,20 +52,25 @@ These are not current blockers for the automated web gate, but are sensible next
 
 ## Recommended verification order
 
-1. Run the quick browser pass from `08-web-smoke-checklist.md`
-2. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
-3. Run the focused export pass from `04-export-qa-checklist.md`
-4. If all three are clean, treat web MVP as functionally ready and choose between:
+1. Run `./tool/release_smoke.sh` for targeted export/reliability regressions
+2. Run `./tool/compact_smoke.sh` for phone-width compact/export regressions
+3. Run `./tool/verify.sh` for the full analyze + test + web build gate
+4. Run the quick browser pass from `08-web-smoke-checklist.md`
+5. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
+6. Run the focused export pass from `04-export-qa-checklist.md`
+7. If all six are clean, treat web MVP as functionally ready and choose between:
    - mobile kickoff, or
    - one final web polish-only pass
 
 ## Recommended next step
 
-Do one manual browser verification pass, then the compact/mobile smoke pass, then the export checklist.
+Run `./tool/release_smoke.sh`, then `./tool/compact_smoke.sh`, then `./tool/verify.sh`, then finish the three manual checklists.
 
 ## Latest verification snapshot
 
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
+- `bash tool/compact_smoke.sh` passed for targeted compact/export regressions
+- `bash tool/release_smoke.sh` now covers empty-scene export disabling, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
 - playback preview toggle behavior is covered so frame/clean preview state affects the export preview
 - video fallback export covers unsupported-download environments with clipboard fallback feedback
 - playback screenshot/export output should still be manually checked in a real browser because the current web/desktop content frame constrains rendered preview width

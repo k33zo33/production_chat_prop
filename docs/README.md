@@ -13,6 +13,7 @@ Ovaj paket je pripremljen kao ulaz za AI coding asistenta i kao početna dokumen
 - `06-product-description.md` — landing/product copy draft za prezentaciju
 - `07-demo-script.md` — koraci za 2-3 minute produkt demo walkthrough
 - `08-web-smoke-checklist.md` — kratki ručni smoke pass za finalnu web provjeru
+- `09-compact-smoke-checklist.md` — ručni compact/mobile smoke pass
 - `production-chat-prop.code-workspace` — opcionalni workspace file za VS Code
 
 ## Preporučeni redoslijed
