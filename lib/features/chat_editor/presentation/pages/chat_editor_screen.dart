@@ -24,6 +24,9 @@ class ChatEditorScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCompactAppBar =
+        forceCompactLayout ?? MediaQuery.sizeOf(context).width < 720;
+
     if (projectId == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Chat Editor')),
@@ -53,13 +56,11 @@ class ChatEditorScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chat Editor'),
-        actions: [
-          IconButton(
-            tooltip: 'Back to Projects',
-            onPressed: () => context.goNamed('projects'),
-            icon: const Icon(Icons.list_alt_rounded),
-          ),
-        ],
+        actions: _buildAppBarActions(
+          context,
+          activeProjectId: activeProjectId,
+          isCompactAppBar: isCompactAppBar,
+        ),
       ),
       body: SafeArea(
         child: AppContentFrame(
@@ -106,6 +107,66 @@ class ChatEditorScreen extends ConsumerWidget {
       ),
     );
   }
+
+  List<Widget> _buildAppBarActions(
+    BuildContext context, {
+    required String activeProjectId,
+    required bool isCompactAppBar,
+  }) {
+    if (!isCompactAppBar) {
+      return [
+        IconButton(
+          key: const Key('chatEditorAppBarOpenPlaybackButton'),
+          tooltip: 'Open Playback',
+          onPressed: () => context.goNamed(
+            'playbackProject',
+            pathParameters: {'projectId': activeProjectId},
+          ),
+          icon: const Icon(Icons.play_circle_outline_rounded),
+        ),
+        IconButton(
+          tooltip: 'Back to Projects',
+          onPressed: () => context.goNamed('projects'),
+          icon: const Icon(Icons.list_alt_rounded),
+        ),
+      ];
+    }
+
+    return [
+      PopupMenuButton<_ChatEditorAppBarAction>(
+        key: const Key('chatEditorOverflowMenuButton'),
+        tooltip: 'Chat editor actions',
+        onSelected: (action) {
+          switch (action) {
+            case _ChatEditorAppBarAction.openPlayback:
+              context.goNamed(
+                'playbackProject',
+                pathParameters: {'projectId': activeProjectId},
+              );
+              return;
+            case _ChatEditorAppBarAction.backToProjects:
+              context.goNamed('projects');
+              return;
+          }
+        },
+        itemBuilder: (context) => const [
+          PopupMenuItem(
+            value: _ChatEditorAppBarAction.openPlayback,
+            child: Text('Open Playback'),
+          ),
+          PopupMenuItem(
+            value: _ChatEditorAppBarAction.backToProjects,
+            child: Text('Back to Projects'),
+          ),
+        ],
+      ),
+    ];
+  }
+}
+
+enum _ChatEditorAppBarAction {
+  openPlayback,
+  backToProjects,
 }
 
 class _ProjectEditorPlaceholder extends ConsumerWidget {

@@ -16,6 +16,7 @@ Preporučeni viewport:
 
 ## 2. Chat editor
 - [ ] Otvori `Open Chat Editor`
+- [ ] Potvrdi da compact app bar koristi overflow meni za `Open Playback` i `Back to Projects`
 - [ ] Potvrdi da je scene selector upotrebljiv na uskoj širini
 - [ ] Otvori scene overflow meni i provjeri `Duplicate Scene` i `Edit Scene Settings`
 - [ ] U `Edit Scene Settings` promijeni preset i aspect ratio pa spremi
@@ -24,6 +25,7 @@ Preporučeni viewport:
 
 ## 3. Playback
 - [ ] Otvori `Open Playback`
+- [ ] Potvrdi da compact app bar koristi overflow meni za `Open Chat Editor` i `Back to Projects`
 - [ ] Potvrdi da export kontrole rade u compact layoutu
 - [ ] Potvrdi da transport kontrole rade bez overlap/overflow loma
 - [ ] Na ~320 px širine provjeri ultra-compact varijantu `Play/Pause`, `Restart`, seek i cue gumba

@@ -1123,6 +1123,74 @@ void main() {
     expect(find.text('Select Projects'), findsOneWidget);
   });
 
+  testWidgets(
+    'compact chat editor app bar uses overflow navigation actions',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: ChatEditorScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('chatEditorOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('chatEditorAppBarOpenPlaybackButton')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const Key('chatEditorOverflowMenuButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open Playback'), findsOneWidget);
+      expect(find.text('Back to Projects'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'compact playback app bar uses overflow navigation actions',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('playbackOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('playbackAppBarOpenEditorButton')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const Key('playbackOverflowMenuButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open Chat Editor'), findsOneWidget);
+      expect(find.text('Back to Projects'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('compact import project dialog stays usable on narrow screens', (
     tester,
   ) async {
