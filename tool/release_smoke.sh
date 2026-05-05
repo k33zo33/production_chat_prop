@@ -31,6 +31,13 @@ declare -a TEST_NAMES=(
   "playback stays responsive with imported 500+ messages"
 )
 
+for test_name in "${TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$WIDGET_TEST_FILE"; then
+    echo "[release-smoke] missing expected widget test: $test_name" >&2
+    exit 1
+  fi
+done
+
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 
 echo "[release-smoke] tests: ${#TEST_NAMES[@]} targeted export/reliability cases"
