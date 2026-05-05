@@ -3213,7 +3213,6 @@ void main() {
     expect(find.textContaining('t=11s'), findsWidgets);
   });
 
-
   testWidgets('delete message asks for confirmation before removing it', (
     tester,
   ) async {
@@ -4012,6 +4011,89 @@ void main() {
       );
       expect(clipboardText, isNotNull);
       expect(clipboardText, contains('"format": "video_fallback_package"'));
+    },
+  );
+
+  testWidgets(
+    'compact playback video fallback export reflects preview toggles and aspect ratio',
+    (tester) async {
+      String? clipboardText;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            ..setMockMethodCallHandler(SystemChannels.platform, (
+              methodCall,
+            ) async {
+              if (methodCall.method == 'Clipboard.setData') {
+                clipboardText =
+                    (methodCall.arguments as Map)['text'] as String?;
+                return null;
+              }
+              return null;
+            });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      await tester.tap(find.byKey(const Key('playbackDeviceFrameSwitch')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('playbackCleanPreviewSwitch')));
+      await tester.pumpAndSettle();
+
+      final aspectRatioLandscapeChip = find.byKey(
+        const Key('aspectRatioLandscapeChip'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        aspectRatioLandscapeChip,
+      );
+      await tester.tap(aspectRatioLandscapeChip);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final exportVideoButton = find.byKey(const Key('exportVideoButton'));
+      await _ensureFinderVisibleInPrimaryListView(tester, exportVideoButton);
+      await tester.pumpAndSettle();
+      await tester.tap(exportVideoButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Download unavailable. Video fallback JSON copied to clipboard.',
+        ),
+        findsOneWidget,
+      );
+      expect(clipboardText, isNotNull);
+
+      final payload = jsonDecode(clipboardText!) as Map<String, dynamic>;
+      final renderHints = payload['renderHints'] as Map<String, dynamic>;
+      final selectedScene = payload['selectedScene'] as Map<String, dynamic>;
+      final messages = selectedScene['messages'] as List<dynamic>;
+
+      expect(renderHints['includeDeviceFrame'], isFalse);
+      expect(renderHints['cleanPreview'], isTrue);
+      expect(selectedScene['aspectRatio'], 'landscape16x9');
+      expect(messages, isNotEmpty);
+      expect(
+        (messages.first as Map<String, dynamic>)['timestampSeconds'],
+        lessThanOrEqualTo(
+          (messages.last as Map<String, dynamic>)['timestampSeconds'] as int,
+        ),
+      );
     },
   );
 

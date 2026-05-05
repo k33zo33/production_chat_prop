@@ -68,9 +68,16 @@ Za brzi demo smoke check koristi:
 ./tool/demo_smoke.sh
 ```
 
+Za fokusirani compact/export regresijski pass koristi:
+
+```bash
+./tool/compact_smoke.sh
+```
+
 Za ručni compact/mobile pass koristi:
 
 - `docs/09-compact-smoke-checklist.md`
+- `docs/04-export-qa-checklist.md`
 
 ## Demo Flow
 
