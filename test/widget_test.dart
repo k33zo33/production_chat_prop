@@ -227,12 +227,53 @@ void main() {
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete New Project 1 Copy?'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('confirmDeleteProjectButton')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('New Project 1 Copy'), findsNothing);
     expect(find.text('New Project 1'), findsOneWidget);
   });
+
+  testWidgets(
+    'compact project delete confirmation stays usable on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const ProjectListScreen(forceCompactAppBar: true),
+      );
+
+      await _openProjectMenuForProject(tester, 'New Project 1');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete New Project 1?'), findsOneWidget);
+      expect(find.byKey(const Key('cancelDeleteProjectButton')), findsOneWidget);
+      expect(find.byKey(const Key('confirmDeleteProjectButton')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byKey(const Key('confirmDeleteProjectButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('New Project 1'), findsNothing);
+      expect(find.text('No projects yet'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('bulk project selection exports selected projects payload', (
     tester,

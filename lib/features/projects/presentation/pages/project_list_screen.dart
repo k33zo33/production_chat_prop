@@ -1612,6 +1612,37 @@ Future<String?> _showValidatedSingleTextDialog(
   return result;
 }
 
+Future<bool> _confirmDeleteProject(
+  BuildContext context,
+  Project project,
+) async {
+  final shouldDelete = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return ResponsiveAlertDialog(
+        title: Text('Delete ${project.name}?'),
+        content: const Text(
+          'This action removes the project from local storage.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('cancelDeleteProjectButton'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('confirmDeleteProjectButton'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      );
+    },
+  );
+
+  return shouldDelete ?? false;
+}
+
 Future<void> _copyProjectJson(BuildContext context, Project project) async {
   const encoder = JsonEncoder.withIndent('  ');
   final jsonText = encoder.convert(project.toJson());
@@ -1710,6 +1741,10 @@ class _ProjectMenuButton extends StatelessWidget {
             );
             return;
           case _ProjectMenuAction.delete:
+            final shouldDelete = await _confirmDeleteProject(context, project);
+            if (!shouldDelete) {
+              return;
+            }
             await controller.deleteProject(project.id);
             return;
         }
