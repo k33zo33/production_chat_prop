@@ -2387,26 +2387,85 @@ class _CharacterManagerCard extends ConsumerWidget {
               Column(
                 children: [
                   for (final character in characters) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Chip(
-                            key: Key('characterChip_${character.id}'),
-                            avatar: _CharacterBubbleAvatar(
-                              bubbleColor: character.bubbleColor,
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Chip(
+                                      key: Key('characterChip_${character.id}'),
+                                      avatar: _CharacterBubbleAvatar(
+                                        bubbleColor: character.bubbleColor,
+                                      ),
+                                      label: Text(character.displayName),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Bubble color: ${describeCharacterBubbleColor(character.bubbleColor)}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
                             ),
-                            label: Text(character.displayName),
-                          ),
+                            const SizedBox(width: 8),
+                            PopupMenuButton<_CompactCharacterAction>(
+                              key: Key(
+                                'characterActionsOverflowMenu_${character.id}',
+                              ),
+                              tooltip:
+                                  'Character actions for ${character.displayName}',
+                              onSelected: (action) async {
+                                switch (action) {
+                                  case _CompactCharacterAction.rename:
+                                    await renameCharacter(character);
+                                    return;
+                                  case _CompactCharacterAction.editColor:
+                                    await updateBubbleColor(character);
+                                    return;
+                                  case _CompactCharacterAction.delete:
+                                    await deleteCharacter(character);
+                                    return;
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  value: _CompactCharacterAction.rename,
+                                  child: Text(
+                                    'Rename ${character.displayName}',
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: _CompactCharacterAction.editColor,
+                                  child: Text(
+                                    'Bubble Color: ${describeCharacterBubbleColor(character.bubbleColor)}',
+                                  ),
+                                ),
+                                PopupMenuItem(
+                                  value: _CompactCharacterAction.delete,
+                                  enabled: characters.length > 1,
+                                  child: const Text('Remove Character'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          tooltip: 'Delete ${character.displayName}',
-                          onPressed: characters.length == 1
-                              ? null
-                              : () => deleteCharacter(character),
-                          icon: const Icon(Icons.person_remove_rounded),
-                        ),
-                      ],
+                      ),
                     ),
                     if (character != characters.last) const SizedBox(height: 8),
                   ],
@@ -2435,72 +2494,38 @@ class _CharacterManagerCard extends ConsumerWidget {
                 'At least one character should remain in the scene.',
               ),
             ],
-            if (characters.isNotEmpty) ...[
+            if (characters.isNotEmpty && !isCompactLayout) ...[
               const SizedBox(height: 8),
-              if (isCompactLayout)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final character in characters) ...[
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () => renameCharacter(character),
-                            icon: const Icon(Icons.edit_rounded),
-                            label: const Text('Rename'),
-                          ),
-                          OutlinedButton.icon(
-                            key: Key(
-                              'editCharacterBubbleColor_${character.id}',
-                            ),
-                            onPressed: () => updateBubbleColor(character),
-                            icon: _CharacterBubbleAvatar(
-                              bubbleColor: character.bubbleColor,
-                            ),
-                            label: Text(
-                              'Color: ${describeCharacterBubbleColor(character.bubbleColor)}',
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (character != characters.last)
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final character in characters)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => renameCharacter(character),
+                          icon: const Icon(Icons.edit_rounded),
+                          label: Text('Rename ${character.displayName}'),
+                        ),
                         const SizedBox(height: 8),
-                    ],
-                  ],
-                )
-              else
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    for (final character in characters)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () => renameCharacter(character),
-                            icon: const Icon(Icons.edit_rounded),
-                            label: Text('Rename ${character.displayName}'),
+                        OutlinedButton.icon(
+                          key: Key(
+                            'editCharacterBubbleColor_${character.id}',
                           ),
-                          const SizedBox(height: 8),
-                          OutlinedButton.icon(
-                            key: Key(
-                              'editCharacterBubbleColor_${character.id}',
-                            ),
-                            onPressed: () => updateBubbleColor(character),
-                            icon: _CharacterBubbleAvatar(
-                              bubbleColor: character.bubbleColor,
-                            ),
-                            label: Text(
-                              'Bubble Color: ${describeCharacterBubbleColor(character.bubbleColor)}',
-                            ),
+                          onPressed: () => updateBubbleColor(character),
+                          icon: _CharacterBubbleAvatar(
+                            bubbleColor: character.bubbleColor,
                           ),
-                        ],
-                      ),
-                  ],
-                ),
+                          label: Text(
+                            'Bubble Color: ${describeCharacterBubbleColor(character.bubbleColor)}',
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ],
           ],
         ),
@@ -2589,6 +2614,8 @@ class _CharacterManagerCard extends ConsumerWidget {
     return result;
   }
 }
+
+enum _CompactCharacterAction { rename, editColor, delete }
 
 class _CharacterBubbleAvatar extends StatelessWidget {
   const _CharacterBubbleAvatar({required this.bubbleColor});

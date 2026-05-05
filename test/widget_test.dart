@@ -1813,6 +1813,82 @@ void main() {
     },
   );
 
+  testWidgets(
+    'compact character manager keeps actions usable through overflow menu',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+      final snapshot = container.read(sceneSnapshotProvider(projectId)).value!;
+      final alex = snapshot.scene!.characters.first;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      final characterMenuButton = find.byKey(
+        Key('characterActionsOverflowMenu_${alex.id}'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, characterMenuButton);
+      expect(find.widgetWithText(OutlinedButton, 'Rename'), findsNothing);
+
+      await tester.tap(characterMenuButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rename ${alex.displayName}'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Character Name'),
+        'Alex Prime',
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alex Prime'), findsWidgets);
+
+      await _ensureFinderVisibleInPrimaryListView(tester, characterMenuButton);
+      await tester.tap(characterMenuButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Bubble Color:'));
+      await tester.pumpAndSettle();
+      final roseColorOption = find.byKey(
+        Key('characterBubbleColorOption_${alex.id}_#F0447C'),
+      );
+      await tester.ensureVisible(roseColorOption);
+      await tester.pumpAndSettle();
+      await tester.tap(roseColorOption);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      final updatedSnapshot = container
+          .read(sceneSnapshotProvider(projectId))
+          .value!;
+      final updatedAlex = updatedSnapshot.scene!.characters.firstWhere(
+        (character) => character.id == alex.id,
+      );
+      expect(updatedAlex.displayName, 'Alex Prime');
+      expect(updatedAlex.bubbleColor, '#F0447C');
+
+      await _ensureFinderVisibleInPrimaryListView(tester, characterMenuButton);
+      await tester.tap(characterMenuButton);
+      await tester.pumpAndSettle();
+      expect(find.text('Rename Alex Prime'), findsOneWidget);
+      expect(find.text('Bubble Color: Rose'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('compact playback export and transport controls remain usable', (
     tester,
   ) async {
