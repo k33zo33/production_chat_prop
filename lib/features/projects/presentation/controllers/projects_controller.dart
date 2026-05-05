@@ -116,7 +116,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     return projects;
   }
 
-  Future<void> createProject() async {
+  Future<String> createProject() async {
     final current = await future;
     final now = DateTime.now();
     final project = Project(
@@ -130,9 +130,10 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
 
     final next = [...current, project];
     await _persist(next);
+    return project.id;
   }
 
-  Future<void> createDemoProject() async {
+  Future<String> createDemoProject() async {
     final current = await future;
     final now = DateTime.now();
     final project = Project(
@@ -146,6 +147,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
 
     final next = [...current, project];
     await _persist(next);
+    return project.id;
   }
 
   Future<void> renameProject({

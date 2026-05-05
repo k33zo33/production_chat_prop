@@ -5,6 +5,7 @@ import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
@@ -65,7 +66,9 @@ class ChatEditorScreen extends ConsumerWidget {
           child: snapshotState.when(
             data: (snapshot) {
               if (snapshot == null) {
-                return const _ProjectNotFoundState();
+                return const ProjectNotFoundRecoveryState(
+                  openRouteName: 'editorProject',
+                );
               }
 
               return _ProjectEditorPlaceholder(
@@ -2587,30 +2590,4 @@ String _formatSceneDuration(int totalSeconds) {
   final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
   final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
   return '$minutes:$seconds';
-}
-
-class _ProjectNotFoundState extends StatelessWidget {
-  const _ProjectNotFoundState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.folder_off_outlined),
-            const SizedBox(height: 12),
-            const Text('Project not found.'),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.goNamed('projects'),
-              child: const Text('Back to Projects'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

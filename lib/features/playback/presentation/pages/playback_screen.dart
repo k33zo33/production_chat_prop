@@ -9,6 +9,7 @@ import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/data/services/video_export_fallback_service.dart';
@@ -83,7 +84,9 @@ class PlaybackScreen extends ConsumerWidget {
           child: snapshotState.when(
             data: (snapshot) {
               if (snapshot == null) {
-                return const _ProjectNotFoundState();
+                return const ProjectNotFoundRecoveryState(
+                  openRouteName: 'playbackProject',
+                );
               }
 
               return _PlaybackTimeline(
@@ -1850,32 +1853,6 @@ class _TimelineItem extends StatelessWidget {
               ],
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _ProjectNotFoundState extends StatelessWidget {
-  const _ProjectNotFoundState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.folder_off_outlined),
-            const SizedBox(height: 12),
-            const Text('Project not found.'),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.goNamed('projects'),
-              child: const Text('Back to Projects'),
-            ),
-          ],
         ),
       ),
     );
