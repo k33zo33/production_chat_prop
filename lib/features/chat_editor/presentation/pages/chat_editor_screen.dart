@@ -1997,12 +1997,17 @@ class _MessageActions extends ConsumerWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final viewportWidth = MediaQuery.sizeOf(context).width;
+            final isUltraCompactLayout = viewportWidth < _kUltraCompactWidth;
+
             return ResponsiveAlertDialog(
               title: const Text('Edit Message'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<String>(
+                    key: const Key('editMessageCharacterDropdown'),
+                    isExpanded: isUltraCompactLayout,
                     initialValue: selectedCharacterId,
                     decoration: const InputDecoration(labelText: 'Character'),
                     items: [
@@ -2038,6 +2043,8 @@ class _MessageActions extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<MessageStatus>(
+                    key: const Key('editMessageStatusDropdown'),
+                    isExpanded: isUltraCompactLayout,
                     initialValue: selectedStatus,
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: MessageStatus.values
@@ -2060,6 +2067,7 @@ class _MessageActions extends ConsumerWidget {
                   SwitchListTile(
                     value: isIncoming,
                     contentPadding: EdgeInsets.zero,
+                    dense: isUltraCompactLayout,
                     title: const Text('Incoming'),
                     onChanged: (value) {
                       setState(() {
@@ -2070,6 +2078,7 @@ class _MessageActions extends ConsumerWidget {
                   SwitchListTile(
                     value: showTypingBefore,
                     contentPadding: EdgeInsets.zero,
+                    dense: isUltraCompactLayout,
                     title: const Text('Show typing before'),
                     onChanged: (value) {
                       setState(() {
