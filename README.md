@@ -82,6 +82,14 @@ Za release-gate export/reliability preflight koristi:
 
 To je namjerno brži pass, ne zamjena za puni `./tool/verify.sh` prije release odluke.
 
+Za standardni beta handoff redoslijed koristi:
+
+```bash
+./tool/beta_handoff.sh
+```
+
+To vrti `release_smoke -> compact_smoke -> verify`, pa na kraju podsjeti na tri ručne checklist provjere.
+
 Za ručni compact/mobile pass koristi:
 
 - `docs/09-compact-smoke-checklist.md`

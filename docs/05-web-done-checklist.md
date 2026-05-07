@@ -52,19 +52,17 @@ These are not current blockers for the automated web gate, but are sensible next
 
 ## Recommended verification order
 
-1. Run `./tool/release_smoke.sh` for targeted export/reliability regressions
-2. Run `./tool/compact_smoke.sh` for phone-width compact/export regressions
-3. Run `./tool/verify.sh` for the full analyze + test + web build gate
-4. Run the quick browser pass from `08-web-smoke-checklist.md`
-5. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
-6. Run the focused export pass from `04-export-qa-checklist.md`
-7. If all six are clean, treat web MVP as functionally ready and choose between:
+1. Run `./tool/beta_handoff.sh` for the standard beta preflight order (`release_smoke -> compact_smoke -> verify`)
+2. Run the quick browser pass from `08-web-smoke-checklist.md`
+3. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
+4. Run the focused export pass from `04-export-qa-checklist.md`
+5. If all four are clean, treat web MVP as functionally ready and choose between:
    - mobile kickoff, or
    - one final web polish-only pass
 
 ## Recommended next step
 
-Run `./tool/release_smoke.sh`, then `./tool/compact_smoke.sh`, then `./tool/verify.sh`, then finish the three manual checklists.
+Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 
 ## Latest verification snapshot
 
