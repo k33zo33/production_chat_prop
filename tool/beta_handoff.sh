@@ -6,12 +6,13 @@ cd "$ROOT_DIR"
 
 export FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
 DEMO_SMOKE_SCRIPT="./tool/demo_smoke.sh"
+IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"
 RELEASE_SMOKE_SCRIPT="./tool/release_smoke.sh"
 COMPACT_SMOKE_SCRIPT="./tool/compact_smoke.sh"
 VERIFY_SCRIPT="./tool/verify.sh"
 WEB_SHELL_SMOKE_SCRIPT="./tool/web_shell_smoke.sh"
 
-for script_path in "$DEMO_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT"; do
+for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT"; do
   if [[ ! -f "$script_path" ]]; then
     echo "[beta-handoff] missing required script: $script_path" >&2
     exit 1
@@ -30,6 +31,10 @@ echo "[beta-handoff] web shell metadata preflight"
 
 echo "[beta-handoff] demo flow preflight"
 "$DEMO_SMOKE_SCRIPT"
+
+echo
+echo "[beta-handoff] import/recovery preflight"
+"$IMPORT_SMOKE_SCRIPT"
 
 echo
 echo "[beta-handoff] release preflight"
