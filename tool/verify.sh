@@ -9,8 +9,12 @@ FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
 echo "[verify] using flutter: $FLUTTER_BIN"
 "$FLUTTER_BIN" --version
 
-echo "[verify] pub get"
-"$FLUTTER_BIN" pub get
+if [[ "${SKIP_PUB_GET:-0}" == "1" ]]; then
+  echo "[verify] pub get skipped (already resolved upstream)"
+else
+  echo "[verify] pub get"
+  "$FLUTTER_BIN" pub get
+fi
 
 echo "[verify] analyze"
 "$FLUTTER_BIN" analyze

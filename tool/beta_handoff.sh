@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+export FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
 RELEASE_SMOKE_SCRIPT="./tool/release_smoke.sh"
 COMPACT_SMOKE_SCRIPT="./tool/compact_smoke.sh"
 VERIFY_SCRIPT="./tool/verify.sh"
@@ -16,6 +17,12 @@ for script_path in "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$VERIFY_SCRI
 
 done
 
+echo "[beta-handoff] using flutter: $FLUTTER_BIN"
+"$FLUTTER_BIN" --version
+
+echo "[beta-handoff] pub get"
+"$FLUTTER_BIN" pub get
+
 echo "[beta-handoff] release preflight"
 "$RELEASE_SMOKE_SCRIPT"
 
@@ -25,7 +32,7 @@ echo "[beta-handoff] compact/mobile preflight"
 
 echo
 echo "[beta-handoff] full verification gate"
-"$VERIFY_SCRIPT"
+SKIP_PUB_GET=1 "$VERIFY_SCRIPT"
 
 echo
 echo "[beta-handoff] manual follow-up"

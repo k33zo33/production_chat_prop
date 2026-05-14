@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  beta_handoff:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Check out repository
@@ -28,10 +28,10 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Run release verification gate
+      - name: Run beta handoff gate
         env:
           FLUTTER_BIN: flutter
-        run: ./tool/verify.sh
+        run: ./tool/beta_handoff.sh
 
       - name: Upload web build artifact
         if: success()

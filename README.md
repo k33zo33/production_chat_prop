@@ -54,13 +54,21 @@ Ako `flutter` nije globalno na PATH-u, koristi apsolutnu putanju:
 
 ## Quality Gate
 
-Za puni lokalni release check koristi:
+GitHub Actions sada mirror-a standardni beta handoff redoslijed (`release_smoke -> compact_smoke -> verify`) i nakon zelenog prolaza upload-a gotovi web build artefakt.
+
+Za standardni lokalni beta handoff koristi:
+
+```bash
+./tool/beta_handoff.sh
+```
+
+Ako trebaš samo završni puni verify/build gate bez preflight smoke koraka, koristi:
 
 ```bash
 ./tool/verify.sh
 ```
 
-Isti verify gate sada vrti i GitHub Actions workflow iz `.github/workflows/flutter_ci.yml`, uključujući `flutter build web` i upload gotovog web artefakta.
+Isti beta handoff redoslijed sada vrti i GitHub Actions workflow iz `.github/workflows/flutter_ci.yml`, uključujući release/compact preflight, `flutter build web`, i upload gotovog web artefakta.
 
 Za brzi demo smoke check koristi:
 

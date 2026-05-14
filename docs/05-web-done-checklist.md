@@ -28,6 +28,7 @@ This checklist reflects the current web MVP state after the widget test stabiliz
 - [x] `flutter analyze`
 - [x] `flutter test test/widget_test.dart`
 - [x] `flutter build web`
+- [x] `./tool/beta_handoff.sh`
 - [x] Main widget flow stabilized on web
 
 ## MVP alignment vs docs
@@ -69,6 +70,7 @@ Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
 - `bash tool/compact_smoke.sh` passed for targeted compact/export regressions
 - `bash tool/release_smoke.sh` now covers empty-scene export disabling, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
+- GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `release_smoke -> compact_smoke -> verify` before uploading the web artifact
 - playback preview toggle behavior is covered so frame/clean preview state affects the export preview
 - video fallback export covers unsupported-download environments with clipboard fallback feedback
 - playback screenshot/export output should still be manually checked in a real browser because the current web/desktop content frame constrains rendered preview width
