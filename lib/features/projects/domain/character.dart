@@ -13,10 +13,10 @@ class Character {
 
   factory Character.fromJson(Map<String, dynamic> json) {
     return Character(
-      id: json['id'] as String,
-      displayName: json['displayName'] as String,
-      avatarPath: json['avatarPath'] as String?,
-      bubbleColor: json['bubbleColor'] as String,
+      id: _readString(json['id']),
+      displayName: _readString(json['displayName']),
+      avatarPath: _readNullableString(json['avatarPath']),
+      bubbleColor: _readString(json['bubbleColor']),
     );
   }
 
@@ -27,5 +27,19 @@ class Character {
       'avatarPath': avatarPath,
       'bubbleColor': bubbleColor,
     };
+  }
+
+  static String _readString(Object? value, {String fallback = ''}) {
+    if (value is String) {
+      return value;
+    }
+    return fallback;
+  }
+
+  static String? _readNullableString(Object? value) {
+    if (value is String) {
+      return value;
+    }
+    return null;
   }
 }

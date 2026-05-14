@@ -22,21 +22,15 @@ class Scene {
 
   factory Scene.fromJson(Map<String, dynamic> json) {
     return Scene(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      characters: (json['characters'] as List<dynamic>)
-          .map(
-            (characterJson) =>
-                Character.fromJson(characterJson as Map<String, dynamic>),
-          )
+      id: _readString(json['id']),
+      title: _readString(json['title']),
+      characters: _readJsonList(json['characters'])
+          .map(Character.fromJson)
           .toList(),
-      messages: (json['messages'] as List<dynamic>)
-          .map(
-            (messageJson) =>
-                Message.fromJson(messageJson as Map<String, dynamic>),
-          )
+      messages: _readJsonList(json['messages'])
+          .map(Message.fromJson)
           .toList(),
-      styleId: json['styleId'] as String,
+      styleId: _readString(json['styleId']),
       aspectRatio: SceneAspectRatio.values.firstWhere(
         (value) => value.name == json['aspectRatio'],
         orElse: () => SceneAspectRatio.portrait9x16,
@@ -53,5 +47,46 @@ class Scene {
       'styleId': styleId,
       'aspectRatio': aspectRatio.name,
     };
+  }
+
+  static String _readString(Object? value, {String fallback = ''}) {
+    if (value is String) {
+      return value;
+    }
+    return fallback;
+  }
+
+  static List<Map<String, dynamic>> _readJsonList(Object? value) {
+    if (value is! List) {
+      return const [];
+    }
+
+    final items = <Map<String, dynamic>>[];
+    for (final entry in value) {
+      final map = _readJsonMap(entry);
+      if (map != null) {
+        items.add(map);
+      }
+    }
+    return items;
+  }
+
+  static Map<String, dynamic>? _readJsonMap(Object? value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is! Map) {
+      return null;
+    }
+
+    final casted = <String, dynamic>{};
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String) {
+        return null;
+      }
+      casted[key] = entry.value;
+    }
+    return casted;
   }
 }

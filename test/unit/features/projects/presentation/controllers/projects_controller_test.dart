@@ -804,6 +804,22 @@ void main() {
     );
 
     test(
+      'previewProjectImportFromJson rejects unrelated payloads without scenes',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .previewProjectImportFromJson('{"foo":"bar"}');
+
+        expect(
+          result.status,
+          ProjectJsonImportPreviewStatus.invalidProjectPayload,
+        );
+      },
+    );
+
+    test(
       'importProjectFromJson appends imported project with unique name',
       () async {
         await container.read(projectsControllerProvider.future);
@@ -1107,6 +1123,68 @@ void main() {
         expect(projects, hasLength(3));
         expect(names, contains('Project One (Imported)'));
         expect(names, contains('Project Two'));
+      },
+    );
+
+    test(
+      'importProjectFromJson accepts sparse legacy payloads and sanitizes missing fields',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        final payload = jsonEncode({
+          'type': 'series',
+          'scenes': [
+            {
+              'characters': [
+                {
+                  'id': 'legacy-character',
+                  'displayName': 'Legacy Lead',
+                },
+                'skip-me',
+              ],
+              'messages': [
+                {
+                  'id': 'legacy-message',
+                  'characterId': 'legacy-character',
+                  'text': ' Imported from older payload ',
+                  'timestampSeconds': '7',
+                  'status': 'seen',
+                  'isIncoming': 'true',
+                  'showTypingBefore': 1,
+                },
+                99,
+              ],
+            },
+          ],
+        });
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .importProjectFromJson(payload);
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final imported = projects.last;
+        final scene = imported.scenes.single;
+        final message = scene.messages.single;
+
+        expect(result.status, ProjectJsonImportStatus.success);
+        expect(result.importedCount, 1);
+        expect(result.skippedCount, 0);
+        expect(result.importedProjectName, 'Imported Project');
+        expect(imported.type, ProjectType.series);
+        expect(imported.name, 'Imported Project');
+        expect(scene.title, 'Scene 1');
+        expect(scene.styleId, kDefaultChatStyleId);
+        expect(scene.characters, hasLength(1));
+        expect(scene.characters.single.displayName, 'Legacy Lead');
+        expect(scene.characters.single.bubbleColor, '#2E90FA');
+        expect(message.text, 'Imported from older payload');
+        expect(message.timestampSeconds, 7);
+        expect(message.status, MessageStatus.seen);
+        expect(message.isIncoming, isTrue);
+        expect(message.showTypingBefore, isTrue);
       },
     );
   });

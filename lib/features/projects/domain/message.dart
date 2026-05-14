@@ -21,16 +21,16 @@ class Message {
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
-      id: json['id'] as String,
-      characterId: json['characterId'] as String,
-      text: json['text'] as String,
-      timestampSeconds: (json['timestampSeconds'] as num).toInt(),
+      id: _readString(json['id']),
+      characterId: _readString(json['characterId']),
+      text: _readString(json['text']),
+      timestampSeconds: _readInt(json['timestampSeconds']),
       status: MessageStatus.values.firstWhere(
         (value) => value.name == json['status'],
         orElse: () => MessageStatus.sent,
       ),
-      isIncoming: json['isIncoming'] as bool,
-      showTypingBefore: json['showTypingBefore'] as bool,
+      isIncoming: _readBool(json['isIncoming']),
+      showTypingBefore: _readBool(json['showTypingBefore']),
     );
   }
 
@@ -44,5 +44,44 @@ class Message {
       'isIncoming': isIncoming,
       'showTypingBefore': showTypingBefore,
     };
+  }
+
+  static String _readString(Object? value, {String fallback = ''}) {
+    if (value is String) {
+      return value;
+    }
+    return fallback;
+  }
+
+  static int _readInt(Object? value, {int fallback = 0}) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value) ?? fallback;
+    }
+    return fallback;
+  }
+
+  static bool _readBool(Object? value, {bool fallback = false}) {
+    if (value is bool) {
+      return value;
+    }
+    if (value is num) {
+      return value != 0;
+    }
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (normalized == 'true') {
+        return true;
+      }
+      if (normalized == 'false') {
+        return false;
+      }
+    }
+    return fallback;
   }
 }

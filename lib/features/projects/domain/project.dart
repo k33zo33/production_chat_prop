@@ -21,16 +21,16 @@ class Project {
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: _readString(json['id']),
+      name: _readString(json['name']),
       type: ProjectType.values.firstWhere(
         (value) => value.name == json['type'],
         orElse: () => ProjectType.other,
       ),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      scenes: (json['scenes'] as List<dynamic>)
-          .map((sceneJson) => Scene.fromJson(sceneJson as Map<String, dynamic>))
+      createdAt: _readDateTime(json['createdAt']),
+      updatedAt: _readDateTime(json['updatedAt']),
+      scenes: _readJsonList(json['scenes'])
+          .map(Scene.fromJson)
           .toList(),
     );
   }
@@ -44,5 +44,74 @@ class Project {
       'updatedAt': updatedAt.toIso8601String(),
       'scenes': scenes.map((scene) => scene.toJson()).toList(),
     };
+  }
+
+  static String _readString(Object? value, {String fallback = ''}) {
+    if (value is String) {
+      return value;
+    }
+    return fallback;
+  }
+
+  static DateTime _readDateTime(Object? value) {
+    if (value is String) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) {
+        return parsed;
+      }
+
+      final numericValue = num.tryParse(value);
+      if (numericValue != null) {
+        return _dateTimeFromNumericValue(numericValue);
+      }
+    }
+
+    if (value is num) {
+      return _dateTimeFromNumericValue(value);
+    }
+
+    return DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+  }
+
+  static DateTime _dateTimeFromNumericValue(num value) {
+    // Legacy payloads may serialize epoch timestamps as seconds or millis.
+    final milliseconds = value.abs() >= 100000000000
+        ? value.toInt()
+        : (value * 1000).toInt();
+    return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
+  }
+
+  static List<Map<String, dynamic>> _readJsonList(Object? value) {
+    if (value is! List) {
+      return const [];
+    }
+
+    final items = <Map<String, dynamic>>[];
+    for (final entry in value) {
+      final map = _readJsonMap(entry);
+      if (map != null) {
+        items.add(map);
+      }
+    }
+    return items;
+  }
+
+  static Map<String, dynamic>? _readJsonMap(Object? value) {
+    if (value is Map<String, dynamic>) {
+      return value;
+    }
+    if (value is! Map) {
+      return null;
+    }
+
+    final casted = <String, dynamic>{};
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String) {
+        return null;
+      }
+      casted[key] = entry.value;
+    }
+    return casted;
   }
 }

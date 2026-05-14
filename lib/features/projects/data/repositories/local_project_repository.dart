@@ -15,6 +15,10 @@ class LocalProjectRepository implements ProjectRepository {
     final jsonList = await _datasource.loadProjectsJson();
     final projects = <Project>[];
     for (final projectJson in jsonList) {
+      if (!_looksLikePersistedProjectPayload(projectJson)) {
+        continue;
+      }
+
       try {
         projects.add(
           _projectSanitizer.sanitizeProject(Project.fromJson(projectJson)),
@@ -36,5 +40,9 @@ class LocalProjectRepository implements ProjectRepository {
   Future<void> saveAll(List<Project> projects) {
     final payload = projects.map((project) => project.toJson()).toList();
     return _datasource.saveProjectsJson(payload);
+  }
+
+  bool _looksLikePersistedProjectPayload(Map<String, dynamic> projectJson) {
+    return projectJson['scenes'] is List;
   }
 }

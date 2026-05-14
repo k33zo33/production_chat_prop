@@ -1553,6 +1553,10 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
   }
 
   Project? _tryParseImportedProject(Map<String, dynamic> projectJson) {
+    if (!_looksLikeProjectPayload(projectJson)) {
+      return null;
+    }
+
     try {
       return _projectSanitizer.sanitizeProject(Project.fromJson(projectJson));
     } catch (error) {
@@ -1563,6 +1567,10 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
       }
       rethrow;
     }
+  }
+
+  bool _looksLikeProjectPayload(Map<String, dynamic> projectJson) {
+    return projectJson['scenes'] is List;
   }
 
   String _buildImportedProjectName({

@@ -96,5 +96,58 @@ void main() {
       expect(decoded.scenes.first.aspectRatio, SceneAspectRatio.portrait9x16);
       expect(decoded.scenes.first.messages.first.status, MessageStatus.sent);
     });
+
+    test('tolerates sparse legacy payloads with safe defaults', () {
+      final decoded = Project.fromJson({
+        'type': 'series',
+        'createdAt': 1710460800,
+        'scenes': [
+          {
+            'characters': [
+              {
+                'id': 'c-legacy',
+                'displayName': 'Legacy Character',
+              },
+              'skip-me',
+            ],
+            'messages': [
+              {
+                'id': 'm-legacy',
+                'characterId': 'c-legacy',
+                'text': 'Imported from older payload',
+                'timestampSeconds': '7',
+                'status': 'seen',
+                'isIncoming': 0,
+                'showTypingBefore': 'false',
+              },
+              42,
+            ],
+          },
+        ],
+      });
+
+      expect(decoded.id, '');
+      expect(decoded.name, '');
+      expect(decoded.type, ProjectType.series);
+      expect(
+        decoded.createdAt,
+        DateTime.fromMillisecondsSinceEpoch(1710460800000, isUtc: true),
+      );
+      expect(
+        decoded.updatedAt,
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+      expect(decoded.scenes, hasLength(1));
+      expect(decoded.scenes.first.id, '');
+      expect(decoded.scenes.first.title, '');
+      expect(decoded.scenes.first.styleId, '');
+      expect(decoded.scenes.first.characters, hasLength(1));
+      expect(decoded.scenes.first.characters.first.avatarPath, isNull);
+      expect(decoded.scenes.first.characters.first.bubbleColor, '');
+      expect(decoded.scenes.first.messages, hasLength(1));
+      expect(decoded.scenes.first.messages.first.timestampSeconds, 7);
+      expect(decoded.scenes.first.messages.first.isIncoming, isFalse);
+      expect(decoded.scenes.first.messages.first.showTypingBefore, isFalse);
+    });
   });
 }

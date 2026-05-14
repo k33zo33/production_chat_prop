@@ -71,6 +71,44 @@ void main() {
       expect(loaded.first.id, project.id);
     });
 
+    test('loads sparse legacy project entries when scenes payload exists', () async {
+      final expectedCreatedAt = DateTime.fromMillisecondsSinceEpoch(
+        1710460800000,
+        isUtc: true,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'projects_v1',
+        jsonEncode([
+          {
+            'createdAt': 1710460800,
+            'updatedAt': null,
+            'scenes': [
+              {
+                'messages': [
+                  {
+                    'text': ' Legacy message ',
+                    'timestampSeconds': '4',
+                  },
+                ],
+              },
+            ],
+          },
+        ]),
+      );
+
+      final loaded = await repository.getAll();
+
+      expect(loaded, hasLength(1));
+      expect(loaded.first.name, 'Imported Project');
+      expect(loaded.first.createdAt, expectedCreatedAt);
+      expect(loaded.first.scenes, hasLength(1));
+      expect(loaded.first.scenes.first.title, 'Scene 1');
+      expect(loaded.first.scenes.first.messages.single.text, 'Legacy message');
+      expect(loaded.first.scenes.first.messages.single.timestampSeconds, 4);
+    });
+
     test('persists and loads project with 500+ messages', () async {
       final project = _sampleProjectWithMessageCount(520);
 
