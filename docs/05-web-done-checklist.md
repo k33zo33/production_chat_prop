@@ -28,6 +28,7 @@ This checklist reflects the current web MVP state after the widget test stabiliz
 - [x] `flutter analyze`
 - [x] `flutter test test/widget_test.dart`
 - [x] `flutter build web`
+- [x] `./tool/web_shell_smoke.sh` validates shell metadata, icons, and brand-neutral web copy
 - [x] `./tool/beta_handoff.sh`
 - [x] Main widget flow stabilized on web
 
@@ -53,7 +54,7 @@ These are not current blockers for the automated web gate, but are sensible next
 
 ## Recommended verification order
 
-1. Run `./tool/beta_handoff.sh` for the standard beta preflight order (`release_smoke -> compact_smoke -> verify`)
+1. Run `./tool/beta_handoff.sh` for the standard beta preflight order (`web_shell_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`)
 2. Run the quick browser pass from `08-web-smoke-checklist.md`
 3. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
 4. Run the focused export pass from `04-export-qa-checklist.md`
@@ -70,7 +71,8 @@ Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
 - `bash tool/compact_smoke.sh` passed for targeted compact/export regressions
 - `bash tool/release_smoke.sh` now covers empty-scene export disabling, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
-- GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `release_smoke -> compact_smoke -> verify` before uploading the web artifact
+- GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `web_shell_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke` before uploading the web artifact
+- web shell metadata is now gated too, so title/manifest/icon regressions or accidental real-brand references get caught before beta handoff
 - playback preview toggle behavior is covered so frame/clean preview state affects the export preview
 - video fallback export covers unsupported-download environments with clipboard fallback feedback
 - playback screenshot/export output should still be manually checked in a real browser before release, but the desktop playback frame now gives the preview more breathing room so browser QA is closer to the final export surface
