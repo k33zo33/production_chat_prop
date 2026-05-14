@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 
+// LayoutBuilder sees the inner action row width after padding, so this
+// threshold maps to roughly a ~408 px viewport with the current shell.
+const _kProjectNotFoundCompactActionsBreakpoint = 360.0;
+
 class ProjectNotFoundRecoveryState extends ConsumerWidget {
   const ProjectNotFoundRecoveryState({
     required this.openRouteName,
@@ -49,7 +53,9 @@ class ProjectNotFoundRecoveryState extends ConsumerWidget {
               const SizedBox(height: 16),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final isCompact = constraints.maxWidth < 360;
+                  final isCompact =
+                      constraints.maxWidth <
+                      _kProjectNotFoundCompactActionsBreakpoint;
                   final buttons = <Widget>[
                     FilledButton.icon(
                       key: const Key('projectNotFoundCreateStarterButton'),
@@ -85,6 +91,7 @@ class ProjectNotFoundRecoveryState extends ConsumerWidget {
 
                   if (isCompact) {
                     return Column(
+                      key: const Key('projectNotFoundCompactActions'),
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         for (
@@ -101,6 +108,7 @@ class ProjectNotFoundRecoveryState extends ConsumerWidget {
                   }
 
                   return Wrap(
+                    key: const Key('projectNotFoundWrapActions'),
                     alignment: WrapAlignment.center,
                     spacing: 12,
                     runSpacing: 12,

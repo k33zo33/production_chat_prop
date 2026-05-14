@@ -13,6 +13,63 @@ void main() {
   });
 
   testWidgets(
+    'compact missing-project recovery stacks actions on phone-width screens',
+    (tester) async {
+      await _setSurfaceSize(tester, const Size(390, 844));
+      await _pumpWithInitialLocation(
+        tester,
+        initialLocation: '/playback/missing-project',
+      );
+
+      expect(
+        find.byKey(const Key('projectNotFoundCompactActions')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('projectNotFoundWrapActions')), findsNothing);
+
+      await tester.tap(
+        find.byKey(const Key('projectNotFoundCreateDemoButton')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(find.text('Demo Project 1'), findsOneWidget);
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'wide missing-project recovery keeps wrap actions on roomy screens',
+    (tester) async {
+      await _setSurfaceSize(tester, const Size(600, 844));
+      await _pumpWithInitialLocation(
+        tester,
+        initialLocation: '/editor/missing-project',
+      );
+
+      expect(
+        find.byKey(const Key('projectNotFoundWrapActions')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('projectNotFoundCompactActions')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('projectNotFoundCreateStarterButton')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('New Project 1'), findsOneWidget);
+      expect(find.textContaining('Scene: Scene 1'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'missing editor route can recover by creating a starter project',
     (tester) async {
       await _pumpWithInitialLocation(
@@ -74,6 +131,15 @@ void main() {
 
     expect(find.text('Project List'), findsOneWidget);
     expect(find.text('No projects yet'), findsOneWidget);
+  });
+}
+
+Future<void> _setSurfaceSize(WidgetTester tester, Size size) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
   });
 }
 

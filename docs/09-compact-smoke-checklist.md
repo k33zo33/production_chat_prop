@@ -34,13 +34,18 @@ Preporučeni viewport:
 - [ ] Ako je scena dugačka, scrubaj duboko u timeline pa prebaci na drugu scenu i potvrdi da preview ne ostane zaglavljen duboko skrolan
 - [ ] Promijeni ratio između `9:16` i `16:9` bez gubitka playback stanja
 
-## 4. Export i feedback
+## 4. Recovery / stale link pass
+- [ ] Otvori `#/editor/nepostojeci-projekt` ili `#/playback/nepostojeci-projekt` na ~390 px širine
+- [ ] Potvrdi da recovery akcije ostaju složene i klikabilne bez overflowa
+- [ ] Klikni `Create Starter Project` ili `Add Demo Project` i potvrdi da flow uredno oporavi ekran
+
+## 5. Export i feedback
 - [ ] Klikni `Export Screenshot`
 - [ ] Klikni `Export Video`
 - [ ] Potvrdi da su success/fallback poruke jasne i da layout ne puca nakon snackbara
 
-## 5. Release gate
+## 6. Release gate
 Compact layout se može smatrati spremnim za beta pass ako:
 - [ ] nema overflow exceptiona ili vizualnih lomova na ~390 px
 - [ ] ultra-compact playback ostaje upravljiv na ~320 px
-- [ ] project list, editor i playback flow možeš proći bez blokera
+- [ ] project list, editor, playback i stale-link recovery flow možeš proći bez blokera

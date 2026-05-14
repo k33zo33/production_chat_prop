@@ -33,9 +33,15 @@ declare -a TEST_NAMES=(
 )
 
 WIDGET_TEST_FILE="test/widget_test.dart"
+RECOVERY_TEST_FILE="test/widget/project_not_found_recovery_test.dart"
 
 if [[ ! -f "$WIDGET_TEST_FILE" ]]; then
   echo "[compact-smoke] missing expected test file: $WIDGET_TEST_FILE" >&2
+  exit 1
+fi
+
+if [[ ! -f "$RECOVERY_TEST_FILE" ]]; then
+  echo "[compact-smoke] missing expected recovery test file: $RECOVERY_TEST_FILE" >&2
   exit 1
 fi
 
@@ -46,10 +52,28 @@ for test_name in "${TEST_NAMES[@]}"; do
   fi
 done
 
+declare -a RECOVERY_TEST_NAMES=(
+  "compact missing-project recovery stacks actions on phone-width screens"
+  "wide missing-project recovery keeps wrap actions on roomy screens"
+)
+
+for test_name in "${RECOVERY_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$RECOVERY_TEST_FILE"; then
+    echo "[compact-smoke] missing expected recovery test: $test_name" >&2
+    exit 1
+  fi
+done
+
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 
 echo "[compact-smoke] tests: ${#TEST_NAMES[@]} targeted compact/export cases"
 "$FLUTTER_BIN" test "$WIDGET_TEST_FILE" --name "^(${TEST_PATTERN})$"
+
+echo
+
+echo "[compact-smoke] recovery tests: ${#RECOVERY_TEST_NAMES[@]} missing-project layout cases"
+"$FLUTTER_BIN" test "$RECOVERY_TEST_FILE" --name "^(${RECOVERY_TEST_PATTERN})$"
 
 echo
 
