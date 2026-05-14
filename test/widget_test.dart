@@ -1549,6 +1549,57 @@ void main() {
     expect(find.text('Scenes: 2'), findsOneWidget);
   });
 
+  testWidgets(
+    'compact chat editor scene selector shows current scene context on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      expect(
+        find.byKey(const Key('compactEditorSceneDropdown')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('compactEditorSceneSummary')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Scene 1 of 2 • 4 messages • 11s max'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('compactEditorSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Scene 2 of 2 • 3 messages • 8s max'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Scene: Scene 2 - Rolling'), findsOneWidget);
+    },
+  );
+
   testWidgets('compact scene settings dialog stays usable on narrow screens', (
     tester,
   ) async {
@@ -2032,6 +2083,11 @@ void main() {
         find.byKey(const Key('compactPlaybackSceneDropdown')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const Key('compactPlaybackSceneSummary')),
+        findsOneWidget,
+      );
+      expect(find.text('Scene 1 of 2 • 4 messages • 11s max'), findsOneWidget);
       expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
 
       container
@@ -2050,6 +2106,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(find.text('Scene 2 of 2 • 3 messages • 8s max'), findsOneWidget);
       expect(
         find.textContaining('Scene ratio: 16:9', skipOffstage: false),
         findsOneWidget,

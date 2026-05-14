@@ -5,6 +5,7 @@ import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
@@ -279,47 +280,31 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                 if (project.scenes.length > 1) ...[
                   const SizedBox(height: 12),
                   if (isCompactLayout) ...[
-                    ExcludeSemantics(
-                      child: Text(
-                        'Selected Scene',
-                        style: Theme.of(context).textTheme.labelLarge,
+                    CompactSceneSelector(
+                      dropdownKey: const Key('compactEditorSceneDropdown'),
+                      summaryKey: const Key('compactEditorSceneSummary'),
+                      value: selectedScene?.id,
+                      summary: buildCompactSceneSummary(
+                        selectedSceneIndex: selectedSceneIndex,
+                        totalScenes: project.scenes.length,
+                        messageCount: selectedScene?.messages.length ?? 0,
+                        maxSecond: selectedSceneMaxSecond,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Semantics(
-                      label: 'Selected Scene',
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedScene?.id,
-                              isExpanded: true,
-                              items: [
-                                for (final scene in project.scenes)
-                                  DropdownMenuItem(
-                                    value: scene.id,
-                                    child: Text(
-                                      scene.title,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                              ],
-                              onChanged: (sceneId) {
-                                if (sceneId != null) {
-                                  onSceneSelected(sceneId);
-                                }
-                              },
+                      items: [
+                        for (final scene in project.scenes)
+                          DropdownMenuItem(
+                            value: scene.id,
+                            child: Text(
+                              scene.title,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                      ),
+                      ],
+                      onChanged: (sceneId) {
+                        if (sceneId != null) {
+                          onSceneSelected(sceneId);
+                        }
+                      },
                     ),
                   ] else
                     DropdownButtonFormField<String>(

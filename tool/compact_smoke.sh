@@ -18,6 +18,7 @@ declare -a TEST_NAMES=(
   "compact selection overflow keeps bulk actions reachable on narrow screens"
   "compact chat editor app bar uses overflow navigation actions"
   "compact chat editor keeps scene actions in overflow menu"
+  "compact chat editor scene selector shows current scene context on narrow screens"
   "compact scene settings dialog stays usable on narrow screens"
   "ultra-compact chat editor composer stays usable on phone-width screens"
   "compact character manager keeps actions usable through overflow menu"

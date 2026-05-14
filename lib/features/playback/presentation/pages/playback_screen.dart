@@ -9,6 +9,7 @@ import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
@@ -392,48 +393,33 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   if (project.scenes.length > 1) ...[
                     const SizedBox(height: 12),
                     if (isCompactLayout) ...[
-                      ExcludeSemantics(
-                        child: Text(
-                          'Selected Scene',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Semantics(
-                        label: 'Selected Scene',
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
+                      CompactSceneSelector(
+                        dropdownKey: const Key('compactPlaybackSceneDropdown'),
+                        summaryKey: const Key('compactPlaybackSceneSummary'),
+                        value: scene?.id,
+                        summary: buildCompactSceneSummary(
+                          selectedSceneIndex: project.scenes.indexWhere(
+                            (item) => item.id == scene?.id,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                key: const Key('compactPlaybackSceneDropdown'),
-                                value: scene?.id,
-                                isExpanded: true,
-                                items: [
-                                  for (final item in project.scenes)
-                                    DropdownMenuItem(
-                                      value: item.id,
-                                      child: Text(
-                                        item.title,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                ],
-                                onChanged: (sceneId) {
-                                  if (sceneId != null) {
-                                    widget.onSceneSelected(sceneId);
-                                  }
-                                },
+                          totalScenes: project.scenes.length,
+                          messageCount: sortedMessages.length,
+                          maxSecond: maxSecond,
+                        ),
+                        items: [
+                          for (final item in project.scenes)
+                            DropdownMenuItem(
+                              value: item.id,
+                              child: Text(
+                                item.title,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
-                        ),
+                        ],
+                        onChanged: (sceneId) {
+                          if (sceneId != null) {
+                            widget.onSceneSelected(sceneId);
+                          }
+                        },
                       ),
                     ] else
                       DropdownButtonFormField<String>(
