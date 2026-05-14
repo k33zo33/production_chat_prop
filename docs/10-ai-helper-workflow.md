@@ -52,14 +52,15 @@ Primjeri:
 
 ## Tehnički detalji
 - Claude CLI se pokreće non-interactive preko `claude -p`
-- Claude radi u `--permission-mode plan`
-- Gemini CLI se pokreće non-interactive preko `gemini -p`
+- Claude radi u `--permission-mode plan` i ograničen je na `Read,Grep,Glob` alate
+- Gemini CLI se pokreće non-interactive preko `gemini -p ''` uz payload preko stdin-a
 - Gemini radi u `--approval-mode plan`
 - Wrapper skripta ispisuje Claude i Gemini sekcije odvojeno radi lakše usporedbe
-- Ako jedan helper faila ili istekne timeout, wrapper nastavlja s drugim helperom
+- Ako jedan helper faila, nije instaliran, ili istekne timeout, wrapper nastavlja s drugim helperom
 - Timeout se može podesiti preko `HELPER_TIMEOUT_SECONDS` varijable okoline
 - Prompt payload se helperima šalje preko stdin-a kako veliki diffovi ne bi padali na shell `ARG_MAX` limit
-- Za untracked fileove skripta generira patch-style pregled (`git diff --no-index`) tako da review ne preskoči nove datoteke
+- Claude u oba moda dobiva `--add-dir` pristup za read-only čitanje repoa, dok Gemini odgovara samo na temelju prompt payload-a
+- Za untracked fileove skripta generira patch-style pregled (`git diff --no-color --no-ext-diff --no-index`) tako da review ne preskoči nove datoteke
 - Za binarne untracked fileove skripta preskače raw patch i zadržava samo stat sažetak da review ostane čitljiv
 
 ## Pravila odlučivanja

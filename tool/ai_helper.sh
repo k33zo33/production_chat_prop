@@ -162,7 +162,7 @@ run_claude() {
   local prompt="$1"
   if ! require_bin claude; then
     echo "Claude CLI unavailable; skipping Claude helper pass." >&2
-    return 0
+    return 2
   fi
 
   if ! printf '%s' "$prompt" | timeout "$HELPER_TIMEOUT_SECONDS" claude -p \
@@ -179,7 +179,7 @@ run_gemini() {
   local prompt="$1"
   if ! require_bin gemini; then
     echo "Gemini CLI unavailable; skipping Gemini helper pass." >&2
-    return 0
+    return 2
   fi
 
   # Gemini requires a prompt argument for -p; an empty string keeps the actual
@@ -207,13 +207,23 @@ case "$mode" in
     if run_claude "$prompt"; then
       helper_successes=$((helper_successes + 1))
     else
-      echo '[ai-helper] Claude helper failed.' >&2
+      claude_status=$?
+      if [[ "$claude_status" -eq 2 ]]; then
+        echo '[ai-helper] Claude helper unavailable.' >&2
+      else
+        echo '[ai-helper] Claude helper failed.' >&2
+      fi
     fi
     printf '\n===== GEMINI CLI REVIEW =====\n'
     if run_gemini "$prompt"; then
       helper_successes=$((helper_successes + 1))
     else
-      echo '[ai-helper] Gemini helper failed.' >&2
+      gemini_status=$?
+      if [[ "$gemini_status" -eq 2 ]]; then
+        echo '[ai-helper] Gemini helper unavailable.' >&2
+      else
+        echo '[ai-helper] Gemini helper failed.' >&2
+      fi
     fi
     if [[ "$helper_successes" -eq 0 ]]; then
       exit 1
@@ -235,13 +245,23 @@ case "$mode" in
     if run_claude "$prompt"; then
       helper_successes=$((helper_successes + 1))
     else
-      echo '[ai-helper] Claude helper failed.' >&2
+      claude_status=$?
+      if [[ "$claude_status" -eq 2 ]]; then
+        echo '[ai-helper] Claude helper unavailable.' >&2
+      else
+        echo '[ai-helper] Claude helper failed.' >&2
+      fi
     fi
     printf '\n===== GEMINI CLI ANALYSIS =====\n'
     if run_gemini "$prompt"; then
       helper_successes=$((helper_successes + 1))
     else
-      echo '[ai-helper] Gemini helper failed.' >&2
+      gemini_status=$?
+      if [[ "$gemini_status" -eq 2 ]]; then
+        echo '[ai-helper] Gemini helper unavailable.' >&2
+      else
+        echo '[ai-helper] Gemini helper failed.' >&2
+      fi
     fi
     if [[ "$helper_successes" -eq 0 ]]; then
       exit 1
