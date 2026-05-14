@@ -31,6 +31,14 @@ declare -a TEST_NAMES=(
   "playback stays responsive with imported 500+ messages"
 )
 
+declare -a UNIT_TEST_FILES=(
+  "test/unit/core/utils/export_file_name_test.dart"
+  "test/unit/features/playback/data/services/screenshot_export_service_test.dart"
+  "test/unit/features/playback/data/services/video_export_fallback_service_test.dart"
+  "test/unit/features/projects/data/services/project_package_export_service_test.dart"
+  "test/unit/features/projects/data/services/project_portfolio_export_service_test.dart"
+)
+
 for test_name in "${TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$WIDGET_TEST_FILE"; then
     echo "[release-smoke] missing expected widget test: $test_name" >&2
@@ -38,10 +46,24 @@ for test_name in "${TEST_NAMES[@]}"; do
   fi
 done
 
+for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
+  if [[ ! -f "$unit_test_file" ]]; then
+    echo "[release-smoke] missing expected unit test file: $unit_test_file" >&2
+    exit 1
+  fi
+done
+
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 
-echo "[release-smoke] tests: ${#TEST_NAMES[@]} targeted export/reliability cases"
+echo "[release-smoke] widget tests: ${#TEST_NAMES[@]} targeted export/reliability cases"
 "$FLUTTER_BIN" test "$WIDGET_TEST_FILE" --name "^(${TEST_PATTERN})$"
+
+echo
+
+echo "[release-smoke] unit tests: ${#UNIT_TEST_FILES[@]} export payload and filename cases"
+for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
+  "$FLUTTER_BIN" test "$unit_test_file"
+done
 
 echo
 

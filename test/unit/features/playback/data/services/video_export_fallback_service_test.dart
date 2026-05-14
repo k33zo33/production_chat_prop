@@ -245,6 +245,119 @@ void main() {
       },
     );
 
+    test(
+      'buildFallbackPackageJson keeps the selected scene synchronized inside the project payload',
+      () {
+        final service = VideoExportFallbackService();
+        const selectedScene = Scene(
+          id: 'scene-selected',
+          title: 'Selected Scene',
+          styleId: 'studio_default',
+          aspectRatio: SceneAspectRatio.landscape16x9,
+          characters: [
+            Character(
+              id: 'c1',
+              displayName: 'Lead',
+              avatarPath: null,
+              bubbleColor: '#00AA88',
+            ),
+          ],
+          messages: [
+            Message(
+              id: 'm-late',
+              characterId: 'c1',
+              text: 'Later',
+              timestampSeconds: 6,
+              status: MessageStatus.seen,
+              isIncoming: true,
+              showTypingBefore: false,
+            ),
+            Message(
+              id: 'm-early',
+              characterId: 'c1',
+              text: 'Earlier',
+              timestampSeconds: 2,
+              status: MessageStatus.sent,
+              isIncoming: false,
+              showTypingBefore: true,
+            ),
+          ],
+        );
+        const untouchedScene = Scene(
+          id: 'scene-untouched',
+          title: 'Untouched Scene',
+          styleId: 'night_shift',
+          aspectRatio: SceneAspectRatio.portrait9x16,
+          characters: [],
+          messages: [
+            Message(
+              id: 'm-untouched',
+              characterId: 'c2',
+              text: 'Keep original order',
+              timestampSeconds: 9,
+              status: MessageStatus.delivered,
+              isIncoming: false,
+              showTypingBefore: false,
+            ),
+          ],
+        );
+        final project = Project(
+          id: 'p-sync',
+          name: 'Sync Project',
+          type: ProjectType.series,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          scenes: const [untouchedScene, selectedScene],
+        );
+
+        final payload = jsonDecode(
+              service.buildFallbackPackageJson(
+                project: project,
+                scene: selectedScene,
+                includeDeviceFrame: true,
+                cleanPreview: false,
+              ),
+            )
+            as Map<String, dynamic>;
+
+        final selectedScenePayload =
+            payload['selectedScene'] as Map<String, dynamic>;
+        final projectScenes =
+            (payload['project'] as Map<String, dynamic>)['scenes']
+                as List<dynamic>;
+        final syncedScenePayload = projectScenes
+            .cast<Map<String, dynamic>>()
+            .singleWhere((scene) => scene['id'] == selectedScene.id);
+        final untouchedScenePayload = projectScenes
+            .cast<Map<String, dynamic>>()
+            .singleWhere((scene) => scene['id'] == untouchedScene.id);
+
+        expect(selectedScenePayload['aspectRatio'], 'landscape16x9');
+        expect(
+          (selectedScenePayload['messages'] as List<dynamic>)
+              .map((message) => (message as Map<String, dynamic>)['id'])
+              .toList(),
+          ['m-early', 'm-late'],
+        );
+        expect(
+          (syncedScenePayload['messages'] as List<dynamic>)
+              .map((message) => (message as Map<String, dynamic>)['id'])
+              .toList(),
+          ['m-early', 'm-late'],
+        );
+        expect(
+          (untouchedScenePayload['messages'] as List<dynamic>)
+              .map((message) => (message as Map<String, dynamic>)['id'])
+              .toList(),
+          ['m-untouched'],
+        );
+        expect(
+          (payload['renderHints'] as Map<String, dynamic>)['targetRatios'],
+          ['9:16', '16:9'],
+        );
+      },
+    );
+
     test('exports package with 500+ scene messages intact', () async {
       List<int>? capturedBytes;
       final service = VideoExportFallbackService(

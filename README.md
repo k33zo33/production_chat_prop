@@ -54,54 +54,28 @@ Ako `flutter` nije globalno na PATH-u, koristi apsolutnu putanju:
 
 ## Quality Gate
 
-GitHub Actions sada mirror-a standardni beta handoff redoslijed (`web_shell_smoke -> demo_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`) i nakon zelenog prolaza upload-a gotovi web build artefakt.
+GitHub Actions i lokalni beta handoff koriste isti redoslijed:
 
-Za standardni lokalni beta handoff koristi:
+`web_shell_smoke -> demo_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`
 
-```bash
-./tool/beta_handoff.sh
-```
+Ako sve prođe, CI upload-a gotovi web build artefakt.
 
-Ako trebaš samo završni puni verify/build gate bez preflight smoke koraka, koristi:
-
-```bash
-./tool/verify.sh
-```
-
-Isti beta handoff redoslijed sada vrti i GitHub Actions workflow iz `.github/workflows/flutter_ci.yml`, uključujući web shell metadata gate, demo/import/export preflight, release/compact preflight, `flutter build web`, i upload gotovog web artefakta.
-
-Za brzi demo smoke check koristi:
+Najčešće komande:
 
 ```bash
 ./tool/demo_smoke.sh
-```
-
-Za fokusirani compact/export regresijski pass koristi:
-
-```bash
-./tool/compact_smoke.sh
-```
-
-Za release-gate export/reliability preflight koristi:
-
-```bash
 ./tool/release_smoke.sh
-```
-
-To je namjerno brži pass, ne zamjena za puni `./tool/verify.sh` prije release odluke.
-
-Za standardni beta handoff redoslijed koristi:
-
-```bash
+./tool/compact_smoke.sh
+./tool/verify.sh
 ./tool/beta_handoff.sh
 ```
 
-To vrti `web_shell_smoke -> demo_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`, pa na kraju podsjeti na tri ručne checklist provjere.
-
-Za ručni compact/mobile pass koristi:
-
-- `docs/09-compact-smoke-checklist.md`
-- `docs/04-export-qa-checklist.md`
+Napomene:
+- `./tool/release_smoke.sh` je brži export/reliability preflight i sada pokriva i ciljane export unit testove, ali nije zamjena za puni `./tool/verify.sh` prije release odluke.
+- `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed i na kraju podsjeti na ručne checklist provjere.
+- Za ručni compact/mobile i export pass koristi:
+  - `docs/09-compact-smoke-checklist.md`
+  - `docs/04-export-qa-checklist.md`
 
 ## Demo Flow
 

@@ -4,7 +4,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 
 ## 1) Preduvjeti
 - Pokrenut app lokalno (`flutter run -d web-server` ili browser target)
-- Prije ručnog passa pokrenuti `./tool/release_smoke.sh` kao brzi automatski preflight za export/reliability regressions
+- Prije ručnog passa pokrenuti `./tool/release_smoke.sh` kao brzi automatski preflight za export/reliability regressions (widget + export unit testovi)
 - Prije release/deploy odluke i dalje odraditi puni `./tool/verify.sh`
 - Postoji barem jedan projekt sa scenom i porukama
 - Testirati i na praznoj sceni (0 poruka)
