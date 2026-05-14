@@ -75,6 +75,7 @@ Najčešće komande:
 
 Napomene:
 - `./tool/release_smoke.sh` je brži export/reliability preflight i sada pokriva i ciljane export unit testove, ali nije zamjena za puni `./tool/verify.sh` prije release odluke.
+- `./tool/compact_smoke.sh` sada hvata i stale-link/missing-project recovery putanje, ne samo narrow layout i export kontrole.
 - `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery gate, i na kraju podsjeti na ručne checklist provjere.
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`

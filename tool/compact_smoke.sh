@@ -55,6 +55,9 @@ done
 declare -a RECOVERY_TEST_NAMES=(
   "compact missing-project recovery stacks actions on phone-width screens"
   "wide missing-project recovery keeps wrap actions on roomy screens"
+  "missing editor route can recover by creating a starter project"
+  "missing playback route can recover by opening a demo project"
+  "missing project recovery can return to the project list"
 )
 
 for test_name in "${RECOVERY_TEST_NAMES[@]}"; do
@@ -72,7 +75,7 @@ echo "[compact-smoke] tests: ${#TEST_NAMES[@]} targeted compact/export cases"
 
 echo
 
-echo "[compact-smoke] recovery tests: ${#RECOVERY_TEST_NAMES[@]} missing-project layout cases"
+echo "[compact-smoke] recovery tests: ${#RECOVERY_TEST_NAMES[@]} missing-project recovery/layout cases"
 "$FLUTTER_BIN" test "$RECOVERY_TEST_FILE" --name "^(${RECOVERY_TEST_PATTERN})$"
 
 echo
