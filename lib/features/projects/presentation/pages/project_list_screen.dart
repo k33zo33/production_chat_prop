@@ -202,6 +202,30 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     }
   }
 
+  void _openProjectEditor(
+    Project project, {
+    bool preferAttentionScene = false,
+  }) {
+    final targetSceneId = preferAttentionScene
+        ? _projectAttentionSceneId(project)
+        : null;
+
+    context.goNamed(
+      'editorProject',
+      pathParameters: {'projectId': project.id},
+      queryParameters: targetSceneId == null
+          ? const <String, String>{}
+          : {'sceneId': targetSceneId},
+    );
+  }
+
+  void _openProjectPlayback(Project project) {
+    context.goNamed(
+      'playbackProject',
+      pathParameters: {'projectId': project.id},
+    );
+  }
+
   Future<void> _onDeleteSelectedProjectsPressed(List<Project> projects) async {
     final selectedIds = _selectedIdsForProjects(projects);
     if (selectedIds.isEmpty) {
@@ -851,6 +875,28 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 filteredProjects,
               );
 
+              Project? findProjectById(String? projectId) {
+                if (projectId == null) {
+                  return null;
+                }
+                for (final project in filteredProjects) {
+                  if (project.id == projectId) {
+                    return project;
+                  }
+                }
+                return null;
+              }
+
+              final primaryProject = findProjectById(
+                readinessSummary.primaryProjectId,
+              );
+              final previewReadyProject = findProjectById(
+                readinessSummary.firstReadyProjectId,
+              );
+              final attentionProject = findProjectById(
+                readinessSummary.firstNeedsAttentionProjectId,
+              );
+
               final headerContent = <Widget>[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -1034,31 +1080,24 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                   key: const Key(
                                     'portfolioContinueEditingButton',
                                   ),
-                                  onPressed:
-                                      readinessSummary.primaryProjectId == null
+                                  onPressed: primaryProject == null
                                       ? null
-                                      : () => context.goNamed(
-                                          'editorProject',
-                                          pathParameters: {
-                                            'projectId': readinessSummary
-                                                .primaryProjectId!,
-                                          },
+                                      : () => _openProjectEditor(
+                                          primaryProject,
+                                          preferAttentionScene:
+                                              primaryProject.id ==
+                                              readinessSummary
+                                                  .firstNeedsAttentionProjectId,
                                         ),
                                   icon: const Icon(Icons.edit_note_rounded),
                                   label: const Text('Continue Editing'),
                                 ),
                                 OutlinedButton.icon(
                                   key: const Key('portfolioPreviewReadyButton'),
-                                  onPressed:
-                                      readinessSummary.firstReadyProjectId ==
-                                          null
+                                  onPressed: previewReadyProject == null
                                       ? null
-                                      : () => context.goNamed(
-                                          'playbackProject',
-                                          pathParameters: {
-                                            'projectId': readinessSummary
-                                                .firstReadyProjectId!,
-                                          },
+                                      : () => _openProjectPlayback(
+                                          previewReadyProject,
                                         ),
                                   icon: const Icon(
                                     Icons.play_circle_outline_rounded,
@@ -1069,17 +1108,11 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                   key: const Key(
                                     'portfolioReviewAttentionButton',
                                   ),
-                                  onPressed:
-                                      readinessSummary
-                                              .firstNeedsAttentionProjectId ==
-                                          null
+                                  onPressed: attentionProject == null
                                       ? null
-                                      : () => context.goNamed(
-                                          'editorProject',
-                                          pathParameters: {
-                                            'projectId': readinessSummary
-                                                .firstNeedsAttentionProjectId!,
-                                          },
+                                      : () => _openProjectEditor(
+                                          attentionProject,
+                                          preferAttentionScene: true,
                                         ),
                                   icon: const Icon(
                                     Icons.rule_folder_outlined,
@@ -1430,9 +1463,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                   key: Key('projectAttentionCta_${project.id}'),
                   onPressed: selectionMode
                       ? null
-                      : () => _projectAttentionState(
-                          project,
-                        ).onPressed(context, project),
+                      : () => _openProjectAttentionAction(context, project),
                   icon: Icon(_projectAttentionState(project).ctaIcon),
                   label: Text(_projectAttentionState(project).ctaLabel),
                 ),
@@ -1442,9 +1473,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                 key: Key('projectAttentionCta_${project.id}'),
                 onPressed: selectionMode
                     ? null
-                    : () => _projectAttentionState(
-                        project,
-                      ).onPressed(context, project),
+                    : () => _openProjectAttentionAction(context, project),
                 icon: Icon(_projectAttentionState(project).ctaIcon),
                 label: Text(_projectAttentionState(project).ctaLabel),
               ),
@@ -1925,6 +1954,42 @@ int _projectStyleCount(Project project) {
   return styleIds.length;
 }
 
+String? _projectAttentionSceneId(Project project) {
+  for (final scene in project.scenes) {
+    if (scene.messages.isEmpty) {
+      return scene.id;
+    }
+  }
+
+  if (project.scenes.isEmpty) {
+    return null;
+  }
+
+  return project.scenes.first.id;
+}
+
+void _openProjectAttentionAction(BuildContext context, Project project) {
+  final attentionState = _projectAttentionState(project);
+  switch (attentionState.intent) {
+    case _ProjectAttentionIntent.openEditor:
+      final targetSceneId = _projectAttentionSceneId(project);
+      context.goNamed(
+        'editorProject',
+        pathParameters: {'projectId': project.id},
+        queryParameters: targetSceneId == null
+            ? const <String, String>{}
+            : {'sceneId': targetSceneId},
+      );
+      return;
+    case _ProjectAttentionIntent.openPlayback:
+      context.goNamed(
+        'playbackProject',
+        pathParameters: {'projectId': project.id},
+      );
+      return;
+  }
+}
+
 _ProjectAttentionState _projectAttentionState(Project project) {
   final totalMessages = _projectMessageCount(project);
   final emptySceneCount = _projectEmptySceneCount(project);
@@ -1972,23 +2037,6 @@ class _ProjectAttentionState {
   final String ctaLabel;
   final IconData ctaIcon;
   final _ProjectAttentionIntent intent;
-
-  void onPressed(BuildContext context, Project project) {
-    switch (intent) {
-      case _ProjectAttentionIntent.openEditor:
-        context.goNamed(
-          'editorProject',
-          pathParameters: {'projectId': project.id},
-        );
-        return;
-      case _ProjectAttentionIntent.openPlayback:
-        context.goNamed(
-          'playbackProject',
-          pathParameters: {'projectId': project.id},
-        );
-        return;
-    }
-  }
 }
 
 enum _ProjectAttentionIntent {

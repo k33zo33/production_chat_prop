@@ -2544,6 +2544,44 @@ void main() {
   );
 
   testWidgets(
+    'portfolio continue editing focuses first empty scene for attention projects',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byTooltip('Add Demo Project'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await tester.tap(find.byTooltip('Import Project JSON'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        _buildMixedReadinessProjectImportPayload(
+          projectName: 'Portfolio Attention Project',
+        ),
+      );
+      await tester.tap(find.text('Import'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('portfolioContinueEditingButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('Portfolio Attention Project'), findsOneWidget);
+      expect(find.textContaining('Scene: Empty Scene'), findsOneWidget);
+      expect(
+        find.textContaining('Scene summary: 1 characters • 0 messages'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'portfolio review attention CTA opens editor for attention project',
     (
       tester,
@@ -2740,6 +2778,47 @@ void main() {
       expect(find.text('Finish Empty Scenes'), findsOneWidget);
       expect(
         find.textContaining('Playback: 1/2 ready • 1 empty • 2 styles'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'mixed readiness project attention CTA opens editor focused on empty scene',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        _buildMixedReadinessProjectImportPayload(
+          projectName: 'CTA Attention Project',
+        ),
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final finishEmptyScenesCta = _projectCardDescendant(
+        projectName: 'CTA Attention Project',
+        matching: find.widgetWithText(OutlinedButton, 'Finish Empty Scenes'),
+      );
+      await tester.ensureVisible(finishEmptyScenesCta);
+      await tester.pumpAndSettle();
+      await tester.tap(finishEmptyScenesCta, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.textContaining('Scene: Empty Scene'), findsOneWidget);
+      expect(
+        find.textContaining('Scene summary: 1 characters • 0 messages'),
         findsOneWidget,
       );
     },
@@ -5290,6 +5369,60 @@ String _buildAttentionProjectImportPayload({
             'displayName': 'Taylor',
             'avatarPath': null,
             'bubbleColor': '#2E90FA',
+          },
+        ],
+        'messages': <Object>[],
+      },
+    ],
+  });
+}
+
+String _buildMixedReadinessProjectImportPayload({
+  String projectName = 'Mixed Readiness Project',
+}) {
+  return jsonEncode({
+    'id': 'mixed-readiness-source-id',
+    'name': projectName,
+    'type': 'series',
+    'createdAt': DateTime.utc(2026, 4, 30, 11).toIso8601String(),
+    'updatedAt': DateTime.utc(2026, 4, 30, 11).toIso8601String(),
+    'scenes': [
+      {
+        'id': 'mixed-readiness-ready-scene',
+        'title': 'Ready Scene',
+        'styleId': 'studio_slate',
+        'aspectRatio': 'portrait9x16',
+        'characters': [
+          {
+            'id': 'mixed-readiness-ready-char',
+            'displayName': 'Taylor',
+            'avatarPath': null,
+            'bubbleColor': '#2E90FA',
+          },
+        ],
+        'messages': [
+          {
+            'id': 'mixed-readiness-ready-message',
+            'characterId': 'mixed-readiness-ready-char',
+            'text': 'Ready scene is already blocked.',
+            'timestampSeconds': 0,
+            'status': 'sent',
+            'isIncoming': false,
+            'showTypingBefore': false,
+          },
+        ],
+      },
+      {
+        'id': 'mixed-readiness-empty-scene',
+        'title': 'Empty Scene',
+        'styleId': 'night_shift',
+        'aspectRatio': 'landscape16x9',
+        'characters': [
+          {
+            'id': 'mixed-readiness-empty-char',
+            'displayName': 'Jordan',
+            'avatarPath': null,
+            'bubbleColor': '#12B76A',
           },
         ],
         'messages': <Object>[],

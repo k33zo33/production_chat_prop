@@ -19,8 +19,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/editor/:projectId',
       name: 'editorProject',
-      builder: (context, state) =>
-          ChatEditorScreen(projectId: state.pathParameters['projectId']),
+      builder: (context, state) => ChatEditorScreen(
+        projectId: state.pathParameters['projectId'],
+        initialSceneId: state.uri.queryParameters['sceneId'],
+      ),
     ),
     GoRoute(
       path: '/playback',

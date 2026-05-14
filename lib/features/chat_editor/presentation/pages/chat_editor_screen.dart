@@ -16,18 +16,65 @@ import 'package:production_chat_prop/features/projects/presentation/controllers/
 
 const _kUltraCompactWidth = 360.0;
 
-class ChatEditorScreen extends ConsumerWidget {
-  const ChatEditorScreen({super.key, this.projectId, this.forceCompactLayout});
+class ChatEditorScreen extends ConsumerStatefulWidget {
+  const ChatEditorScreen({
+    super.key,
+    this.projectId,
+    this.forceCompactLayout,
+    this.initialSceneId,
+  });
 
   final String? projectId;
   final bool? forceCompactLayout;
+  final String? initialSceneId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isCompactAppBar =
-        forceCompactLayout ?? MediaQuery.sizeOf(context).width < 720;
+  ConsumerState<ChatEditorScreen> createState() => _ChatEditorScreenState();
+}
 
-    if (projectId == null) {
+class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
+  String? _lastAppliedInitialSceneKey;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _applyInitialSceneSelectionIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatEditorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _applyInitialSceneSelectionIfNeeded();
+  }
+
+  void _applyInitialSceneSelectionIfNeeded() {
+    final projectId = widget.projectId;
+    final initialSceneId = widget.initialSceneId;
+    if (projectId == null || initialSceneId == null) {
+      return;
+    }
+
+    final selectionKey = '$projectId::$initialSceneId';
+    if (_lastAppliedInitialSceneKey == selectionKey) {
+      return;
+    }
+    _lastAppliedInitialSceneKey = selectionKey;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(sceneSelectionProvider(projectId).notifier).selectedSceneId =
+          initialSceneId;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isCompactAppBar =
+        widget.forceCompactLayout ?? MediaQuery.sizeOf(context).width < 720;
+
+    if (widget.projectId == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Chat Editor')),
         body: Center(
@@ -50,7 +97,7 @@ class ChatEditorScreen extends ConsumerWidget {
       );
     }
 
-    final activeProjectId = projectId!;
+    final activeProjectId = widget.projectId!;
     final snapshotState = ref.watch(sceneSnapshotProvider(activeProjectId));
 
     return Scaffold(
@@ -75,7 +122,7 @@ class ChatEditorScreen extends ConsumerWidget {
               return _ProjectEditorPlaceholder(
                 projectId: activeProjectId,
                 snapshot: snapshot,
-                forceCompactLayout: forceCompactLayout,
+                forceCompactLayout: widget.forceCompactLayout,
                 onSceneSelected: (sceneId) {
                   ref
                           .read(
