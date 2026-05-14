@@ -14,6 +14,7 @@ Ovaj paket je pripremljen kao ulaz za AI coding asistenta i kao početna dokumen
 - `07-demo-script.md` — koraci za 2-3 minute produkt demo walkthrough
 - `08-web-smoke-checklist.md` — kratki ručni smoke pass za finalnu web provjeru
 - `09-compact-smoke-checklist.md` — ručni compact/mobile smoke pass
+- `10-ai-helper-workflow.md` — Claude/Gemini read-only helper workflow i review wrapper
 - `production-chat-prop.code-workspace` — opcionalni workspace file za VS Code
 
 ## Preporučeni redoslijed

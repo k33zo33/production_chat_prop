@@ -1,11 +1,3 @@
 {
-  "mcpServers": {
-    "claude": {
-      "command": "claude",
-      "args": [
-        "mcp",
-        "serve"
-      ]
-    }
-  }
+  "mcpServers": {}
 }
