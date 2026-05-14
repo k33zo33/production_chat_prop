@@ -54,7 +54,7 @@ Ako `flutter` nije globalno na PATH-u, koristi apsolutnu putanju:
 
 ## Quality Gate
 
-GitHub Actions sada mirror-a standardni beta handoff redoslijed (`release_smoke -> compact_smoke -> verify`) i nakon zelenog prolaza upload-a gotovi web build artefakt.
+GitHub Actions sada mirror-a standardni beta handoff redoslijed (`web_shell_smoke -> demo_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`) i nakon zelenog prolaza upload-a gotovi web build artefakt.
 
 Za standardni lokalni beta handoff koristi:
 
@@ -68,7 +68,7 @@ Ako trebaš samo završni puni verify/build gate bez preflight smoke koraka, kor
 ./tool/verify.sh
 ```
 
-Isti beta handoff redoslijed sada vrti i GitHub Actions workflow iz `.github/workflows/flutter_ci.yml`, uključujući release/compact preflight, `flutter build web`, i upload gotovog web artefakta.
+Isti beta handoff redoslijed sada vrti i GitHub Actions workflow iz `.github/workflows/flutter_ci.yml`, uključujući web shell metadata gate, demo/import/export preflight, release/compact preflight, `flutter build web`, i upload gotovog web artefakta.
 
 Za brzi demo smoke check koristi:
 
@@ -96,7 +96,7 @@ Za standardni beta handoff redoslijed koristi:
 ./tool/beta_handoff.sh
 ```
 
-To vrti `release_smoke -> compact_smoke -> verify`, pa na kraju podsjeti na tri ručne checklist provjere.
+To vrti `web_shell_smoke -> demo_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`, pa na kraju podsjeti na tri ručne checklist provjere.
 
 Za ručni compact/mobile pass koristi:
 
