@@ -2005,7 +2005,6 @@ _ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
   var totalMessages = 0;
   var readyProjectCount = 0;
   var needsAttentionProjectCount = 0;
-  String? primaryProjectId;
   String? firstReadyProjectId;
   String? firstNeedsAttentionProjectId;
 
@@ -2031,8 +2030,6 @@ _ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
       needsAttentionProjectCount++;
       firstNeedsAttentionProjectId ??= project.id;
     }
-
-    primaryProjectId ??= firstNeedsAttentionProjectId ?? firstReadyProjectId;
   }
 
   return _ProjectPortfolioReadinessSummary(
@@ -2042,7 +2039,7 @@ _ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
     totalMessages: totalMessages,
     readyProjectCount: readyProjectCount,
     needsAttentionProjectCount: needsAttentionProjectCount,
-    primaryProjectId: primaryProjectId,
+    primaryProjectId: firstNeedsAttentionProjectId ?? firstReadyProjectId,
     firstReadyProjectId: firstReadyProjectId,
     firstNeedsAttentionProjectId: firstNeedsAttentionProjectId,
   );

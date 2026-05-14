@@ -2391,6 +2391,66 @@ void main() {
   });
 
   testWidgets(
+    'portfolio continue editing prioritizes projects that need attention',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byTooltip('Add Demo Project'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final attentionPayload = jsonEncode(<String, Object?>{
+        'id': 'attention-project-priority-id',
+        'name': 'Attention Project',
+        'type': 'other',
+        'createdAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'updatedAt': DateTime.utc(2026, 1, 2).toIso8601String(),
+        'scenes': <Map<String, Object?>>[
+          <String, Object?>{
+            'id': 'attention-scene-priority-1',
+            'title': 'Needs Timing Pass',
+            'styleId': 'studio_slate',
+            'aspectRatio': 'portrait9x16',
+            'characters': <Map<String, Object?>>[
+              <String, Object?>{
+                'id': 'attention-char-priority-1',
+                'displayName': 'Taylor',
+                'avatarPath': null,
+                'bubbleColor': '#2E90FA',
+              },
+            ],
+            'messages': <Map<String, Object?>>[],
+          },
+        ],
+      });
+
+      await tester.tap(find.byTooltip('Import Project JSON'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        attentionPayload,
+      );
+      await tester.tap(find.text('Import'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('portfolioContinueEditingButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('Attention Project'), findsOneWidget);
+      expect(
+        find.textContaining('Scene summary: 1 characters • 0 messages'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'portfolio review attention CTA opens editor for attention project',
     (
       tester,
