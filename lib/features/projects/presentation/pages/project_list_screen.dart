@@ -916,44 +916,75 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ChoiceChip(
-                          key: const Key('projectTypeFilter_all'),
-                          label: Text('All (${projects.length})'),
-                          selected: _selectedTypeFilter == null,
-                          onSelected: (selected) {
-                            if (!selected) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedTypeFilter = null;
-                            });
-                          },
-                        ),
-                        for (final type in ProjectType.values)
-                          ChoiceChip(
-                            key: Key('projectTypeFilter_${type.name}'),
-                            label: Text(
-                              '${type.label} (${typeCounts[type] ?? 0})',
+                  child: MediaQuery.sizeOf(context).width < 560
+                      ? KeyedSubtree(
+                          key: const Key('projectTypeFilterDropdown'),
+                          child: DropdownButtonFormField<ProjectType?>(
+                            key: ValueKey<String>(
+                              'projectTypeFilterField_${_selectedTypeFilter?.name ?? 'all'}',
                             ),
-                            selected: _selectedTypeFilter == type,
-                            onSelected: (selected) {
-                              if (!selected) {
-                                return;
-                              }
+                            isExpanded: true,
+                            initialValue: _selectedTypeFilter,
+                            decoration: const InputDecoration(
+                              labelText: 'Project Type',
+                            ),
+                            items: [
+                              DropdownMenuItem<ProjectType?>(
+                                child: Text('All (${projects.length})'),
+                              ),
+                              for (final type in ProjectType.values)
+                                DropdownMenuItem<ProjectType?>(
+                                  value: type,
+                                  child: Text(
+                                    '${type.label} (${typeCounts[type] ?? 0})',
+                                  ),
+                                ),
+                            ],
+                            onChanged: (value) {
                               setState(() {
-                                _selectedTypeFilter = type;
+                                _selectedTypeFilter = value;
                               });
                             },
                           ),
-                      ],
-                    ),
-                  ),
+                        )
+                      : Align(
+                          alignment: Alignment.centerLeft,
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              ChoiceChip(
+                                key: const Key('projectTypeFilter_all'),
+                                label: Text('All (${projects.length})'),
+                                selected: _selectedTypeFilter == null,
+                                onSelected: (selected) {
+                                  if (!selected) {
+                                    return;
+                                  }
+                                  setState(() {
+                                    _selectedTypeFilter = null;
+                                  });
+                                },
+                              ),
+                              for (final type in ProjectType.values)
+                                ChoiceChip(
+                                  key: Key('projectTypeFilter_${type.name}'),
+                                  label: Text(
+                                    '${type.label} (${typeCounts[type] ?? 0})',
+                                  ),
+                                  selected: _selectedTypeFilter == type,
+                                  onSelected: (selected) {
+                                    if (!selected) {
+                                      return;
+                                    }
+                                    setState(() {
+                                      _selectedTypeFilter = type;
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),

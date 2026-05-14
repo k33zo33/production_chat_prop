@@ -12,6 +12,7 @@ import 'package:production_chat_prop/features/chat_editor/presentation/pages/cha
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
+import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 import 'package:production_chat_prop/features/projects/presentation/pages/project_list_screen.dart';
@@ -1313,7 +1314,16 @@ void main() {
 
       expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
+      final compactTypeFilter = find.descendant(
+        of: find.byKey(const Key('projectTypeFilterDropdown')),
+        matching: find.byType(DropdownButtonFormField<ProjectType?>),
+      );
+      expect(compactTypeFilter, findsOneWidget);
+      expect(find.byKey(const Key('projectTypeFilter_ad')), findsNothing);
+
+      await tester.tap(compactTypeFilter);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ad (1)').last);
       await tester.pumpAndSettle();
 
       expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
@@ -1336,6 +1346,8 @@ void main() {
         find.byKey(const Key('projectSearchField')),
       );
       expect(searchField.controller!.text, isEmpty);
+      expect(find.text('All (2)'), findsOneWidget);
+      expect(find.text('Updated (Newest)'), findsOneWidget);
       expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -2451,6 +2463,7 @@ void main() {
       find.byKey(const Key('projectTypeFilter_all')),
     );
     expect(allChip.selected, isTrue);
+    expect(find.text('Updated (Newest)'), findsOneWidget);
     expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
   });
 
