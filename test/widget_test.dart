@@ -2069,6 +2069,95 @@ void main() {
   );
 
   testWidgets(
+    'compact playback scene switch resets deep preview scroll in long scenes',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildLargeMultiSceneImportPayload());
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('compactPlaybackSceneDropdown')),
+        findsOneWidget,
+      );
+
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackPreviewAspectRatio')),
+      );
+
+      final previewScrollViewFinder = find.byKey(
+        const Key('playbackPreviewScrollView'),
+        skipOffstage: false,
+      );
+      expect(
+        tester
+            .widget<SingleChildScrollView>(previewScrollViewFinder)
+            .controller!
+            .position
+            .pixels,
+        0,
+      );
+
+      container
+          .read(playbackControllerProvider(projectId).notifier)
+          .scrubTo(second: 480, maxSecond: 519);
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<SingleChildScrollView>(previewScrollViewFinder)
+            .controller!
+            .position
+            .pixels,
+        greaterThan(0),
+      );
+
+      tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position
+          .jumpTo(0);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('compactPlaybackSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Reset Check').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Scene ratio: 16:9', skipOffstage: false),
+        findsOneWidget,
+      );
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackPreviewAspectRatio')),
+      );
+      expect(
+        tester
+            .widget<SingleChildScrollView>(previewScrollViewFinder)
+            .controller!
+            .position
+            .pixels,
+        0,
+      );
+      expect(
+        find.textContaining('t=0s / 7 s', skipOffstage: false),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'compact demo flow stays usable across project list, editor, and playback',
     (tester) async {
       final container = ProviderContainer(
@@ -5052,6 +5141,22 @@ Future<String> _openProjectMenuForProject(
 }
 
 String _buildLargeProjectImportPayload({required int messageCount}) {
+  final payload = _buildLargeProjectImportData(messageCount: messageCount);
+  return jsonEncode(payload);
+}
+
+String _buildLargeMultiSceneImportPayload({int firstSceneMessageCount = 520}) {
+  final payload = _buildLargeProjectImportData(
+    messageCount: firstSceneMessageCount,
+    includeResetCheckScene: true,
+  );
+  return jsonEncode(payload);
+}
+
+Map<String, Object?> _buildLargeProjectImportData({
+  required int messageCount,
+  bool includeResetCheckScene = false,
+}) {
   final messages = List<Map<String, Object?>>.generate(
     messageCount,
     (index) => {
@@ -5070,38 +5175,90 @@ String _buildLargeProjectImportPayload({required int messageCount}) {
     growable: false,
   );
 
-  final payload = {
+  final scenes = <Map<String, Object?>>[
+    {
+      'id': 'scene-stress',
+      'title': 'Stress Scene',
+      'styleId': 'studio_default',
+      'aspectRatio': 'portrait9x16',
+      'characters': [
+        {
+          'id': 'c_alex',
+          'displayName': 'Alex',
+          'avatarPath': null,
+          'bubbleColor': '#2E90FA',
+        },
+        {
+          'id': 'c_mia',
+          'displayName': 'Mia',
+          'avatarPath': null,
+          'bubbleColor': '#12B76A',
+        },
+      ],
+      'messages': messages,
+    },
+  ];
+
+  if (includeResetCheckScene) {
+    scenes.add({
+      'id': 'scene-reset-check',
+      'title': 'Scene 2 - Reset Check',
+      'styleId': 'studio_slate',
+      'aspectRatio': 'landscape16x9',
+      'characters': [
+        {
+          'id': 'c_alex',
+          'displayName': 'Alex',
+          'avatarPath': null,
+          'bubbleColor': '#2E90FA',
+        },
+        {
+          'id': 'c_mia',
+          'displayName': 'Mia',
+          'avatarPath': null,
+          'bubbleColor': '#12B76A',
+        },
+      ],
+      'messages': [
+        {
+          'id': 'reset_m_0',
+          'characterId': 'c_alex',
+          'text': 'Reset cue 0',
+          'timestampSeconds': 0,
+          'status': 'sent',
+          'isIncoming': false,
+          'showTypingBefore': false,
+        },
+        {
+          'id': 'reset_m_1',
+          'characterId': 'c_mia',
+          'text': 'Reset cue 1',
+          'timestampSeconds': 3,
+          'status': 'delivered',
+          'isIncoming': true,
+          'showTypingBefore': true,
+        },
+        {
+          'id': 'reset_m_2',
+          'characterId': 'c_alex',
+          'text': 'Reset cue 2',
+          'timestampSeconds': 7,
+          'status': 'seen',
+          'isIncoming': false,
+          'showTypingBefore': false,
+        },
+      ],
+    });
+  }
+
+  return {
     'id': 'stress-project-source',
     'name': 'Stress Playback Project',
     'type': 'series',
     'createdAt': DateTime.utc(2026, 3, 31, 12).toIso8601String(),
     'updatedAt': DateTime.utc(2026, 3, 31, 12).toIso8601String(),
-    'scenes': [
-      {
-        'id': 'scene-stress',
-        'title': 'Stress Scene',
-        'styleId': 'studio_default',
-        'aspectRatio': 'portrait9x16',
-        'characters': [
-          {
-            'id': 'c_alex',
-            'displayName': 'Alex',
-            'avatarPath': null,
-            'bubbleColor': '#2E90FA',
-          },
-          {
-            'id': 'c_mia',
-            'displayName': 'Mia',
-            'avatarPath': null,
-            'bubbleColor': '#12B76A',
-          },
-        ],
-        'messages': messages,
-      },
-    ],
+    'scenes': scenes,
   };
-
-  return jsonEncode(payload);
 }
 
 String _buildAttentionProjectImportPayload({

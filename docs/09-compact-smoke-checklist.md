@@ -31,6 +31,7 @@ Preporučeni viewport:
 - [ ] Na ~320 px širine provjeri ultra-compact varijantu `Play/Pause`, `Restart`, seek i cue gumba
 - [ ] Skrolaj do dna playback ekrana i potvrdi da `Open Chat Editor` otvara editor, a `Back to Projects` vraća na listu projekata
 - [ ] Promijeni scenu i potvrdi da se progress resetira na novu scenu
+- [ ] Ako je scena dugačka, scrubaj duboko u timeline pa prebaci na drugu scenu i potvrdi da preview ne ostane zaglavljen duboko skrolan
 - [ ] Promijeni ratio između `9:16` i `16:9` bez gubitka playback stanja
 
 ## 4. Export i feedback
