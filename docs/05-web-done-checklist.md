@@ -73,4 +73,4 @@ Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 - GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `release_smoke -> compact_smoke -> verify` before uploading the web artifact
 - playback preview toggle behavior is covered so frame/clean preview state affects the export preview
 - video fallback export covers unsupported-download environments with clipboard fallback feedback
-- playback screenshot/export output should still be manually checked in a real browser because the current web/desktop content frame constrains rendered preview width
+- playback screenshot/export output should still be manually checked in a real browser before release, but the desktop playback frame now gives the preview more breathing room so browser QA is closer to the final export surface

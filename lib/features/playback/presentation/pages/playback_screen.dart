@@ -34,6 +34,10 @@ final videoExportFallbackServiceProvider = Provider<VideoExportFallbackService>(
   },
 );
 
+const _kPlaybackDesktopContentMaxWidth = 1440.0;
+const _kPlaybackPortraitPreviewMaxWidth = 560.0;
+const _kPlaybackLandscapePreviewMaxWidth = 1040.0;
+
 class PlaybackScreen extends ConsumerWidget {
   const PlaybackScreen({super.key, this.projectId});
 
@@ -80,7 +84,7 @@ class PlaybackScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: AppContentFrame(
-          maxWidth: 1280,
+          maxWidth: _kPlaybackDesktopContentMaxWidth,
           child: snapshotState.when(
             data: (snapshot) {
               if (snapshot == null) {
@@ -1187,8 +1191,9 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final targetPreviewWidth = switch (widget.aspectRatio) {
-            SceneAspectRatio.portrait9x16 => 500.0,
-            SceneAspectRatio.landscape16x9 => 880.0,
+            SceneAspectRatio.portrait9x16 => _kPlaybackPortraitPreviewMaxWidth,
+            SceneAspectRatio.landscape16x9 =>
+              _kPlaybackLandscapePreviewMaxWidth,
           };
           final availableWidth = constraints.hasBoundedWidth
               ? constraints.maxWidth

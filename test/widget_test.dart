@@ -2113,6 +2113,10 @@ void main() {
           .read(playbackControllerProvider(projectId).notifier)
           .scrubTo(second: 480, maxSecond: 519);
       await tester.pumpAndSettle();
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackPreviewAspectRatio')),
+      );
 
       expect(
         tester
@@ -4502,7 +4506,7 @@ void main() {
 
       final previewFinder = find.byKey(const Key('playbackPreviewAspectRatio'));
       final portraitSize = tester.getSize(previewFinder);
-      expect(portraitSize.width, greaterThan(420));
+      expect(portraitSize.width, greaterThan(520));
       expect(portraitSize.height, greaterThan(portraitSize.width));
 
       await tester.tap(find.byKey(const Key('aspectRatioLandscapeChip')));
@@ -4510,7 +4514,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       final landscapeSize = tester.getSize(previewFinder);
-      expect(landscapeSize.width, greaterThan(720));
+      expect(landscapeSize.width, greaterThan(960));
       expect(landscapeSize.width, greaterThan(landscapeSize.height));
     },
   );
@@ -4898,6 +4902,10 @@ void main() {
         .read(playbackControllerProvider(projectId).notifier)
         .scrubTo(second: 480, maxSecond: 519);
     await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      find.byKey(const Key('playbackPreviewAspectRatio')),
+    );
 
     final updatedPreviewScrollView = tester.widget<SingleChildScrollView>(
       previewScrollViewFinder,
