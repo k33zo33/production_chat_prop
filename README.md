@@ -56,7 +56,9 @@ Ako `flutter` nije globalno na PATH-u, koristi apsolutnu putanju:
 
 GitHub Actions i lokalni beta handoff koriste isti redoslijed:
 
-`web_shell_smoke -> demo_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`
+`web_shell_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`
+
+`./tool/beta_handoff.sh` dodatno vrti mali docs-sync preflight kako README, checklist i CI ne bi tiho odlutali iz stvarnog handoff reda.
 
 Ako sve prođe, CI upload-a gotovi web build artefakt.
 
@@ -64,6 +66,7 @@ Najčešće komande:
 
 ```bash
 ./tool/demo_smoke.sh
+./tool/import_smoke.sh
 ./tool/release_smoke.sh
 ./tool/compact_smoke.sh
 ./tool/verify.sh
@@ -72,7 +75,7 @@ Najčešće komande:
 
 Napomene:
 - `./tool/release_smoke.sh` je brži export/reliability preflight i sada pokriva i ciljane export unit testove, ali nije zamjena za puni `./tool/verify.sh` prije release odluke.
-- `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed i na kraju podsjeti na ručne checklist provjere.
+- `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery gate, i na kraju podsjeti na ručne checklist provjere.
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`

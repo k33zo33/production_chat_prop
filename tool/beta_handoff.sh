@@ -11,8 +11,9 @@ RELEASE_SMOKE_SCRIPT="./tool/release_smoke.sh"
 COMPACT_SMOKE_SCRIPT="./tool/compact_smoke.sh"
 VERIFY_SCRIPT="./tool/verify.sh"
 WEB_SHELL_SMOKE_SCRIPT="./tool/web_shell_smoke.sh"
+DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"
 
-for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT"; do
+for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT"; do
   if [[ ! -f "$script_path" ]]; then
     echo "[beta-handoff] missing required script: $script_path" >&2
     exit 1
@@ -25,6 +26,9 @@ echo "[beta-handoff] using flutter: $FLUTTER_BIN"
 
 echo "[beta-handoff] pub get"
 "$FLUTTER_BIN" pub get
+
+echo "[beta-handoff] docs/release instructions preflight"
+"$DOCS_HANDOFF_SMOKE_SCRIPT"
 
 echo "[beta-handoff] web shell metadata preflight"
 "$WEB_SHELL_SMOKE_SCRIPT" web
