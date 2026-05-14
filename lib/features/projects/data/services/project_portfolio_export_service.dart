@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:production_chat_prop/core/utils/export_file_name.dart';
 import 'package:production_chat_prop/core/utils/file_download/file_downloader.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 
@@ -80,14 +81,7 @@ class ProjectPortfolioExportService {
   }
 
   String _buildFileName() {
-    final now = DateTime.now();
-    final timestamp =
-        '${now.year.toString().padLeft(4, '0')}'
-        '${now.month.toString().padLeft(2, '0')}'
-        '${now.day.toString().padLeft(2, '0')}_'
-        '${now.hour.toString().padLeft(2, '0')}'
-        '${now.minute.toString().padLeft(2, '0')}'
-        '${now.second.toString().padLeft(2, '0')}';
+    final timestamp = buildExportTimestamp();
     return 'pcp_project_portfolio_$timestamp.json';
   }
 }

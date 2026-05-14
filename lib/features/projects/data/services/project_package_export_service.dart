@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:production_chat_prop/core/utils/export_file_name.dart';
 import 'package:production_chat_prop/core/utils/file_download/file_downloader.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 
@@ -68,24 +69,11 @@ class ProjectPackageExportService {
   }
 
   String _buildFileName({required String projectName}) {
-    final now = DateTime.now();
-    final timestamp =
-        '${now.year.toString().padLeft(4, '0')}'
-        '${now.month.toString().padLeft(2, '0')}'
-        '${now.day.toString().padLeft(2, '0')}_'
-        '${now.hour.toString().padLeft(2, '0')}'
-        '${now.minute.toString().padLeft(2, '0')}'
-        '${now.second.toString().padLeft(2, '0')}';
-    final safeProject = _sanitizeSegment(projectName);
+    final timestamp = buildExportTimestamp();
+    final safeProject = sanitizeExportFileNameSegment(
+      projectName,
+      fallback: 'project',
+    );
     return 'pcp_project_${safeProject}_$timestamp.json';
-  }
-
-  String _sanitizeSegment(String value) {
-    final normalized = value.trim().toLowerCase();
-    final replaced = normalized.replaceAll(RegExp('[^a-z0-9]+'), '_');
-    return replaced
-        .replaceAll(RegExp('_+'), '_')
-        .replaceFirst(RegExp('^_+'), '')
-        .replaceFirst(RegExp(r'_+$'), '');
   }
 }

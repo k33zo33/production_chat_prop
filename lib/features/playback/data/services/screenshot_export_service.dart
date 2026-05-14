@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+import 'package:production_chat_prop/core/utils/export_file_name.dart';
 import 'package:production_chat_prop/core/utils/file_download/file_downloader.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 
@@ -155,26 +156,15 @@ class ScreenshotExportService {
     required String projectName,
     required String sceneTitle,
   }) {
-    final now = DateTime.now();
-    final timestamp =
-        '${now.year.toString().padLeft(4, '0')}'
-        '${now.month.toString().padLeft(2, '0')}'
-        '${now.day.toString().padLeft(2, '0')}_'
-        '${now.hour.toString().padLeft(2, '0')}'
-        '${now.minute.toString().padLeft(2, '0')}'
-        '${now.second.toString().padLeft(2, '0')}';
-
-    final safeProject = _sanitizeSegment(projectName);
-    final safeScene = _sanitizeSegment(sceneTitle);
+    final timestamp = buildExportTimestamp();
+    final safeProject = sanitizeExportFileNameSegment(
+      projectName,
+      fallback: 'project',
+    );
+    final safeScene = sanitizeExportFileNameSegment(
+      sceneTitle,
+      fallback: 'scene',
+    );
     return 'pcp_${safeProject}_${safeScene}_$timestamp.png';
-  }
-
-  String _sanitizeSegment(String value) {
-    final normalized = value.trim().toLowerCase();
-    final replaced = normalized.replaceAll(RegExp('[^a-z0-9]+'), '_');
-    return replaced
-        .replaceAll(RegExp('_+'), '_')
-        .replaceFirst(RegExp('^_+'), '')
-        .replaceFirst(RegExp(r'_+$'), '');
   }
 }

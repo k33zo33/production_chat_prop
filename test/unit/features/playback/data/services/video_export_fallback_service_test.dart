@@ -151,37 +151,99 @@ void main() {
       expect(result.failure, VideoFallbackExportFailure.downloadUnavailable);
     });
 
-    test('buildFallbackPackageJson returns readable payload for clipboard fallback', () {
-      final service = VideoExportFallbackService();
-      const scene = Scene(
-        id: 's1',
-        title: 'Scene',
-        styleId: 'style',
-        aspectRatio: SceneAspectRatio.landscape16x9,
-        characters: [],
-        messages: [],
-      );
-      final project = Project(
-        id: 'p1',
-        name: 'Project',
-        type: ProjectType.other,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-        scenes: [scene],
-      );
+    test(
+      'uses safe fallback filename segments for blank export labels',
+      () async {
+        String? capturedFilename;
 
-      final jsonText = service.buildFallbackPackageJson(
-        project: project,
-        scene: scene,
-        includeDeviceFrame: true,
-        cleanPreview: false,
-      );
+        final service = VideoExportFallbackService(
+          downloader:
+              ({
+                required bytes,
+                required filename,
+                required mimeType,
+              }) async {
+                capturedFilename = filename;
+                return true;
+              },
+        );
 
-      final payload = jsonDecode(jsonText) as Map<String, dynamic>;
-      expect((payload['meta'] as Map<String, dynamic>)['format'], 'video_fallback_package');
-      expect((payload['renderHints'] as Map<String, dynamic>)['includeDeviceFrame'], isTrue);
-      expect((payload['selectedScene'] as Map<String, dynamic>)['title'], 'Scene');
-    });
+        const scene = Scene(
+          id: 's1',
+          title: '###',
+          styleId: 'style',
+          aspectRatio: SceneAspectRatio.landscape16x9,
+          characters: [],
+          messages: [],
+        );
+        final project = Project(
+          id: 'p1',
+          name: '***',
+          type: ProjectType.other,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          scenes: [scene],
+        );
+
+        final result = await service.exportFallbackPackage(
+          project: project,
+          scene: scene,
+          includeDeviceFrame: true,
+          cleanPreview: false,
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(
+          capturedFilename,
+          startsWith('pcp_video_fallback_project_scene_'),
+        );
+      },
+    );
+
+    test(
+      'buildFallbackPackageJson returns readable payload for clipboard fallback',
+      () {
+        final service = VideoExportFallbackService();
+        const scene = Scene(
+          id: 's1',
+          title: 'Scene',
+          styleId: 'style',
+          aspectRatio: SceneAspectRatio.landscape16x9,
+          characters: [],
+          messages: [],
+        );
+        final project = Project(
+          id: 'p1',
+          name: 'Project',
+          type: ProjectType.other,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+          scenes: [scene],
+        );
+
+        final jsonText = service.buildFallbackPackageJson(
+          project: project,
+          scene: scene,
+          includeDeviceFrame: true,
+          cleanPreview: false,
+        );
+
+        final payload = jsonDecode(jsonText) as Map<String, dynamic>;
+        expect(
+          (payload['meta'] as Map<String, dynamic>)['format'],
+          'video_fallback_package',
+        );
+        expect(
+          (payload['renderHints']
+              as Map<String, dynamic>)['includeDeviceFrame'],
+          isTrue,
+        );
+        expect(
+          (payload['selectedScene'] as Map<String, dynamic>)['title'],
+          'Scene',
+        );
+      },
+    );
 
     test('exports package with 500+ scene messages intact', () async {
       List<int>? capturedBytes;

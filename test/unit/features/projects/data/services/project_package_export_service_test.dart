@@ -63,14 +63,33 @@ void main() {
       expect(result.filename, isNull);
     },
   );
+
+  test('exportProjectPackage falls back to a safe filename segment', () async {
+    String? capturedFilename;
+
+    final service = ProjectPackageExportService(
+      downloader:
+          ({required bytes, required filename, required mimeType}) async {
+            capturedFilename = filename;
+            return true;
+          },
+    );
+
+    final result = await service.exportProjectPackage(
+      project: _sampleProject(name: '###'),
+    );
+
+    expect(result.isSuccess, isTrue);
+    expect(capturedFilename, startsWith('pcp_project_project_'));
+  });
 }
 
-Project _sampleProject() {
+Project _sampleProject({String name = 'Export Project'}) {
   final now = DateTime.utc(2026, 3, 30);
 
   return Project(
     id: 'project-export-1',
-    name: 'Export Project',
+    name: name,
     type: ProjectType.series,
     createdAt: now,
     updatedAt: now,
