@@ -308,6 +308,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     ),
                   ] else
                     DropdownButtonFormField<String>(
+                      key: const Key('editorSceneDropdown'),
                       initialValue: selectedScene?.id,
                       isExpanded: true,
                       decoration: const InputDecoration(

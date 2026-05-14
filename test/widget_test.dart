@@ -1643,6 +1643,50 @@ void main() {
     },
   );
 
+  testWidgets(
+    'wide chat editor scene selector switches demo scenes with desktop controls intact',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(960, 900),
+        child: ChatEditorScreen(projectId: projectId),
+      );
+
+      expect(find.byKey(const Key('editorSceneDropdown')), findsOneWidget);
+      expect(
+        find.byKey(const Key('compactEditorSceneDropdown')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('duplicateSceneButton')), findsOneWidget);
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('editorSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Scene summary: 2 characters • 3 messages • max 8s',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('duplicateSceneButton')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('compact scene settings dialog stays usable on narrow screens', (
     tester,
   ) async {
@@ -2165,6 +2209,67 @@ void main() {
         ),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets(
+    'wide playback scene selector switches demo scenes and resets progress',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(960, 900),
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(find.byKey(const Key('playbackSceneDropdown')), findsOneWidget);
+      expect(
+        find.byKey(const Key('compactPlaybackSceneDropdown')),
+        findsNothing,
+      );
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+
+      container
+          .read(playbackControllerProvider(projectId).notifier)
+          .seekBy(delta: 5, maxSecond: 11);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('t=5s / 11 s', skipOffstage: false),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('playbackSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        find.textContaining('Scene ratio: 16:9', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('t=0s / 8 s', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Progress: 0% • Visible messages: 1/3',
+          skipOffstage: false,
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
     },
   );
 
