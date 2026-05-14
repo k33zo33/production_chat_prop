@@ -12,25 +12,45 @@ echo "[demo-smoke] using flutter: $FLUTTER_BIN"
 echo "[demo-smoke] analyze"
 "$FLUTTER_BIN" analyze
 
-echo "[demo-smoke] targeted widget tests"
-"$FLUTTER_BIN" test --plain-name "add demo project action seeds prefilled project"
-"$FLUTTER_BIN" test --plain-name "create project and navigate to chat editor from project card"
-"$FLUTTER_BIN" test --plain-name "create project and navigate to playback from project card"
-"$FLUTTER_BIN" test --plain-name "export all projects action shows empty portfolio feedback"
-"$FLUTTER_BIN" test --plain-name "bulk project selection exports selected projects payload"
-"$FLUTTER_BIN" test --plain-name "bulk project selection deletes multiple projects"
-"$FLUTTER_BIN" test --plain-name "bulk project selection sets type for selected projects"
-"$FLUTTER_BIN" test --plain-name "bulk project selection duplicates selected projects"
-"$FLUTTER_BIN" test --plain-name "project popup copy json writes clipboard and shows feedback"
-"$FLUTTER_BIN" test --plain-name "project popup download json shows fallback feedback on unsupported platform"
-"$FLUTTER_BIN" test --plain-name "import project json dialog adds new project card"
-"$FLUTTER_BIN" test --plain-name "import project json dialog supports batch payload"
-"$FLUTTER_BIN" test --plain-name "import json file button shows fallback when no file is selected"
-"$FLUTTER_BIN" test --plain-name "import json file button imports project from picker payload"
-"$FLUTTER_BIN" test --plain-name "compact playback scene selector switches demo scenes and resets progress"
-"$FLUTTER_BIN" test --plain-name "compact demo flow stays usable across project list, editor, and playback"
-"$FLUTTER_BIN" test --plain-name "playback stays responsive with imported 500+ messages"
-"$FLUTTER_BIN" test --plain-name "video export button copies fallback package to clipboard when download is unavailable"
+WIDGET_TEST_FILE="test/widget_test.dart"
+
+if [[ ! -f "$WIDGET_TEST_FILE" ]]; then
+  echo "[demo-smoke] missing expected test file: $WIDGET_TEST_FILE" >&2
+  exit 1
+fi
+
+declare -a TEST_NAMES=(
+  "add demo project action seeds prefilled project"
+  "create project and navigate to chat editor from project card"
+  "create project and navigate to playback from project card"
+  "export all projects action shows empty portfolio feedback"
+  "bulk project selection exports selected projects payload"
+  "bulk project selection deletes multiple projects"
+  "bulk project selection sets type for selected projects"
+  "bulk project selection duplicates selected projects"
+  "project popup copy json writes clipboard and shows feedback"
+  "project popup download json shows fallback feedback on unsupported platform"
+  "import project json dialog adds new project card"
+  "import project json dialog supports batch payload"
+  "import json file button shows fallback when no file is selected"
+  "import json file button imports project from picker payload"
+  "compact playback scene selector switches demo scenes and resets progress"
+  "compact demo flow stays usable across project list, editor, and playback"
+  "playback stays responsive with imported 500+ messages"
+  "video export button copies fallback package to clipboard when download is unavailable"
+)
+
+for test_name in "${TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$WIDGET_TEST_FILE"; then
+    echo "[demo-smoke] missing expected widget test: $test_name" >&2
+    exit 1
+  fi
+done
+
+TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+
+echo "[demo-smoke] tests: ${#TEST_NAMES[@]} targeted demo/import/export cases"
+"$FLUTTER_BIN" test "$WIDGET_TEST_FILE" --name "^(${TEST_PATTERN})$"
 
 echo
 echo "[demo-smoke] manual demo checklist"
