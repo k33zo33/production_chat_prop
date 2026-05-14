@@ -73,7 +73,7 @@ Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
 - `bash tool/demo_smoke.sh` now covers the core beta walkthrough path plus import/export handoff regressions before the heavier release gates
 - `bash tool/import_smoke.sh` now catches JSON import, sanitizer, and persisted-project recovery regressions before export/mobile passes
-- `bash tool/compact_smoke.sh` passed for targeted compact/export regressions
+- `bash tool/compact_smoke.sh` passed for targeted compact/export regressions, including narrow project-list search/filter/sort controls
 - `bash tool/release_smoke.sh` now covers empty-scene export disabling, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
 - GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `web_shell_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke` before uploading the web artifact
 - web shell metadata is now gated too, so title/manifest/icon regressions or accidental real-brand references get caught before beta handoff

@@ -1267,7 +1267,7 @@ void main() {
   });
 
   testWidgets(
-    'compact project list filters and sort controls stay usable on narrow screens',
+    'compact project list search, filters, and sort controls stay usable on narrow screens',
     (tester) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -1284,6 +1284,33 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
+      expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'New Project 2',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(Card),
+          matching: find.text('New Project 2'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(Card),
+          matching: find.text('Demo Project 1'),
+        ),
+        findsNothing,
+      );
+
+      await tester.enterText(find.byKey(const Key('projectSearchField')), '');
+      await tester.pumpAndSettle();
+
       expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
@@ -1305,6 +1332,10 @@ void main() {
       await tester.tap(find.byKey(const Key('projectResetFiltersButton')));
       await tester.pumpAndSettle();
 
+      final searchField = tester.widget<TextField>(
+        find.byKey(const Key('projectSearchField')),
+      );
+      expect(searchField.controller!.text, isEmpty);
       expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

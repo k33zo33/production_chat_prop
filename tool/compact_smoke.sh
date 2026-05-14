@@ -15,6 +15,7 @@ echo "[compact-smoke] analyze"
 declare -a TEST_NAMES=(
   "compact project list app bar uses overflow menu actions"
   "ultra-compact project list uses one scroll and keeps lower cards reachable"
+  "compact project list search, filters, and sort controls stay usable on narrow screens"
   "compact selection overflow keeps bulk actions reachable on narrow screens"
   "compact chat editor app bar uses overflow navigation actions"
   "compact chat editor keeps scene actions in overflow menu"
