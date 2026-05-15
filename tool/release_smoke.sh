@@ -35,6 +35,7 @@ declare -a UNIT_TEST_FILES=(
   "test/unit/core/utils/export_file_name_test.dart"
   "test/unit/features/playback/data/services/screenshot_export_service_test.dart"
   "test/unit/features/playback/data/services/video_export_fallback_service_test.dart"
+  "test/unit/features/playback/domain/playback_timeline_test.dart"
   "test/unit/features/projects/data/services/project_package_export_service_test.dart"
   "test/unit/features/projects/data/services/project_portfolio_export_service_test.dart"
   "test/unit/features/projects/domain/export_qa_fixture_test.dart"

@@ -14,6 +14,7 @@ import 'package:production_chat_prop/core/widgets/project_not_found_recovery_sta
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/data/services/video_export_fallback_service.dart';
+import 'package:production_chat_prop/features/playback/domain/playback_timeline.dart';
 import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -336,8 +337,8 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final isCompactLayout = viewportWidth < 720;
     final isUltraCompactLayout = viewportWidth < 360;
-    final visibleMessagesCount = _countVisibleMessages(
-      messages: sortedMessages,
+    final visibleMessagesCount = countVisibleMessagesAtSecond(
+      sortedMessages: sortedMessages,
       currentSecond: playbackState.currentSecond,
     );
     final progressPercent = maxSecond == 0
@@ -350,12 +351,12 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final sliderValue = playbackState.currentSecond > maxSecond
         ? maxSecond.toDouble()
         : playbackState.currentSecond.toDouble();
-    final previousCue = _findPreviousCue(
-      messages: sortedMessages,
+    final previousCue = findPreviousCueSecond(
+      sortedMessages: sortedMessages,
       currentSecond: playbackState.currentSecond,
     );
-    final nextCue = _findNextCue(
-      messages: sortedMessages,
+    final nextCue = findNextCueSecond(
+      sortedMessages: sortedMessages,
       currentSecond: playbackState.currentSecond,
     );
     final openChatEditorButton = FilledButton.icon(
@@ -750,7 +751,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
             speakerNameById: speakerNameById,
             characterBubbleColorById: characterBubbleColorById,
             resolveSpeakerName: _resolveSpeakerName,
-            showTypingIndicator: _showTypingIndicator,
+            showTypingIndicator: showsTypingIndicatorAtSecond,
           ),
           const SizedBox(height: 12),
           if (isUltraCompactLayout)
@@ -965,76 +966,6 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     return map;
   }
 
-  bool _showTypingIndicator({
-    required Message message,
-    required int currentSecond,
-  }) {
-    if (!message.showTypingBefore) {
-      return false;
-    }
-    final typingSecond = message.timestampSeconds - 1;
-    if (typingSecond < 0) {
-      return false;
-    }
-    return currentSecond == typingSecond;
-  }
-
-  int _maxSecondForScene(Scene? scene) {
-    if (scene == null || scene.messages.isEmpty) {
-      return 0;
-    }
-    final sortedMessages = sortMessagesByTimeline(scene.messages);
-    return sortedMessages.last.timestampSeconds;
-  }
-
-  int _countVisibleMessages({
-    required List<Message> messages,
-    required int currentSecond,
-  }) {
-    if (messages.isEmpty) {
-      return 0;
-    }
-
-    var low = 0;
-    var high = messages.length;
-    while (low < high) {
-      final mid = low + ((high - low) >> 1);
-      if (messages[mid].timestampSeconds <= currentSecond) {
-        low = mid + 1;
-      } else {
-        high = mid;
-      }
-    }
-    return low;
-  }
-
-  int? _findNextCue({
-    required List<Message> messages,
-    required int currentSecond,
-  }) {
-    for (final message in messages) {
-      if (message.timestampSeconds > currentSecond) {
-        return message.timestampSeconds;
-      }
-    }
-    return null;
-  }
-
-  int? _findPreviousCue({
-    required List<Message> messages,
-    required int currentSecond,
-  }) {
-    int? candidate;
-    for (final message in messages) {
-      if (message.timestampSeconds < currentSecond) {
-        candidate = message.timestampSeconds;
-      } else {
-        break;
-      }
-    }
-    return candidate;
-  }
-
   void _syncPlaybackWithScene({
     required String? previousSceneId,
     required String? currentSceneId,
@@ -1044,7 +975,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       playbackControllerProvider(projectId).notifier,
     );
     final playbackState = ref.read(playbackControllerProvider(projectId));
-    final newMaxSecond = _maxSecondForScene(widget.snapshot.scene);
+    final newMaxSecond = maxSecondForScene(widget.snapshot.scene);
 
     if (previousSceneId != currentSceneId) {
       playbackController.restart();
