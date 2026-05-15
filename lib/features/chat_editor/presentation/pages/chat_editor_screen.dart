@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
+import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
@@ -250,6 +251,9 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
     final selectedSceneMaxSecond = selectedScene == null
         ? 0
         : _sceneMaxSecond(selectedScene);
+    final selectedSceneHealth = selectedScene == null
+        ? null
+        : summarizeSceneHealth(selectedScene);
     final selectedSceneIndex = selectedScene == null
         ? -1
         : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
@@ -385,6 +389,14 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     '${_sceneTypingCueCount(selectedScene)} typing cues • '
                     '${_formatSceneDuration(selectedSceneMaxSecond)} total duration',
                   ),
+                  if (selectedSceneHealth case final sceneHealth?
+                      when sceneHealth.needsAttention) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      key: const Key('sceneHealthSummaryLine'),
+                      'Scene health: ${sceneHealth.statusLabel} • ${sceneHealth.detailLabel}',
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   _SceneActionSection(
                     project: project,

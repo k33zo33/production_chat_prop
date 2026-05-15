@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
+import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
@@ -346,6 +347,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     );
 
     final hasPlaybackMessages = sortedMessages.isNotEmpty;
+    final sceneHealth = scene == null ? null : summarizeSceneHealth(scene);
     final exportReadiness = hasPlaybackMessages
         ? _isExporting
               ? 'Export in progress'
@@ -555,6 +557,14 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     key: const Key('exportReadinessLabel'),
                     'Export readiness: $exportReadiness',
                   ),
+                  if (sceneHealth != null && sceneHealth.needsAttention) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      key: const Key('playbackSceneHealthLabel'),
+                      'Scene health: ${sceneHealth.statusLabel} • ${sceneHealth.detailLabel}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   if (scene != null) ...[
                     Text(

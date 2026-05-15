@@ -3005,8 +3005,12 @@ void main() {
       findsOneWidget,
     );
     expect(
+      find.textContaining('Projects: 1 • Ready scenes: 1/1 • Messages: 3'),
+      findsOneWidget,
+    );
+    expect(
       find.textContaining(
-        'Projects: 1 • Ready scenes: 1/1 • Empty scenes: 0 • Messages: 3',
+        'Ready: no empty scenes • all active characters have lines',
       ),
       findsOneWidget,
     );
@@ -3030,8 +3034,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(
+      find.textContaining('Projects: 1 • Ready scenes: 2/2 • Messages: 7'),
+      findsOneWidget,
+    );
+    expect(
       find.textContaining(
-        'Projects: 1 • Ready scenes: 2/2 • Empty scenes: 0 • Messages: 7',
+        'Ready: no empty scenes • all active characters have lines',
       ),
       findsOneWidget,
     );
@@ -3410,6 +3418,110 @@ void main() {
       expect(find.text('Finish Empty Scenes'), findsOneWidget);
       expect(
         find.textContaining('Playback: 1/2 ready • 1 empty • 2 styles'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'project card shows staged-character attention state when a character has no lines yet',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        _buildStagedCharacterProjectImportPayload(),
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Characters need lines'), findsOneWidget);
+      expect(find.text('Review Scene Setup'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Scene health: 1 character waiting for lines across 1 scene',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Projects: 1 • Ready scenes: 1/1 • Messages: 2'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Attention: 0 empty scenes • 1 character waiting for lines',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'staged-character attention surfaces scene health in editor and playback',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildStagedCharacterProjectImportPayload());
+      final projects = await container.read(projectsControllerProvider.future);
+      final project = projects.single;
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      final reviewSceneSetupCta = _projectCardDescendant(
+        projectName: 'Staged Character Project',
+        matching: find.widgetWithText(OutlinedButton, 'Review Scene Setup'),
+      );
+      await tester.ensureVisible(reviewSceneSetupCta);
+      await tester.pumpAndSettle();
+      await tester.tap(reviewSceneSetupCta, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining(
+          'Scene health: 1 character waiting for lines • Jordan has no lines in this scene yet.',
+        ),
+        findsOneWidget,
+      );
+
+      final openPlaybackButton = find.byKey(
+        const Key('chatEditorOpenPlaybackButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, openPlaybackButton);
+      await tester.tap(openPlaybackButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(
+        find.byKey(const Key('playbackSceneHealthLabel')),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Scene health: 1 character waiting for lines • Jordan has no lines in this scene yet.',
+          skipOffstage: false,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Scene: ${project.scenes.single.title}'),
         findsOneWidget,
       );
     },
@@ -4042,7 +4154,12 @@ void main() {
     expect(find.textContaining('Scene: Scene B'), findsOneWidget);
     expect(find.text('Scenes: 2', skipOffstage: false), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Rename Scene'));
+    final renameSceneButton = find.widgetWithText(
+      OutlinedButton,
+      'Rename Scene',
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, renameSceneButton);
+    await tester.tap(renameSceneButton);
     await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextField, 'Scene Title'),
@@ -4132,7 +4249,9 @@ void main() {
     );
     expect(moveDownBefore.onPressed, isNull);
 
-    await tester.tap(find.byKey(const Key('moveSceneUpButton')));
+    final moveSceneUpButton = find.byKey(const Key('moveSceneUpButton'));
+    await _ensureFinderVisibleInPrimaryListView(tester, moveSceneUpButton);
+    await tester.tap(moveSceneUpButton);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -6046,6 +6165,60 @@ String _buildAttentionProjectImportPayload({
           },
         ],
         'messages': <Object>[],
+      },
+    ],
+  });
+}
+
+String _buildStagedCharacterProjectImportPayload({
+  String projectName = 'Staged Character Project',
+}) {
+  return jsonEncode({
+    'id': 'staged-character-source-id',
+    'name': projectName,
+    'type': 'series',
+    'createdAt': DateTime.utc(2026, 5, 1, 9).toIso8601String(),
+    'updatedAt': DateTime.utc(2026, 5, 1, 9).toIso8601String(),
+    'scenes': [
+      {
+        'id': 'staged-character-scene-1',
+        'title': 'Blocking Pass',
+        'styleId': 'studio_slate',
+        'aspectRatio': 'portrait9x16',
+        'characters': [
+          {
+            'id': 'staged-character-char-1',
+            'displayName': 'Taylor',
+            'avatarPath': null,
+            'bubbleColor': '#2E90FA',
+          },
+          {
+            'id': 'staged-character-char-2',
+            'displayName': 'Jordan',
+            'avatarPath': null,
+            'bubbleColor': '#12B76A',
+          },
+        ],
+        'messages': [
+          {
+            'id': 'staged-character-msg-1',
+            'characterId': 'staged-character-char-1',
+            'text': 'Lead line is blocked in.',
+            'timestampSeconds': 0,
+            'status': 'sent',
+            'isIncoming': false,
+            'showTypingBefore': false,
+          },
+          {
+            'id': 'staged-character-msg-2',
+            'characterId': 'staged-character-char-1',
+            'text': 'Jordan still needs a reply cue.',
+            'timestampSeconds': 5,
+            'status': 'delivered',
+            'isIncoming': false,
+            'showTypingBefore': true,
+          },
+        ],
       },
     ],
   });

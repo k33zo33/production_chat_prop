@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
+import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
@@ -1121,8 +1122,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             key: const Key('projectPortfolioReadinessSummary'),
                             'Projects: ${filteredProjects.length} • '
                             'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
-                            'Empty scenes: ${readinessSummary.emptyScenes} • '
                             'Messages: ${readinessSummary.totalMessages}',
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            key: const Key('projectPortfolioHealthSummary'),
+                            _portfolioHealthSummaryLabel(readinessSummary),
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 8),
                           Wrap(
@@ -1281,51 +1287,56 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       itemCount: filteredProjects.length,
                     );
 
-              final useSingleScrollColumn =
-                  MediaQuery.sizeOf(context).width < 360;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final useSingleScrollColumn = constraints.maxWidth < 720;
 
-              if (useSingleScrollColumn) {
-                return CustomScrollView(
-                  key: const Key('projectListScrollView'),
-                  slivers: [
-                    for (final header in headerContent)
-                      SliverToBoxAdapter(child: header),
-                    if (filteredProjects.isEmpty)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Center(
-                            child: Text('No projects match current filters.'),
+                  if (useSingleScrollColumn) {
+                    return CustomScrollView(
+                      key: const Key('projectListScrollView'),
+                      slivers: [
+                        for (final header in headerContent)
+                          SliverToBoxAdapter(child: header),
+                        if (filteredProjects.isEmpty)
+                          const SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Center(
+                                child: Text(
+                                  'No projects match current filters.',
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  if (index.isOdd) {
+                                    return const SizedBox(height: 12);
+                                  }
+                                  final projectIndex = index ~/ 2;
+                                  return buildProjectCard(
+                                    filteredProjects[projectIndex],
+                                  );
+                                },
+                                childCount: filteredProjects.length * 2 - 1,
+                              ),
+                            ),
                           ),
-                        ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 180),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              if (index.isOdd) {
-                                return const SizedBox(height: 12);
-                              }
-                              final projectIndex = index ~/ 2;
-                              return buildProjectCard(
-                                filteredProjects[projectIndex],
-                              );
-                            },
-                            childCount: filteredProjects.length * 2 - 1,
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              }
+                      ],
+                    );
+                  }
 
-              return Column(
-                children: [
-                  ...headerContent,
-                  Expanded(child: projectsList),
-                ],
+                  return Column(
+                    children: [
+                      ...headerContent,
+                      Expanded(child: projectsList),
+                    ],
+                  );
+                },
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -1443,6 +1454,8 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
     final onSelectionChanged = widget.onSelectionChanged;
     final controller = ref.read(projectsControllerProvider.notifier);
     final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final projectHealth = summarizeProjectHealth(project);
+    final attentionState = _projectAttentionState(project);
 
     return Card(
       key: Key('projectCard_${project.id}'),
@@ -1526,18 +1539,24 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
             Text(
               key: Key('projectPlaybackSummary_${project.id}'),
               'Playback: '
-              '${_projectReadySceneCount(project)}/${project.scenes.length} ready • '
-              '${_projectEmptySceneCount(project)} empty • '
+              '${projectHealth.readyScenes}/${project.scenes.length} ready • '
+              '${projectHealth.emptyScenes} empty • '
               '${_projectStyleCount(project)} style${_projectStyleCount(project) == 1 ? '' : 's'}',
             ),
+            if (projectHealth.unusedCharacterCount > 0) ...[
+              const SizedBox(height: 4),
+              Text(
+                key: Key('projectHealthSummary_${project.id}'),
+                'Scene health: '
+                '${projectHealth.unusedCharacterCount} character${projectHealth.unusedCharacterCount == 1 ? '' : 's'} waiting for lines '
+                'across ${projectHealth.scenesWithUnusedCharacters} scene${projectHealth.scenesWithUnusedCharacters == 1 ? '' : 's'}',
+              ),
+            ],
             const SizedBox(height: 8),
             Chip(
               key: Key('projectAttentionReason_${project.id}'),
-              avatar: Icon(
-                _projectAttentionState(project).icon,
-                size: 18,
-              ),
-              label: Text(_projectAttentionState(project).label),
+              avatar: Icon(attentionState.icon, size: 18),
+              label: Text(attentionState.label),
             ),
             const SizedBox(height: 8),
             if (isCompactLayout)
@@ -1548,8 +1567,8 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                   onPressed: selectionMode
                       ? null
                       : () => _openProjectAttentionAction(context, project),
-                  icon: Icon(_projectAttentionState(project).ctaIcon),
-                  label: Text(_projectAttentionState(project).ctaLabel),
+                  icon: Icon(attentionState.ctaIcon),
+                  label: Text(attentionState.ctaLabel),
                 ),
               )
             else
@@ -1558,8 +1577,8 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                 onPressed: selectionMode
                     ? null
                     : () => _openProjectAttentionAction(context, project),
-                icon: Icon(_projectAttentionState(project).ctaIcon),
-                label: Text(_projectAttentionState(project).ctaLabel),
+                icon: Icon(attentionState.ctaIcon),
+                label: Text(attentionState.ctaLabel),
               ),
             const SizedBox(height: 16),
             if (isCompactLayout)
@@ -2042,26 +2061,6 @@ int _projectMaxSecond(Project project) {
   return maxSecond;
 }
 
-int _projectReadySceneCount(Project project) {
-  var count = 0;
-  for (final scene in project.scenes) {
-    if (scene.messages.isNotEmpty) {
-      count++;
-    }
-  }
-  return count;
-}
-
-int _projectEmptySceneCount(Project project) {
-  var count = 0;
-  for (final scene in project.scenes) {
-    if (scene.messages.isEmpty) {
-      count++;
-    }
-  }
-  return count;
-}
-
 int _projectStyleCount(Project project) {
   final styleIds = <String>{};
   for (final scene in project.scenes) {
@@ -2071,10 +2070,9 @@ int _projectStyleCount(Project project) {
 }
 
 String? _projectAttentionSceneId(Project project) {
-  for (final scene in project.scenes) {
-    if (scene.messages.isEmpty) {
-      return scene.id;
-    }
+  final projectHealth = summarizeProjectHealth(project);
+  if (projectHealth.firstAttentionSceneId != null) {
+    return projectHealth.firstAttentionSceneId;
   }
 
   if (project.scenes.isEmpty) {
@@ -2129,10 +2127,9 @@ void _openProjectAttentionAction(BuildContext context, Project project) {
 }
 
 _ProjectAttentionState _projectAttentionState(Project project) {
-  final totalMessages = _projectMessageCount(project);
-  final emptySceneCount = _projectEmptySceneCount(project);
+  final projectHealth = summarizeProjectHealth(project);
 
-  if (totalMessages == 0) {
+  if (!projectHealth.hasMessages) {
     return const _ProjectAttentionState(
       label: 'No messages yet',
       icon: Icons.chat_bubble_outline_rounded,
@@ -2142,12 +2139,22 @@ _ProjectAttentionState _projectAttentionState(Project project) {
     );
   }
 
-  if (emptySceneCount > 0) {
+  if (projectHealth.emptyScenes > 0) {
     return const _ProjectAttentionState(
       label: 'Has empty scenes',
       icon: Icons.error_outline_rounded,
       ctaLabel: 'Finish Empty Scenes',
       ctaIcon: Icons.build_circle_outlined,
+      intent: _ProjectAttentionIntent.openEditor,
+    );
+  }
+
+  if (projectHealth.unusedCharacterCount > 0) {
+    return const _ProjectAttentionState(
+      label: 'Characters need lines',
+      icon: Icons.record_voice_over_outlined,
+      ctaLabel: 'Review Scene Setup',
+      ctaIcon: Icons.playlist_add_check_circle_outlined,
       intent: _ProjectAttentionIntent.openEditor,
     );
   }
@@ -2191,30 +2198,24 @@ _ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
   var totalMessages = 0;
   var readyProjectCount = 0;
   var needsAttentionProjectCount = 0;
+  var unusedCharacterCount = 0;
   String? firstReadyProjectId;
   String? firstNeedsAttentionProjectId;
 
   for (final project in projects) {
-    var projectHasEmptyScene = false;
-    var projectHasMessages = false;
-    totalScenes += project.scenes.length;
-    for (final scene in project.scenes) {
-      totalMessages += scene.messages.length;
-      if (scene.messages.isEmpty) {
-        emptyScenes++;
-        projectHasEmptyScene = true;
-      } else {
-        readyScenes++;
-        projectHasMessages = true;
-      }
-    }
+    final projectHealth = summarizeProjectHealth(project);
+    totalScenes += projectHealth.totalScenes;
+    readyScenes += projectHealth.readyScenes;
+    emptyScenes += projectHealth.emptyScenes;
+    totalMessages += projectHealth.totalMessages;
+    unusedCharacterCount += projectHealth.unusedCharacterCount;
 
-    if (projectHasMessages && !projectHasEmptyScene) {
-      readyProjectCount++;
-      firstReadyProjectId ??= project.id;
-    } else {
+    if (projectHealth.needsAttention) {
       needsAttentionProjectCount++;
       firstNeedsAttentionProjectId ??= project.id;
+    } else {
+      readyProjectCount++;
+      firstReadyProjectId ??= project.id;
     }
   }
 
@@ -2223,6 +2224,7 @@ _ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
     readyScenes: readyScenes,
     emptyScenes: emptyScenes,
     totalMessages: totalMessages,
+    unusedCharacterCount: unusedCharacterCount,
     readyProjectCount: readyProjectCount,
     needsAttentionProjectCount: needsAttentionProjectCount,
     primaryProjectId: firstNeedsAttentionProjectId ?? firstReadyProjectId,
@@ -2237,6 +2239,7 @@ class _ProjectPortfolioReadinessSummary {
     required this.readyScenes,
     required this.emptyScenes,
     required this.totalMessages,
+    required this.unusedCharacterCount,
     required this.readyProjectCount,
     required this.needsAttentionProjectCount,
     required this.primaryProjectId,
@@ -2248,9 +2251,23 @@ class _ProjectPortfolioReadinessSummary {
   final int readyScenes;
   final int emptyScenes;
   final int totalMessages;
+  final int unusedCharacterCount;
   final int readyProjectCount;
   final int needsAttentionProjectCount;
   final String? primaryProjectId;
   final String? firstReadyProjectId;
   final String? firstNeedsAttentionProjectId;
+
+  bool get needsAttention => emptyScenes > 0 || unusedCharacterCount > 0;
+}
+
+String _portfolioHealthSummaryLabel(
+  _ProjectPortfolioReadinessSummary summary,
+) {
+  if (!summary.needsAttention) {
+    return 'Ready: no empty scenes • all active characters have lines';
+  }
+
+  return 'Attention: ${summary.emptyScenes} empty scene${summary.emptyScenes == 1 ? '' : 's'} • '
+      '${summary.unusedCharacterCount} character${summary.unusedCharacterCount == 1 ? '' : 's'} waiting for lines';
 }
