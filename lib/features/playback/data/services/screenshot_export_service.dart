@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
@@ -43,14 +44,44 @@ class ScreenshotExportProfile {
   final Size targetPixelSize;
 }
 
+typedef BoundaryPngCapture =
+    Future<ByteData?> Function(
+      RenderRepaintBoundary boundary,
+      double pixelRatio,
+    );
+
 class ScreenshotExportService {
-  ScreenshotExportService({BytesDownloader? downloader})
-    : _downloader = downloader ?? downloadBytes;
+  ScreenshotExportService({
+    BytesDownloader? downloader,
+    Future<void> Function()? waitForEndOfFrame,
+    BoundaryPngCapture? capturePngBytes,
+  }) : _downloader = downloader ?? downloadBytes,
+       _waitForEndOfFrame = waitForEndOfFrame ?? _defaultWaitForEndOfFrame,
+       _capturePngBytes = capturePngBytes ?? _defaultCapturePngBytes;
 
   final BytesDownloader _downloader;
+  final Future<void> Function() _waitForEndOfFrame;
+  final BoundaryPngCapture _capturePngBytes;
 
   static const Size portraitTargetPixelSize = Size(1080, 1920);
   static const Size landscapeTargetPixelSize = Size(1920, 1080);
+
+  static Future<void> _defaultWaitForEndOfFrame() {
+    return SchedulerBinding.instance.endOfFrame;
+  }
+
+  static Future<ByteData?> _defaultCapturePngBytes(
+    RenderRepaintBoundary boundary,
+    double pixelRatio,
+  ) async {
+    ui.Image? image;
+    try {
+      image = await boundary.toImage(pixelRatio: pixelRatio);
+      return image.toByteData(format: ui.ImageByteFormat.png);
+    } finally {
+      image?.dispose();
+    }
+  }
 
   Future<ScreenshotExportResult> exportBoundaryAsPng({
     required GlobalKey boundaryKey,
@@ -78,7 +109,7 @@ class ScreenshotExportService {
       );
     }
 
-    await SchedulerBinding.instance.endOfFrame;
+    await _waitForEndOfFrame();
     if (renderObject.debugNeedsPaint) {
       return const ScreenshotExportResult.failure(
         failure: ScreenshotExportFailure.captureFailed,
@@ -89,10 +120,21 @@ class ScreenshotExportService {
       logicalSize: renderObject.size,
       aspectRatio: aspectRatio,
     );
-    final image = await renderObject.toImage(
-      pixelRatio: pixelRatio ?? captureProfile.pixelRatio,
-    );
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+    ByteData? byteData;
+    try {
+      byteData = await _capturePngBytes(
+        renderObject,
+        pixelRatio ?? captureProfile.pixelRatio,
+      );
+    } on Object {
+      // Engine/framework image capture failures should surface to the user as a
+      // recoverable export error rather than crash the app.
+      return const ScreenshotExportResult.failure(
+        failure: ScreenshotExportFailure.captureFailed,
+      );
+    }
+
     if (byteData == null) {
       return const ScreenshotExportResult.failure(
         failure: ScreenshotExportFailure.captureFailed,
