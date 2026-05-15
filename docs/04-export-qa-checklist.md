@@ -6,11 +6,16 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 - Pokrenut app lokalno (`flutter run -d web-server` ili browser target)
 - Prije ručnog passa pokrenuti `./tool/release_smoke.sh` kao brzi automatski preflight za export/reliability regressions (widget + export unit testovi)
 - Prije release/deploy odluke i dalje odraditi puni `./tool/verify.sh`
-- Postoji barem jedan projekt sa scenom i porukama
-- Testirati i na praznoj sceni (0 poruka)
+- U app importati `docs/fixtures/export-qa-project.json` kao standardni QA projekt za ovaj pass
+- Fixture već pokriva:
+  - portrait scenu za hero screenshot pass
+  - landscape scenu za 16:9 provjeru
+  - praznu scenu za disabled export stanje
+  - dugu scenu za playback/endurance provjeru
 
 ## 2) Screenshot export (PNG)
-- [ ] U Playbacku uključiti/isključiti `Show Device Frame`
+- [ ] Otvoriti `Scene 1 - Hero Portrait` u Playbacku
+- [ ] Uključiti/isključiti `Show Device Frame`
 - [ ] Uključiti/isključiti `Clean Preview Mode`
 - [ ] Kliknuti `Export Screenshot`
 - [ ] Provjeriti:
@@ -20,6 +25,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
   - [ ] sadržaj odgovara trenutnom previewu, uključujući frame/clean toggle stanje (timeline, status chipovi, typing)
 
 ## 3) Video fallback export (`.json`)
+- [ ] Ostati na `Scene 1 - Hero Portrait` ili prebaciti na `Scene 2 - Hero Landscape`
 - [ ] Kliknuti `Export Video`
 - [ ] Provjeriti:
   - [ ] na webu se pokreće download `.json` datoteke ili, ako download nije dostupan, app jasno javlja da je fallback JSON kopiran u clipboard
@@ -29,6 +35,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
   - [ ] odgovarajuća scena u `project.scenes` ne proturječi `selectedScene.messages` redoslijedu
 
 ## 4) Omjeri izlaza (9:16 / 16:9)
+- [ ] Otvoriti `Scene 2 - Hero Landscape`
 - [ ] U Playbacku prebaciti `Scene ratio` između `9:16` i `16:9`
 - [ ] Potvrditi da:
   - [ ] labela prikazuje odabrani omjer
@@ -36,11 +43,11 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
   - [ ] export fallback payload reflektira odabrani omjer kroz `selectedScene.aspectRatio`
 
 ## 5) Edge-case provjere
-- [ ] Prazna scena:
+- [ ] Prazna scena (`Scene 3 - Empty Export Check`):
   - [ ] `Export readiness` prikazuje `No messages in scene`
   - [ ] `Export Screenshot` je disabled
   - [ ] `Export Video` je disabled
-- [ ] Duga scena (15+ poruka):
+- [ ] Duga scena (`Scene 4 - Long Playback Run`, 15+ poruka):
   - [ ] Playback i scrub rade bez rušenja
   - [ ] export gumbi ostaju aktivni
 - [ ] Brza promjena kontrola:

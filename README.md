@@ -80,6 +80,7 @@ Napomene:
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`
+- Standardni ručni import/export QA sample je `docs/fixtures/export-qa-project.json`.
 
 ## Demo Flow
 

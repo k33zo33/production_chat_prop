@@ -37,6 +37,7 @@ declare -a UNIT_TEST_FILES=(
   "test/unit/features/playback/data/services/video_export_fallback_service_test.dart"
   "test/unit/features/projects/data/services/project_package_export_service_test.dart"
   "test/unit/features/projects/data/services/project_portfolio_export_service_test.dart"
+  "test/unit/features/projects/domain/export_qa_fixture_test.dart"
 )
 
 for test_name in "${TEST_NAMES[@]}"; do
@@ -71,6 +72,7 @@ echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
 echo "- Then do the browser pass from docs/08-web-smoke-checklist.md."
 echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md."
+echo "- Import docs/fixtures/export-qa-project.json for the standard portrait/landscape/empty/long-scene export pass."
 echo "- Finish with docs/04-export-qa-checklist.md before a release/deploy decision."
 
 echo "[release-smoke] done"

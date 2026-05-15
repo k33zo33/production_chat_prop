@@ -9,6 +9,7 @@ FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
 CONTROLLER_TEST_FILE="test/unit/features/projects/presentation/controllers/projects_controller_test.dart"
 SANITIZER_TEST_FILE="test/unit/features/projects/data/services/project_sanitizer_test.dart"
 REPOSITORY_TEST_FILE="test/unit/features/projects/data/repositories/local_project_repository_test.dart"
+FIXTURE_TEST_FILE="test/unit/features/projects/domain/export_qa_fixture_test.dart"
 
 echo "[import-smoke] using flutter: $FLUTTER_BIN"
 "$FLUTTER_BIN" --version
@@ -16,7 +17,7 @@ echo "[import-smoke] using flutter: $FLUTTER_BIN"
 echo "[import-smoke] analyze"
 "$FLUTTER_BIN" analyze
 
-for test_file in "$CONTROLLER_TEST_FILE" "$SANITIZER_TEST_FILE" "$REPOSITORY_TEST_FILE"; do
+for test_file in "$CONTROLLER_TEST_FILE" "$SANITIZER_TEST_FILE" "$REPOSITORY_TEST_FILE" "$FIXTURE_TEST_FILE"; do
   if [[ ! -f "$test_file" ]]; then
     echo "[import-smoke] missing expected test file: $test_file" >&2
     exit 1
@@ -90,8 +91,16 @@ echo "[import-smoke] repository tests: ${#REPOSITORY_TEST_NAMES[@]} persistence 
 
 echo
 
+echo
+
+echo "[import-smoke] fixture test: tracked export QA sample stays importable"
+"$FLUTTER_BIN" test "$FIXTURE_TEST_FILE"
+
+echo
+
 echo "[import-smoke] manual follow-up"
 echo "- Run ./tool/beta_handoff.sh for the full preflight sequence when you want the release-ready gate stack."
 echo "- Keep one real browser import pass in the manual demo checklist for clipboard/file-picker behavior."
+echo "- Use docs/fixtures/export-qa-project.json as the standard manual import sample before export QA."
 
 echo "[import-smoke] done"

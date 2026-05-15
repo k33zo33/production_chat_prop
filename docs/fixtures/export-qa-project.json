@@ -1,0 +1,315 @@
+{
+  "id": "qa-export-project",
+  "name": "Export QA Project",
+  "type": "ad",
+  "createdAt": "2026-05-14T21:00:00.000Z",
+  "updatedAt": "2026-05-14T21:00:00.000Z",
+  "scenes": [
+    {
+      "id": "qa-scene-hero-portrait",
+      "title": "Scene 1 - Hero Portrait",
+      "styleId": "studio_default",
+      "aspectRatio": "portrait9x16",
+      "characters": [
+        {
+          "id": "qa-hero-producer",
+          "displayName": "Producer",
+          "avatarPath": null,
+          "bubbleColor": "#2E90FA"
+        },
+        {
+          "id": "qa-hero-talent",
+          "displayName": "Talent",
+          "avatarPath": null,
+          "bubbleColor": "#12B76A"
+        },
+        {
+          "id": "qa-hero-director",
+          "displayName": "Director",
+          "avatarPath": null,
+          "bubbleColor": "#F79009"
+        }
+      ],
+      "messages": [
+        {
+          "id": "qa-hero-message-1",
+          "characterId": "qa-hero-producer",
+          "text": "Hero phone is framed for the close-up.",
+          "timestampSeconds": 0,
+          "status": "sent",
+          "isIncoming": false,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-hero-message-2",
+          "characterId": "qa-hero-talent",
+          "text": "Copy, I can hold on that last line for two beats.",
+          "timestampSeconds": 4,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-hero-message-3",
+          "characterId": "qa-hero-director",
+          "text": "Good. Keep the preview clean for export reference.",
+          "timestampSeconds": 9,
+          "status": "seen",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-hero-message-4",
+          "characterId": "qa-hero-producer",
+          "text": "Saving both framed and frameless versions after this take.",
+          "timestampSeconds": 14,
+          "status": "sent",
+          "isIncoming": false,
+          "showTypingBefore": false
+        }
+      ]
+    },
+    {
+      "id": "qa-scene-hero-landscape",
+      "title": "Scene 2 - Hero Landscape",
+      "styleId": "night_shift",
+      "aspectRatio": "landscape16x9",
+      "characters": [
+        {
+          "id": "qa-landscape-ad",
+          "displayName": "1st AD",
+          "avatarPath": null,
+          "bubbleColor": "#2E90FA"
+        },
+        {
+          "id": "qa-landscape-camera",
+          "displayName": "Camera Op",
+          "avatarPath": null,
+          "bubbleColor": "#7A5AF8"
+        }
+      ],
+      "messages": [
+        {
+          "id": "qa-landscape-message-1",
+          "characterId": "qa-landscape-ad",
+          "text": "Switching to the 16:9 control room insert now.",
+          "timestampSeconds": 0,
+          "status": "sent",
+          "isIncoming": false,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-landscape-message-2",
+          "characterId": "qa-landscape-camera",
+          "text": "Preview already matches the operator monitor ratio.",
+          "timestampSeconds": 5,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-landscape-message-3",
+          "characterId": "qa-landscape-ad",
+          "text": "Perfect. Keep playback running while we rehearse timing.",
+          "timestampSeconds": 11,
+          "status": "seen",
+          "isIncoming": false,
+          "showTypingBefore": false
+        }
+      ]
+    },
+    {
+      "id": "qa-scene-empty-export",
+      "title": "Scene 3 - Empty Export Check",
+      "styleId": "warm_paper",
+      "aspectRatio": "portrait9x16",
+      "characters": [
+        {
+          "id": "qa-empty-producer",
+          "displayName": "Producer",
+          "avatarPath": null,
+          "bubbleColor": "#2E90FA"
+        },
+        {
+          "id": "qa-empty-script",
+          "displayName": "Script",
+          "avatarPath": null,
+          "bubbleColor": "#12B76A"
+        }
+      ],
+      "messages": []
+    },
+    {
+      "id": "qa-scene-long-run",
+      "title": "Scene 4 - Long Playback Run",
+      "styleId": "cleanroom_day",
+      "aspectRatio": "portrait9x16",
+      "characters": [
+        {
+          "id": "qa-long-producer",
+          "displayName": "Producer",
+          "avatarPath": null,
+          "bubbleColor": "#2E90FA"
+        },
+        {
+          "id": "qa-long-prop",
+          "displayName": "Prop Lead",
+          "avatarPath": null,
+          "bubbleColor": "#12B76A"
+        },
+        {
+          "id": "qa-long-camera",
+          "displayName": "Camera",
+          "avatarPath": null,
+          "bubbleColor": "#F79009"
+        }
+      ],
+      "messages": [
+        {
+          "id": "qa-long-message-1",
+          "characterId": "qa-long-producer",
+          "text": "Starting the long playback endurance pass.",
+          "timestampSeconds": 0,
+          "status": "sent",
+          "isIncoming": false,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-long-message-2",
+          "characterId": "qa-long-prop",
+          "text": "Phone brightness locked and notifications disabled.",
+          "timestampSeconds": 3,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-3",
+          "characterId": "qa-long-camera",
+          "text": "Preview stays readable from the wide monitor.",
+          "timestampSeconds": 6,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-4",
+          "characterId": "qa-long-producer",
+          "text": "Keep the cue spacing natural for the rehearsal take.",
+          "timestampSeconds": 9,
+          "status": "seen",
+          "isIncoming": false,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-long-message-5",
+          "characterId": "qa-long-prop",
+          "text": "Copy, framing is clean with the device frame on.",
+          "timestampSeconds": 12,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-6",
+          "characterId": "qa-long-camera",
+          "text": "Try one export pass with clean preview after this cue.",
+          "timestampSeconds": 15,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-7",
+          "characterId": "qa-long-producer",
+          "text": "Marking that version for editorial reference.",
+          "timestampSeconds": 18,
+          "status": "seen",
+          "isIncoming": false,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-long-message-8",
+          "characterId": "qa-long-prop",
+          "text": "Typing indicator still lands before the response bubble.",
+          "timestampSeconds": 21,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-9",
+          "characterId": "qa-long-camera",
+          "text": "Transport controls remain clear on the compact layout.",
+          "timestampSeconds": 24,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-long-message-10",
+          "characterId": "qa-long-producer",
+          "text": "Good, scrub forward and confirm the preview follows the cue.",
+          "timestampSeconds": 27,
+          "status": "seen",
+          "isIncoming": false,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-long-message-11",
+          "characterId": "qa-long-prop",
+          "text": "Playback is steady through the middle of the scene.",
+          "timestampSeconds": 30,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-12",
+          "characterId": "qa-long-camera",
+          "text": "No dropped frames on this browser pass.",
+          "timestampSeconds": 33,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-13",
+          "characterId": "qa-long-producer",
+          "text": "Great, hold for the last preview before export.",
+          "timestampSeconds": 36,
+          "status": "seen",
+          "isIncoming": false,
+          "showTypingBefore": false
+        },
+        {
+          "id": "qa-long-message-14",
+          "characterId": "qa-long-prop",
+          "text": "Clipboard fallback note is ready if download gets blocked.",
+          "timestampSeconds": 40,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-15",
+          "characterId": "qa-long-camera",
+          "text": "Switching back to framed preview for the hero save.",
+          "timestampSeconds": 44,
+          "status": "delivered",
+          "isIncoming": true,
+          "showTypingBefore": true
+        },
+        {
+          "id": "qa-long-message-16",
+          "characterId": "qa-long-producer",
+          "text": "Endurance scene complete. Save the package for handoff.",
+          "timestampSeconds": 49,
+          "status": "seen",
+          "isIncoming": false,
+          "showTypingBefore": false
+        }
+      ]
+    }
+  ]
+}
