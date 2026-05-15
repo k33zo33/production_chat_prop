@@ -262,10 +262,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   }
 
   void _openProjectPlayback(Project project) {
-    context.goNamed(
-      'playbackProject',
-      pathParameters: {'projectId': project.id},
-    );
+    _goToProjectPlayback(context, project);
   }
 
   Future<void> _onDeleteSelectedProjectsPressed(List<Project> projects) async {
@@ -1585,10 +1582,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                     key: Key('projectOpenPlayback_${project.id}'),
                     onPressed: selectionMode
                         ? null
-                        : () => context.goNamed(
-                            'playbackProject',
-                            pathParameters: {'projectId': project.id},
-                          ),
+                        : () => _goToProjectPlayback(context, project),
                     icon: const Icon(Icons.play_circle_outline_rounded),
                     label: const Text('Open Playback'),
                   ),
@@ -1614,10 +1608,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                     key: Key('projectOpenPlayback_${project.id}'),
                     onPressed: selectionMode
                         ? null
-                        : () => context.goNamed(
-                            'playbackProject',
-                            pathParameters: {'projectId': project.id},
-                          ),
+                        : () => _goToProjectPlayback(context, project),
                     icon: const Icon(Icons.play_circle_outline_rounded),
                     label: const Text('Open Playback'),
                   ),
@@ -2063,6 +2054,31 @@ String? _projectAttentionSceneId(Project project) {
   return project.scenes.first.id;
 }
 
+String? _projectPlaybackSceneId(Project project) {
+  for (final scene in project.scenes) {
+    if (scene.messages.isNotEmpty) {
+      return scene.id;
+    }
+  }
+
+  if (project.scenes.isEmpty) {
+    return null;
+  }
+
+  return project.scenes.first.id;
+}
+
+void _goToProjectPlayback(BuildContext context, Project project) {
+  final targetSceneId = _projectPlaybackSceneId(project);
+  context.goNamed(
+    'playbackProject',
+    pathParameters: {'projectId': project.id},
+    queryParameters: targetSceneId == null
+        ? const <String, String>{}
+        : {'sceneId': targetSceneId},
+  );
+}
+
 void _openProjectAttentionAction(BuildContext context, Project project) {
   final attentionState = _projectAttentionState(project);
   switch (attentionState.intent) {
@@ -2077,10 +2093,7 @@ void _openProjectAttentionAction(BuildContext context, Project project) {
       );
       return;
     case _ProjectAttentionIntent.openPlayback:
-      context.goNamed(
-        'playbackProject',
-        pathParameters: {'projectId': project.id},
-      );
+      _goToProjectPlayback(context, project);
       return;
   }
 }

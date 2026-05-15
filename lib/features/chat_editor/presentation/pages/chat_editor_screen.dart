@@ -100,6 +100,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
 
     final activeProjectId = widget.projectId!;
     final snapshotState = ref.watch(sceneSnapshotProvider(activeProjectId));
+    final selectedSceneId = ref.watch(sceneSelectionProvider(activeProjectId));
 
     return Scaffold(
       appBar: AppBar(
@@ -107,6 +108,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
         actions: _buildAppBarActions(
           context,
           activeProjectId: activeProjectId,
+          selectedSceneId: selectedSceneId,
           isCompactAppBar: isCompactAppBar,
         ),
       ),
@@ -159,6 +161,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
   List<Widget> _buildAppBarActions(
     BuildContext context, {
     required String activeProjectId,
+    required String? selectedSceneId,
     required bool isCompactAppBar,
   }) {
     if (!isCompactAppBar) {
@@ -169,6 +172,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
           onPressed: () => context.goNamed(
             'playbackProject',
             pathParameters: {'projectId': activeProjectId},
+            queryParameters: _playbackRouteQueryParameters(selectedSceneId),
           ),
           icon: const Icon(Icons.play_circle_outline_rounded),
         ),
@@ -190,6 +194,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
               context.goNamed(
                 'playbackProject',
                 pathParameters: {'projectId': activeProjectId},
+                queryParameters: _playbackRouteQueryParameters(selectedSceneId),
               );
               return;
             case _ChatEditorAppBarAction.backToProjects:
@@ -215,6 +220,14 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
 enum _ChatEditorAppBarAction {
   openPlayback,
   backToProjects,
+}
+
+Map<String, String> _playbackRouteQueryParameters(String? sceneId) {
+  if (sceneId == null) {
+    return const <String, String>{};
+  }
+
+  return {'sceneId': sceneId};
 }
 
 class _ProjectEditorPlaceholder extends ConsumerWidget {
@@ -249,6 +262,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
       onPressed: () => context.goNamed(
         'playbackProject',
         pathParameters: {'projectId': project.id},
+        queryParameters: _playbackRouteQueryParameters(selectedScene?.id),
       ),
       icon: const Icon(Icons.play_circle_outline_rounded),
       label: const Text('Open Playback'),

@@ -32,8 +32,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/playback/:projectId',
       name: 'playbackProject',
-      builder: (context, state) =>
-          PlaybackScreen(projectId: state.pathParameters['projectId']),
+      builder: (context, state) => PlaybackScreen(
+        projectId: state.pathParameters['projectId'],
+        initialSceneId: state.uri.queryParameters['sceneId'],
+      ),
     ),
   ],
 );

@@ -39,16 +39,62 @@ const _kPlaybackDesktopContentMaxWidth = 1440.0;
 const _kPlaybackPortraitPreviewMaxWidth = 560.0;
 const _kPlaybackLandscapePreviewMaxWidth = 1040.0;
 
-class PlaybackScreen extends ConsumerWidget {
-  const PlaybackScreen({super.key, this.projectId});
+class PlaybackScreen extends ConsumerStatefulWidget {
+  const PlaybackScreen({
+    super.key,
+    this.projectId,
+    this.initialSceneId,
+  });
 
   final String? projectId;
+  final String? initialSceneId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlaybackScreen> createState() => _PlaybackScreenState();
+}
+
+class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
+  String? _lastAppliedInitialSceneKey;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _applyInitialSceneSelectionIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant PlaybackScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _applyInitialSceneSelectionIfNeeded();
+  }
+
+  void _applyInitialSceneSelectionIfNeeded() {
+    final projectId = widget.projectId;
+    final initialSceneId = widget.initialSceneId;
+    if (projectId == null || initialSceneId == null) {
+      return;
+    }
+
+    final selectionKey = '$projectId::$initialSceneId';
+    if (_lastAppliedInitialSceneKey == selectionKey) {
+      return;
+    }
+    _lastAppliedInitialSceneKey = selectionKey;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(sceneSelectionProvider(projectId).notifier).selectedSceneId =
+          initialSceneId;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isCompactAppBar = MediaQuery.sizeOf(context).width < 720;
 
-    if (projectId == null) {
+    if (widget.projectId == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Playback')),
         body: Center(
@@ -71,7 +117,7 @@ class PlaybackScreen extends ConsumerWidget {
       );
     }
 
-    final activeProjectId = projectId!;
+    final activeProjectId = widget.projectId!;
     final snapshotState = ref.watch(sceneSnapshotProvider(activeProjectId));
 
     return Scaffold(

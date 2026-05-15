@@ -1774,6 +1774,47 @@ void main() {
     },
   );
 
+  testWidgets(
+    'chat editor open playback action keeps the currently selected scene',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(960, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+      await _openChatEditorFromProjectList(
+        tester,
+        projectName: 'Demo Project 1',
+      );
+
+      await tester.tap(find.byKey(const Key('editorSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('chatEditorAppBarOpenPlaybackButton')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(find.text('Messages: 3'), findsOneWidget);
+    },
+  );
+
   testWidgets('compact scene settings dialog stays usable on narrow screens', (
     tester,
   ) async {
@@ -2758,6 +2799,46 @@ void main() {
     expect(find.text('Playback'), findsOneWidget);
   });
 
+  testWidgets(
+    'portfolio preview ready CTA resets stale scene selection to the primary ready scene',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final project = projects.singleWhere(
+        (candidate) => candidate.id == projectId,
+      );
+      container
+              .read(sceneSelectionProvider(projectId).notifier)
+              .selectedSceneId =
+          project.scenes.last.id;
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      final previewReadyButton = find.byKey(
+        const Key('portfolioPreviewReadyButton'),
+      );
+      await tester.ensureVisible(previewReadyButton);
+      await tester.pumpAndSettle();
+      await tester.tap(previewReadyButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+      expect(find.text('Messages: 4'), findsOneWidget);
+    },
+  );
+
   testWidgets('portfolio continue editing CTA opens editor from summary card', (
     tester,
   ) async {
@@ -3221,6 +3302,48 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'project card open playback prefers the first ready scene over a stale empty selection',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(
+            _buildMixedReadinessProjectImportPayload(
+              projectName: 'Project Card Ready Scene',
+            ),
+          );
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+      container
+              .read(sceneSelectionProvider(projectId).notifier)
+              .selectedSceneId =
+          'mixed-readiness-empty-scene';
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      final openPlaybackButton = find.byKey(
+        Key('projectOpenPlayback_$projectId'),
+      );
+      await tester.ensureVisible(openPlaybackButton);
+      await tester.pumpAndSettle();
+      await tester.tap(openPlaybackButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(find.text('Scene: Ready Scene'), findsOneWidget);
+      expect(find.text('Messages: 1'), findsOneWidget);
+    },
+  );
 
   testWidgets('add message in chat editor and see it in playback', (
     tester,
