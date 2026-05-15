@@ -5,17 +5,15 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
+source "$ROOT_DIR/tool/smoke_common.sh"
 
 CONTROLLER_TEST_FILE="test/unit/features/projects/presentation/controllers/projects_controller_test.dart"
 SANITIZER_TEST_FILE="test/unit/features/projects/data/services/project_sanitizer_test.dart"
 REPOSITORY_TEST_FILE="test/unit/features/projects/data/repositories/local_project_repository_test.dart"
 FIXTURE_TEST_FILE="test/unit/features/projects/domain/export_qa_fixture_test.dart"
 
-echo "[import-smoke] using flutter: $FLUTTER_BIN"
-"$FLUTTER_BIN" --version
-
-echo "[import-smoke] analyze"
-"$FLUTTER_BIN" analyze
+smoke_print_flutter_banner "import-smoke" "$FLUTTER_BIN"
+smoke_run_analyze "import-smoke" "$FLUTTER_BIN"
 
 for test_file in "$CONTROLLER_TEST_FILE" "$SANITIZER_TEST_FILE" "$REPOSITORY_TEST_FILE" "$FIXTURE_TEST_FILE"; do
   if [[ ! -f "$test_file" ]]; then

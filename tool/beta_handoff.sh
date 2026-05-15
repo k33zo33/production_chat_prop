@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 export FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
+source "$ROOT_DIR/tool/smoke_common.sh"
 DEMO_SMOKE_SCRIPT="./tool/demo_smoke.sh"
 IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"
 RELEASE_SMOKE_SCRIPT="./tool/release_smoke.sh"
@@ -21,11 +22,15 @@ for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_S
 
 done
 
-echo "[beta-handoff] using flutter: $FLUTTER_BIN"
-"$FLUTTER_BIN" --version
+smoke_print_flutter_banner "beta-handoff" "$FLUTTER_BIN"
 
 echo "[beta-handoff] pub get"
 "$FLUTTER_BIN" pub get
+
+smoke_run_analyze "beta-handoff" "$FLUTTER_BIN"
+
+export SMOKE_SKIP_VERSION=1
+export SMOKE_SKIP_ANALYZE=1
 
 echo "[beta-handoff] docs/release instructions preflight"
 "$DOCS_HANDOFF_SMOKE_SCRIPT"

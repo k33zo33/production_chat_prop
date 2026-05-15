@@ -5,9 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
+source "$ROOT_DIR/tool/smoke_common.sh"
 
-echo "[verify] using flutter: $FLUTTER_BIN"
-"$FLUTTER_BIN" --version
+smoke_print_flutter_banner "verify" "$FLUTTER_BIN"
 
 if [[ "${SKIP_PUB_GET:-0}" == "1" ]]; then
   echo "[verify] pub get skipped (already resolved upstream)"
@@ -16,8 +16,7 @@ else
   "$FLUTTER_BIN" pub get
 fi
 
-echo "[verify] analyze"
-"$FLUTTER_BIN" analyze
+smoke_run_analyze "verify" "$FLUTTER_BIN"
 
 echo "[verify] test"
 "$FLUTTER_BIN" test

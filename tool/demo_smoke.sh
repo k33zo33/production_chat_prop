@@ -5,12 +5,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
+source "$ROOT_DIR/tool/smoke_common.sh"
 
-echo "[demo-smoke] using flutter: $FLUTTER_BIN"
-"$FLUTTER_BIN" --version
-
-echo "[demo-smoke] analyze"
-"$FLUTTER_BIN" analyze
+smoke_print_flutter_banner "demo-smoke" "$FLUTTER_BIN"
+smoke_run_analyze "demo-smoke" "$FLUTTER_BIN"
 
 WIDGET_TEST_FILE="test/widget_test.dart"
 

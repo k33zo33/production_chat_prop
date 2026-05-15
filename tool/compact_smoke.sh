@@ -5,12 +5,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
+source "$ROOT_DIR/tool/smoke_common.sh"
 
-echo "[compact-smoke] using flutter: $FLUTTER_BIN"
-"$FLUTTER_BIN" --version
-
-echo "[compact-smoke] analyze"
-"$FLUTTER_BIN" analyze
+smoke_print_flutter_banner "compact-smoke" "$FLUTTER_BIN"
+smoke_run_analyze "compact-smoke" "$FLUTTER_BIN"
 
 declare -a TEST_NAMES=(
   "compact project list app bar uses overflow menu actions"
