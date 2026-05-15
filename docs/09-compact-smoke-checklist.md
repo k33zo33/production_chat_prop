@@ -11,6 +11,9 @@ Preporučeni viewport:
 - [ ] Potvrdi da app bar koristi overflow meni umjesto širokog seta akcija
 - [ ] Klikni `Load Demo Project` ili `Add Demo Project`
 - [ ] Na ~320 px potvrdi da project list ostaje scrollabilan i da nema očitog overflowa u gornjim kontrolama ili summary kartici
+- [ ] Ako je vidljiv portfolio readiness summary, potvrdi da su `Continue Editing`, `Preview Ready Project` i `Review Attention Project` klikabilni bez overlap/overflow loma
+- [ ] Klikni `Preview Ready Project` i potvrdi da vodi u Playback
+- [ ] Vrati se natrag pa klikni `Continue Editing`; ako postoji attention projekt, potvrdi da otvara prvi problematični/empty scene
 - [ ] Probaj search, type filter i sort dropdown
 - [ ] Uđi u `Select Projects` i potvrdi da bulk akcije ostaju dostupne kroz overflow meni
 

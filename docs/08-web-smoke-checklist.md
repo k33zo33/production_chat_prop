@@ -12,6 +12,10 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 ## 2. Project list flow
 - [ ] Na početnom ekranu klikni `Load Demo Project`
 - [ ] Potvrdi da se pojavi demo projekt kartica
+- [ ] Potvrdi da je portfolio readiness summary vidljiv i da CTA gumbi ne djeluju "mrtvo"
+- [ ] Klikni `Preview Ready Project` i potvrdi da otvara Playback
+- [ ] Vrati se na project list pa klikni `Continue Editing` i potvrdi da otvara editor bez rušenja
+- [ ] Ako postoji projekt s attention stanjem, klikni `Review Attention Project`
 - [ ] Na uskom viewportu potvrdi da se prikaže compact overflow meni u app baru
 - [ ] Otvori project menu i provjeri da osnovne akcije postoje
 - [ ] Otvori `Open Chat Editor`

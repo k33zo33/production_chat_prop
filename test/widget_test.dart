@@ -1687,6 +1687,87 @@ void main() {
     },
   );
 
+  testWidgets(
+    'compact portfolio preview ready action opens playback on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      final previewButton = find.byKey(
+        const Key('portfolioPreviewReadyButton'),
+      );
+      await tester.ensureVisible(previewButton);
+      await tester.pumpAndSettle();
+      await tester.tap(previewButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+      expect(find.text('Messages: 4'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'compact portfolio continue editing focuses first empty scene for attention projects',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(
+            _buildMixedReadinessProjectImportPayload(
+              projectName: 'Compact Portfolio Attention Project',
+            ),
+          );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      final continueEditingButton = find.byKey(
+        const Key('portfolioContinueEditingButton'),
+      );
+      await tester.ensureVisible(continueEditingButton);
+      await tester.pumpAndSettle();
+      await tester.tap(continueEditingButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('Compact Portfolio Attention Project'), findsOneWidget);
+      expect(find.textContaining('Scene: Empty Scene'), findsOneWidget);
+      expect(
+        find.textContaining('Scene summary: 1 characters • 0 messages'),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('compact playback hides keyboard shortcut hint', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
