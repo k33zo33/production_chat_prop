@@ -17,6 +17,14 @@ final projectJsonFilePickerProvider = Provider<TextFilePicker>((ref) {
   return pickTextFile;
 });
 
+const _kExportQaFixtureAssetPath = 'docs/fixtures/export-qa-project.json';
+
+final exportQaFixtureLoaderProvider = Provider<Future<String> Function()>((
+  ref,
+) {
+  return () => rootBundle.loadString(_kExportQaFixtureAssetPath);
+});
+
 class ProjectListScreen extends ConsumerStatefulWidget {
   const ProjectListScreen({super.key, this.forceCompactAppBar});
 
@@ -127,6 +135,40 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       return;
     }
     await _runJsonImportFlow(rawJson);
+  }
+
+  Future<void> _onLoadExportQaProjectPressed() async {
+    String rawJson;
+    try {
+      rawJson = await ref.read(exportQaFixtureLoaderProvider)();
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      _showProjectListSnackBar('Unable to load the bundled export QA project.');
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    try {
+      final result = await ref
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(rawJson);
+      if (!mounted) {
+        return;
+      }
+      _showProjectListSnackBar(_importResultMessage(result));
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      _showProjectListSnackBar(
+        'Bundled export QA project could not be imported.',
+      );
+    }
   }
 
   Future<void> _onExportAllProjectsPressed() async {
@@ -562,6 +604,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           icon: const Icon(Icons.auto_awesome_rounded),
         ),
         IconButton(
+          key: const Key('loadExportQaProjectButton'),
+          tooltip: 'Load Export QA Project',
+          onPressed: _onLoadExportQaProjectPressed,
+          icon: const Icon(Icons.fact_check_outlined),
+        ),
+        IconButton(
           tooltip: 'Refresh',
           onPressed: () => ref.invalidate(projectsControllerProvider),
           icon: const Icon(Icons.refresh_rounded),
@@ -583,6 +631,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               await _onImportProjectJsonFilePressed();
             case _ProjectListAppBarAction.importJson:
               await _onImportProjectJsonPressed();
+            case _ProjectListAppBarAction.loadExportQa:
+              await _onLoadExportQaProjectPressed();
             case _ProjectListAppBarAction.addDemo:
               await ref
                   .read(projectsControllerProvider.notifier)
@@ -608,6 +658,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           const PopupMenuItem(
             value: _ProjectListAppBarAction.importJson,
             child: Text('Import Project JSON'),
+          ),
+          const PopupMenuItem(
+            value: _ProjectListAppBarAction.loadExportQa,
+            child: Text('Load Export QA Project'),
           ),
           const PopupMenuItem(
             value: _ProjectListAppBarAction.addDemo,
@@ -843,6 +897,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   onCreateDemoProject: () => ref
                       .read(projectsControllerProvider.notifier)
                       .createDemoProject(),
+                  onLoadExportQaProject: _onLoadExportQaProjectPressed,
                 );
               }
 
@@ -1323,6 +1378,7 @@ enum _ProjectListAppBarAction {
   exportAll,
   importFile,
   importJson,
+  loadExportQa,
   addDemo,
   refresh,
 }
@@ -1578,10 +1634,12 @@ class _EmptyProjectState extends StatelessWidget {
   const _EmptyProjectState({
     required this.onCreateProject,
     required this.onCreateDemoProject,
+    required this.onLoadExportQaProject,
   });
 
   final VoidCallback onCreateProject;
   final VoidCallback onCreateDemoProject;
+  final VoidCallback onLoadExportQaProject;
 
   @override
   Widget build(BuildContext context) {
@@ -1620,6 +1678,12 @@ class _EmptyProjectState extends StatelessWidget {
                   onPressed: onCreateDemoProject,
                   icon: const Icon(Icons.auto_awesome_rounded),
                   label: const Text('Load Demo Project'),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('emptyLoadExportQaButton'),
+                  onPressed: onLoadExportQaProject,
+                  icon: const Icon(Icons.fact_check_outlined),
+                  label: const Text('Load Export QA Project'),
                 ),
               ],
             ),

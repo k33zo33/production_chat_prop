@@ -35,6 +35,43 @@ class _FakeScreenshotExportService extends ScreenshotExportService {
   }
 }
 
+const _exportQaFixtureJson = '''
+{
+  "id": "qa-export-project",
+  "name": "Export QA Project",
+  "type": "ad",
+  "createdAt": "2026-05-14T21:00:00.000Z",
+  "updatedAt": "2026-05-14T21:00:00.000Z",
+  "scenes": [
+    {
+      "id": "qa-scene-hero-portrait",
+      "title": "Scene 1 - Hero Portrait",
+      "styleId": "studio_default",
+      "aspectRatio": "portrait9x16",
+      "characters": [
+        {
+          "id": "qa-hero-producer",
+          "displayName": "Producer",
+          "avatarPath": null,
+          "bubbleColor": "#2E90FA"
+        }
+      ],
+      "messages": [
+        {
+          "id": "qa-hero-message-1",
+          "characterId": "qa-hero-producer",
+          "text": "Hero phone is framed for the close-up.",
+          "timestampSeconds": 0,
+          "status": "sent",
+          "isIncoming": false,
+          "showTypingBefore": false
+        }
+      ]
+    }
+  ]
+}
+''';
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -87,6 +124,7 @@ void main() {
     expect(find.text('No projects yet'), findsOneWidget);
     expect(find.byKey(const Key('emptyCreateProjectButton')), findsOneWidget);
     expect(find.byKey(const Key('emptyCreateDemoButton')), findsOneWidget);
+    expect(find.byKey(const Key('emptyLoadExportQaButton')), findsOneWidget);
   });
 
   testWidgets('empty state demo button seeds demo project card', (
@@ -119,6 +157,30 @@ void main() {
 
     expect(find.text('New Project 1'), findsOneWidget);
     expect(find.text('Type: Other'), findsOneWidget);
+  });
+
+  testWidgets('load export QA project action imports bundled QA fixture', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exportQaFixtureLoaderProvider.overrideWithValue(
+            () async => _exportQaFixtureJson,
+          ),
+        ],
+        child: const ProductionChatPropApp(),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Load Export QA Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Export QA Project'), findsOneWidget);
+    expect(find.text('Scene 1 - Hero Portrait'), findsNothing);
+    expect(find.text('Imported project: Export QA Project.'), findsOneWidget);
   });
 
   testWidgets('export all projects action shows empty portfolio feedback', (
@@ -1078,6 +1140,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Demo Project 1'), findsOneWidget);
+  });
+
+  testWidgets('compact project list overflow can load export QA project', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          exportQaFixtureLoaderProvider.overrideWithValue(
+            () async => _exportQaFixtureJson,
+          ),
+        ],
+        child: const MaterialApp(
+          home: ProjectListScreen(forceCompactAppBar: true),
+        ),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Load Export QA Project').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Export QA Project'), findsOneWidget);
   });
 
   testWidgets('compact selection app bar uses overflow menu actions', (
