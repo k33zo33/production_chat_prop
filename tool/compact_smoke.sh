@@ -67,14 +67,10 @@ done
 
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+COMBINED_TEST_PATTERN="${TEST_PATTERN}|${RECOVERY_TEST_PATTERN}"
 
-echo "[compact-smoke] tests: ${#TEST_NAMES[@]} targeted compact/export cases"
-"$FLUTTER_BIN" test "$WIDGET_TEST_FILE" --name "^(${TEST_PATTERN})$"
-
-echo
-
-echo "[compact-smoke] recovery tests: ${#RECOVERY_TEST_NAMES[@]} missing-project recovery/layout cases"
-"$FLUTTER_BIN" test "$RECOVERY_TEST_FILE" --name "^(${RECOVERY_TEST_PATTERN})$"
+echo "[compact-smoke] tests: ${#TEST_NAMES[@]} compact/export + ${#RECOVERY_TEST_NAMES[@]} recovery/layout cases (batched)"
+"$FLUTTER_BIN" test "$WIDGET_TEST_FILE" "$RECOVERY_TEST_FILE" --name "^(${COMBINED_TEST_PATTERN})$"
 
 echo
 

@@ -60,10 +60,8 @@ echo "[release-smoke] widget tests: ${#TEST_NAMES[@]} targeted export/reliabilit
 
 echo
 
-echo "[release-smoke] unit tests: ${#UNIT_TEST_FILES[@]} export payload and filename cases"
-for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
-  "$FLUTTER_BIN" test "$unit_test_file"
-done
+echo "[release-smoke] unit tests: ${#UNIT_TEST_FILES[@]} export payload and filename cases (batched)"
+"$FLUTTER_BIN" test "${UNIT_TEST_FILES[@]}"
 
 echo
 

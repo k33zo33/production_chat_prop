@@ -49,6 +49,12 @@ declare -a REPOSITORY_TEST_NAMES=(
   "normalizes legacy scene style ids when loading persisted projects"
 )
 
+declare -a FIXTURE_TEST_NAMES=(
+  "parses the tracked export QA project for manual beta passes"
+  "project package export keeps all QA scenes in the handoff payload"
+  "video fallback export keeps the selected QA scene synchronized"
+)
+
 for test_name in "${CONTROLLER_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$CONTROLLER_TEST_FILE"; then
     echo "[import-smoke] missing expected controller test: $test_name" >&2
@@ -70,29 +76,38 @@ for test_name in "${REPOSITORY_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${FIXTURE_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$FIXTURE_TEST_FILE"; then
+    echo "[import-smoke] missing expected fixture test: $test_name" >&2
+    exit 1
+  fi
+done
+
+fixture_test_count=$(grep -Ec '^[[:space:]]*test[[:space:]]*\(' "$FIXTURE_TEST_FILE")
+if [[ "$fixture_test_count" -ne ${#FIXTURE_TEST_NAMES[@]} ]]; then
+  echo "[import-smoke] export QA fixture coverage drifted: expected ${#FIXTURE_TEST_NAMES[@]} registered tests, found $fixture_test_count in $FIXTURE_TEST_FILE" >&2
+  exit 1
+fi
+
 CONTROLLER_TEST_PATTERN="$(printf '%s\n' "${CONTROLLER_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SANITIZER_TEST_PATTERN="$(printf '%s\n' "${SANITIZER_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 REPOSITORY_TEST_PATTERN="$(printf '%s\n' "${REPOSITORY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+FIXTURE_TEST_PATTERN="$(printf '%s\n' "${FIXTURE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+COMBINED_TEST_PATTERN="${CONTROLLER_TEST_PATTERN}|${SANITIZER_TEST_PATTERN}|${REPOSITORY_TEST_PATTERN}|${FIXTURE_TEST_PATTERN}"
+TOTAL_TARGETED_TESTS=$((
+  ${#CONTROLLER_TEST_NAMES[@]} +
+  ${#SANITIZER_TEST_NAMES[@]} +
+  ${#REPOSITORY_TEST_NAMES[@]} +
+  ${#FIXTURE_TEST_NAMES[@]}
+))
 
-echo "[import-smoke] controller tests: ${#CONTROLLER_TEST_NAMES[@]} targeted import/recovery cases"
-"$FLUTTER_BIN" test "$CONTROLLER_TEST_FILE" --name "^.*(${CONTROLLER_TEST_PATTERN})$"
-
-echo
-
-echo "[import-smoke] sanitizer tests: ${#SANITIZER_TEST_NAMES[@]} payload normalization cases"
-"$FLUTTER_BIN" test "$SANITIZER_TEST_FILE" --name "^.*(${SANITIZER_TEST_PATTERN})$"
-
-echo
-
-echo "[import-smoke] repository tests: ${#REPOSITORY_TEST_NAMES[@]} persistence recovery cases"
-"$FLUTTER_BIN" test "$REPOSITORY_TEST_FILE" --name "^.*(${REPOSITORY_TEST_PATTERN})$"
-
-echo
-
-echo
-
-echo "[import-smoke] fixture test: tracked export QA sample stays importable"
-"$FLUTTER_BIN" test "$FIXTURE_TEST_FILE"
+echo "[import-smoke] tests: $TOTAL_TARGETED_TESTS targeted import/sanitizer/repository/fixture cases (batched)"
+"$FLUTTER_BIN" test \
+  "$CONTROLLER_TEST_FILE" \
+  "$SANITIZER_TEST_FILE" \
+  "$REPOSITORY_TEST_FILE" \
+  "$FIXTURE_TEST_FILE" \
+  --name "^.*(${COMBINED_TEST_PATTERN})$"
 
 echo
 
