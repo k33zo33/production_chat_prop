@@ -340,25 +340,28 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                       },
                     ),
                   ] else
-                    DropdownButtonFormField<String>(
-                      key: const Key('editorSceneDropdown'),
-                      initialValue: selectedScene?.id,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Selected Scene',
+                    KeyedSubtree(
+                      key: ValueKey<String?>('editorSceneDropdown_${selectedScene?.id}'),
+                      child: DropdownButtonFormField<String>(
+                        key: const Key('editorSceneDropdown'),
+                        initialValue: selectedScene?.id,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Selected Scene',
+                        ),
+                        items: [
+                          for (final scene in project.scenes)
+                            DropdownMenuItem(
+                              value: scene.id,
+                              child: Text(scene.title),
+                            ),
+                        ],
+                        onChanged: (sceneId) {
+                          if (sceneId != null) {
+                            onSceneSelected(sceneId);
+                          }
+                        },
                       ),
-                      items: [
-                        for (final scene in project.scenes)
-                          DropdownMenuItem(
-                            value: scene.id,
-                            child: Text(scene.title),
-                          ),
-                      ],
-                      onChanged: (sceneId) {
-                        if (sceneId != null) {
-                          onSceneSelected(sceneId);
-                        }
-                      },
                     ),
                 ],
               ],

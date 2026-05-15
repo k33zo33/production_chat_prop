@@ -489,25 +489,28 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                         },
                       ),
                     ] else
-                      DropdownButtonFormField<String>(
-                        key: const Key('playbackSceneDropdown'),
-                        initialValue: scene?.id,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Selected Scene',
+                      KeyedSubtree(
+                        key: ValueKey<String?>('playbackSceneDropdown_${scene?.id}'),
+                        child: DropdownButtonFormField<String>(
+                          key: const Key('playbackSceneDropdown'),
+                          initialValue: scene?.id,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Selected Scene',
+                          ),
+                          items: [
+                            for (final item in project.scenes)
+                              DropdownMenuItem(
+                                value: item.id,
+                                child: Text(item.title),
+                              ),
+                          ],
+                          onChanged: (sceneId) {
+                            if (sceneId != null) {
+                              widget.onSceneSelected(sceneId);
+                            }
+                          },
                         ),
-                        items: [
-                          for (final item in project.scenes)
-                            DropdownMenuItem(
-                              value: item.id,
-                              child: Text(item.title),
-                            ),
-                        ],
-                        onChanged: (sceneId) {
-                          if (sceneId != null) {
-                            widget.onSceneSelected(sceneId);
-                          }
-                        },
                       ),
                   ],
                 ],

@@ -1925,6 +1925,47 @@ void main() {
   );
 
   testWidgets(
+    'wide chat editor scene selector stays synced after external scene changes',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final project = projects.single;
+      final projectId = project.id;
+      final secondSceneId = project.scenes[1].id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(960, 900),
+        child: ChatEditorScreen(projectId: projectId),
+      );
+
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+      expect(
+        _dropdownFieldValue(tester, const Key('editorSceneDropdown')),
+        project.scenes.first.id,
+      );
+
+      container
+          .read(sceneSelectionProvider(projectId).notifier)
+          .selectedSceneId = secondSceneId;
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        _dropdownFieldValue(tester, const Key('editorSceneDropdown')),
+        secondSceneId,
+      );
+    },
+  );
+
+  testWidgets(
     'chat editor open playback action keeps the currently selected scene',
     (tester) async {
       final container = ProviderContainer();
@@ -2755,6 +2796,47 @@ void main() {
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'wide playback scene selector stays synced after external scene changes',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final project = projects.single;
+      final projectId = project.id;
+      final secondSceneId = project.scenes[1].id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(960, 900),
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+      expect(
+        _dropdownFieldValue(tester, const Key('playbackSceneDropdown')),
+        project.scenes.first.id,
+      );
+
+      container
+          .read(sceneSelectionProvider(projectId).notifier)
+          .selectedSceneId = secondSceneId;
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        _dropdownFieldValue(tester, const Key('playbackSceneDropdown')),
+        secondSceneId,
+      );
     },
   );
 
@@ -6185,6 +6267,13 @@ Future<void> _ensureFinderVisibleInPrimaryListView(
   expect(finder, findsOneWidget);
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
+}
+
+String? _dropdownFieldValue(WidgetTester tester, Key key) {
+  final dropdownFinder = find.byKey(key);
+  expect(dropdownFinder, findsOneWidget);
+  final state = tester.state<FormFieldState<String>>(dropdownFinder);
+  return state.value;
 }
 
 Future<Finder> _openMessageActionsForText(
