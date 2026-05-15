@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -420,6 +422,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
             projectId: project.id,
             sceneId: selectedScene.id,
             characters: selectedScene.characters,
+            sceneMessages: selectedScene.messages,
           ),
           const SizedBox(height: 12),
           _MessageComposerCard(
@@ -2298,11 +2301,13 @@ class _CharacterManagerCard extends ConsumerWidget {
     required this.projectId,
     required this.sceneId,
     required this.characters,
+    required this.sceneMessages,
   });
 
   final String projectId;
   final String sceneId;
   final List<Character> characters;
+  final List<Message> sceneMessages;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2365,11 +2370,47 @@ class _CharacterManagerCard extends ConsumerWidget {
         return;
       }
 
-      await controller.deleteCharacter(
-        projectId: projectId,
-        sceneId: sceneId,
-        characterId: character.id,
+      final assignedMessageCount = sceneMessages
+          .where((message) => message.characterId == character.id)
+          .length;
+      final confirmed = await _showDeleteCharacterDialog(
+        context,
+        character: character,
+        assignedMessageCount: assignedMessageCount,
       );
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        await controller.deleteCharacter(
+          projectId: projectId,
+          sceneId: sceneId,
+          characterId: character.id,
+        );
+      } on Object catch (_) {
+        if (!context.mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not delete character. Please try again.'),
+          ),
+        );
+        return;
+      }
+      if (!context.mounted) {
+        return;
+      }
+
+      final removalMessage = assignedMessageCount == 0
+          ? 'Removed ${character.displayName} from the scene.'
+          : 'Removed ${character.displayName} and deleted '
+                '$assignedMessageCount '
+                'message${assignedMessageCount == 1 ? '' : 's'}.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(removalMessage)));
     }
 
     return Card(
@@ -2542,7 +2583,7 @@ class _CharacterManagerCard extends ConsumerWidget {
                         bubbleColor: character.bubbleColor,
                       ),
                       label: Text(character.displayName),
-                      onDeleted: () => deleteCharacter(character),
+                      onDeleted: () => unawaited(deleteCharacter(character)),
                       deleteIcon: const Icon(Icons.person_remove_rounded),
                     ),
                 ],
@@ -2604,6 +2645,44 @@ class _CharacterManagerCard extends ConsumerWidget {
       initialValue: initialValue,
       emptyErrorText: 'Character name cannot be empty.',
     );
+  }
+
+  Future<bool> _showDeleteCharacterDialog(
+    BuildContext context, {
+    required Character character,
+    required int assignedMessageCount,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final messageWarning = assignedMessageCount == 0
+            ? 'This character has no assigned messages yet.'
+            : 'This also deletes '
+                  '$assignedMessageCount '
+                  'message${assignedMessageCount == 1 ? '' : 's'} assigned to them.';
+
+        return ResponsiveAlertDialog(
+          title: const Text('Delete Character'),
+          content: Text(
+            'Remove ${character.displayName} from this scene? $messageWarning',
+          ),
+          actions: [
+            TextButton(
+              key: const Key('cancelDeleteCharacterButton'),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const Key('confirmDeleteCharacterButton'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
   }
 
   Future<String?> _showCharacterBubbleColorDialog(

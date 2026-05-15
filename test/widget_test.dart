@@ -13,6 +13,7 @@ import 'package:production_chat_prop/features/chat_editor/presentation/pages/cha
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
 import 'package:production_chat_prop/features/playback/presentation/controllers/playback_controller.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
+import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
@@ -2158,7 +2159,45 @@ void main() {
 
       final projectId = await _createStarterProjectInContainer(container);
       final snapshot = container.read(sceneSnapshotProvider(projectId)).value!;
-      final alex = snapshot.scene!.characters.first;
+      final scene = snapshot.scene!;
+      final alex = scene.characters.first;
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addCharacter(
+            projectId: projectId,
+            sceneId: scene.id,
+            displayName: 'Blair',
+          );
+
+      final sceneAfterCharacterAdd = container
+          .read(sceneSnapshotProvider(projectId))
+          .value!
+          .scene!;
+      final blair = sceneAfterCharacterAdd.characters.last;
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addMessage(
+            projectId: projectId,
+            sceneId: scene.id,
+            characterId: blair.id,
+            text: 'I am covering the mobile pass.',
+            timestampSeconds: 4,
+            status: MessageStatus.sent,
+            isIncoming: false,
+            showTypingBefore: false,
+          );
+      await container
+          .read(projectsControllerProvider.notifier)
+          .addMessage(
+            projectId: projectId,
+            sceneId: scene.id,
+            characterId: blair.id,
+            text: 'And I have one more line to clear.',
+            timestampSeconds: 6,
+            status: MessageStatus.delivered,
+            isIncoming: true,
+            showTypingBefore: false,
+          );
 
       await _pumpNarrowScreenWithContainer(
         tester,
@@ -2170,13 +2209,13 @@ void main() {
         ),
       );
 
-      final characterMenuButton = find.byKey(
+      final alexMenuButton = find.byKey(
         Key('characterActionsOverflowMenu_${alex.id}'),
       );
-      await _ensureFinderVisibleInPrimaryListView(tester, characterMenuButton);
+      await _ensureFinderVisibleInPrimaryListView(tester, alexMenuButton);
       expect(find.widgetWithText(OutlinedButton, 'Rename'), findsNothing);
 
-      await tester.tap(characterMenuButton);
+      await tester.tap(alexMenuButton);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Rename ${alex.displayName}'));
       await tester.pumpAndSettle();
@@ -2190,13 +2229,27 @@ void main() {
 
       expect(find.text('Alex Prime'), findsWidgets);
 
-      await _ensureFinderVisibleInPrimaryListView(tester, characterMenuButton);
-      await tester.tap(characterMenuButton);
+      final renamedSnapshot = container
+          .read(sceneSnapshotProvider(projectId))
+          .value!
+          .scene!;
+      final renamedAlex = renamedSnapshot.characters.firstWhere(
+        (character) => character.id == alex.id,
+      );
+      final renamedAlexMenuButton = find.byKey(
+        Key('characterActionsOverflowMenu_${renamedAlex.id}'),
+      );
+
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        renamedAlexMenuButton,
+      );
+      await tester.tap(renamedAlexMenuButton);
       await tester.pumpAndSettle();
       await tester.tap(find.textContaining('Bubble Color:'));
       await tester.pumpAndSettle();
       final roseColorOption = find.byKey(
-        Key('characterBubbleColorOption_${alex.id}_#F0447C'),
+        Key('characterBubbleColorOption_${renamedAlex.id}_#F0447C'),
       );
       await tester.ensureVisible(roseColorOption);
       await tester.pumpAndSettle();
@@ -2214,11 +2267,40 @@ void main() {
       expect(updatedAlex.displayName, 'Alex Prime');
       expect(updatedAlex.bubbleColor, '#F0447C');
 
-      await _ensureFinderVisibleInPrimaryListView(tester, characterMenuButton);
-      await tester.tap(characterMenuButton);
+      final blairMenuButton = find.byKey(
+        Key('characterActionsOverflowMenu_${blair.id}'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, blairMenuButton);
+      await tester.tap(blairMenuButton);
       await tester.pumpAndSettle();
-      expect(find.text('Rename Alex Prime'), findsOneWidget);
-      expect(find.text('Bubble Color: Rose'), findsOneWidget);
+      expect(find.text('Rename Alex Prime'), findsNothing);
+      expect(find.text('Bubble Color: Rose'), findsNothing);
+      expect(find.text('Remove Character'), findsOneWidget);
+      await tester.tap(find.text('Remove Character'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Character'), findsOneWidget);
+      expect(
+        find.text(
+          'Remove Blair from this scene? This also deletes 2 messages assigned to them.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('confirmDeleteCharacterButton')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('confirmDeleteCharacterButton')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Removed Blair and deleted 2 messages.'),
+        findsOneWidget,
+      );
+      expect(find.text('Blair'), findsNothing);
+      expect(find.text('I am covering the mobile pass.'), findsNothing);
+      expect(find.text('And I have one more line to clear.'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
@@ -3905,6 +3987,24 @@ void main() {
     await tester.tapAt(tester.getCenter(zedDeleteIcon));
     await tester.pumpAndSettle();
 
+    expect(find.text('Delete Character'), findsOneWidget);
+    expect(
+      find.text(
+        'Remove Zed from this scene? This character has no assigned messages yet.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('cancelDeleteCharacterButton')));
+    await tester.pumpAndSettle();
+    expect(find.text('Rename Zed'), findsOneWidget);
+
+    await tester.tapAt(tester.getCenter(zedDeleteIcon));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmDeleteCharacterButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Removed Zed from the scene.'), findsOneWidget);
     expect(find.text('Rename Zed'), findsNothing);
     expect(find.text('Zed'), findsNothing);
   });
