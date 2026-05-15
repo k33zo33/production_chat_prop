@@ -8,29 +8,100 @@ README_PATH="$ROOT_DIR/README.md"
 WEB_DONE_PATH="$ROOT_DIR/docs/05-web-done-checklist.md"
 WORKFLOW_PATH="$ROOT_DIR/.github/workflows/flutter_ci.yml"
 BETA_HANDOFF_PATH="$ROOT_DIR/tool/beta_handoff.sh"
+DEMO_SMOKE_PATH="$ROOT_DIR/tool/demo_smoke.sh"
+RELEASE_SMOKE_PATH="$ROOT_DIR/tool/release_smoke.sh"
+COMPACT_SMOKE_PATH="$ROOT_DIR/tool/compact_smoke.sh"
+IMPORT_SMOKE_PATH="$ROOT_DIR/tool/import_smoke.sh"
+WIDGET_TEST_PATH="$ROOT_DIR/test/widget_test.dart"
+RECOVERY_TEST_PATH="$ROOT_DIR/test/widget/project_not_found_recovery_test.dart"
+CONTROLLER_TEST_PATH="$ROOT_DIR/test/unit/features/projects/presentation/controllers/projects_controller_test.dart"
+SANITIZER_TEST_PATH="$ROOT_DIR/test/unit/features/projects/data/services/project_sanitizer_test.dart"
+REPOSITORY_TEST_PATH="$ROOT_DIR/test/unit/features/projects/data/repositories/local_project_repository_test.dart"
+FIXTURE_TEST_PATH="$ROOT_DIR/test/unit/features/projects/domain/export_qa_fixture_test.dart"
 
-for path in "$README_PATH" "$WEB_DONE_PATH" "$WORKFLOW_PATH" "$BETA_HANDOFF_PATH"; do
+for path in \
+  "$README_PATH" \
+  "$WEB_DONE_PATH" \
+  "$WORKFLOW_PATH" \
+  "$BETA_HANDOFF_PATH" \
+  "$DEMO_SMOKE_PATH" \
+  "$RELEASE_SMOKE_PATH" \
+  "$COMPACT_SMOKE_PATH" \
+  "$IMPORT_SMOKE_PATH" \
+  "$WIDGET_TEST_PATH" \
+  "$RECOVERY_TEST_PATH" \
+  "$CONTROLLER_TEST_PATH" \
+  "$SANITIZER_TEST_PATH" \
+  "$REPOSITORY_TEST_PATH" \
+  "$FIXTURE_TEST_PATH"; do
   if [[ ! -f "$path" ]]; then
     echo "[docs-handoff-smoke] missing required file: $path" >&2
     exit 1
   fi
 done
 
-python3 - "$README_PATH" "$WEB_DONE_PATH" "$WORKFLOW_PATH" "$BETA_HANDOFF_PATH" <<'PY'
+python3 - \
+  "$README_PATH" \
+  "$WEB_DONE_PATH" \
+  "$WORKFLOW_PATH" \
+  "$BETA_HANDOFF_PATH" \
+  "$DEMO_SMOKE_PATH" \
+  "$RELEASE_SMOKE_PATH" \
+  "$COMPACT_SMOKE_PATH" \
+  "$IMPORT_SMOKE_PATH" \
+  "$WIDGET_TEST_PATH" \
+  "$RECOVERY_TEST_PATH" \
+  "$CONTROLLER_TEST_PATH" \
+  "$SANITIZER_TEST_PATH" \
+  "$REPOSITORY_TEST_PATH" <<'PY'
 import pathlib
 import re
 import sys
 
-_, readme_raw, web_done_raw, workflow_raw, beta_handoff_raw = sys.argv
+(
+    _,
+    readme_raw,
+    web_done_raw,
+    workflow_raw,
+    beta_handoff_raw,
+    demo_smoke_raw,
+    release_smoke_raw,
+    compact_smoke_raw,
+    import_smoke_raw,
+    widget_test_raw,
+    recovery_test_raw,
+    controller_test_raw,
+    sanitizer_test_raw,
+    repository_test_raw,
+) = sys.argv
+
 readme_path = pathlib.Path(readme_raw)
 web_done_path = pathlib.Path(web_done_raw)
 workflow_path = pathlib.Path(workflow_raw)
 beta_handoff_path = pathlib.Path(beta_handoff_raw)
+demo_smoke_path = pathlib.Path(demo_smoke_raw)
+release_smoke_path = pathlib.Path(release_smoke_raw)
+compact_smoke_path = pathlib.Path(compact_smoke_raw)
+import_smoke_path = pathlib.Path(import_smoke_raw)
+widget_test_path = pathlib.Path(widget_test_raw)
+recovery_test_path = pathlib.Path(recovery_test_raw)
+controller_test_path = pathlib.Path(controller_test_raw)
+sanitizer_test_path = pathlib.Path(sanitizer_test_raw)
+repository_test_path = pathlib.Path(repository_test_raw)
 
 readme = readme_path.read_text(encoding='utf-8')
 web_done = web_done_path.read_text(encoding='utf-8')
 workflow = workflow_path.read_text(encoding='utf-8')
 beta_handoff = beta_handoff_path.read_text(encoding='utf-8')
+demo_smoke = demo_smoke_path.read_text(encoding='utf-8')
+release_smoke = release_smoke_path.read_text(encoding='utf-8')
+compact_smoke = compact_smoke_path.read_text(encoding='utf-8')
+import_smoke = import_smoke_path.read_text(encoding='utf-8')
+widget_test = widget_test_path.read_text(encoding='utf-8')
+recovery_test = recovery_test_path.read_text(encoding='utf-8')
+controller_test = controller_test_path.read_text(encoding='utf-8')
+sanitizer_test = sanitizer_test_path.read_text(encoding='utf-8')
+repository_test = repository_test_path.read_text(encoding='utf-8')
 
 expected_sequence = (
     'web_shell_smoke -> demo_smoke -> import_smoke -> '
@@ -56,8 +127,100 @@ for passed, message in checks:
     if not passed:
         raise SystemExit(f'[docs-handoff-smoke] {message}')
 
+
+def extract_declared_names(script_text: str, array_name: str) -> list[str]:
+    pattern = re.compile(
+        rf'declare -a {re.escape(array_name)}=\((.*?)\n\s*\)',
+        re.S,
+    )
+    match = pattern.search(script_text)
+    if match is None:
+        raise SystemExit(
+            f'[docs-handoff-smoke] missing array {array_name!r} in smoke script'
+        )
+    matches = re.findall(r"'([^']+)'|\"([^\"]+)\"", match.group(1))
+    return [single_quoted or double_quoted for single_quoted, double_quoted in matches]
+
+
+# One-directional on purpose: smoke scripts curate targeted subsets, so this
+# catches stale renamed/deleted entries without requiring every new test to be
+# added to a smoke catalog.
+def assert_names_exist(
+    *,
+    script_label: str,
+    array_name: str,
+    script_text: str,
+    target_label: str,
+    target_text: str,
+) -> None:
+    names = extract_declared_names(script_text, array_name)
+    missing = [
+        name
+        for name in names
+        if re.search(rf"'{re.escape(name)}'|\"{re.escape(name)}\"", target_text)
+        is None
+    ]
+    if missing:
+        missing_lines = '\n'.join(f'  - {name}' for name in missing)
+        raise SystemExit(
+            f'[docs-handoff-smoke] {script_label} has stale {array_name} entries '
+            f'for {target_label}:\n{missing_lines}'
+        )
+
+
+assert_names_exist(
+    script_label='tool/demo_smoke.sh',
+    array_name='TEST_NAMES',
+    script_text=demo_smoke,
+    target_label='test/widget_test.dart',
+    target_text=widget_test,
+)
+assert_names_exist(
+    script_label='tool/release_smoke.sh',
+    array_name='TEST_NAMES',
+    script_text=release_smoke,
+    target_label='test/widget_test.dart',
+    target_text=widget_test,
+)
+assert_names_exist(
+    script_label='tool/compact_smoke.sh',
+    array_name='TEST_NAMES',
+    script_text=compact_smoke,
+    target_label='test/widget_test.dart',
+    target_text=widget_test,
+)
+assert_names_exist(
+    script_label='tool/compact_smoke.sh',
+    array_name='RECOVERY_TEST_NAMES',
+    script_text=compact_smoke,
+    target_label='test/widget/project_not_found_recovery_test.dart',
+    target_text=recovery_test,
+)
+assert_names_exist(
+    script_label='tool/import_smoke.sh',
+    array_name='CONTROLLER_TEST_NAMES',
+    script_text=import_smoke,
+    target_label='projects_controller_test.dart',
+    target_text=controller_test,
+)
+assert_names_exist(
+    script_label='tool/import_smoke.sh',
+    array_name='SANITIZER_TEST_NAMES',
+    script_text=import_smoke,
+    target_label='project_sanitizer_test.dart',
+    target_text=sanitizer_test,
+)
+assert_names_exist(
+    script_label='tool/import_smoke.sh',
+    array_name='REPOSITORY_TEST_NAMES',
+    script_text=import_smoke,
+    target_label='local_project_repository_test.dart',
+    target_text=repository_test,
+)
+
 print('[docs-handoff-smoke] validated README/docs/workflow beta handoff alignment')
 print(f'[docs-handoff-smoke] sequence: {expected_sequence}')
+print('[docs-handoff-smoke] smoke script test-name catalogs are in sync')
 PY
 
 echo "[docs-handoff-smoke] done"

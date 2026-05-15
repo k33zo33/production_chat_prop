@@ -29,7 +29,7 @@ declare -a TEST_NAMES=(
   "bulk project selection sets type for selected projects"
   "bulk project selection duplicates selected projects"
   "project popup copy json writes clipboard and shows feedback"
-  "project popup download json shows fallback feedback on unsupported platform"
+  "project popup download json copies fallback payload on unsupported platform"
   "import project json dialog adds new project card"
   "import project json dialog supports batch payload"
   "import json file button shows fallback when no file is selected"
