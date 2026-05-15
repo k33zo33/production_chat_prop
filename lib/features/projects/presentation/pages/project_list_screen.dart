@@ -60,6 +60,30 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     return _selectedProjectIds.where(availableIds.contains).toSet();
   }
 
+  List<Project> _filteredProjects(List<Project> projects) {
+    final normalizedQuery = _searchQuery.trim().toLowerCase();
+
+    return projects
+        .where((project) {
+          final matchesQuery =
+              normalizedQuery.isEmpty ||
+              project.name.toLowerCase().contains(normalizedQuery);
+          final matchesType =
+              _selectedTypeFilter == null ||
+              project.type == _selectedTypeFilter;
+          return matchesQuery && matchesType;
+        })
+        .toList(growable: false)
+      ..sort(_projectSortComparator(_selectedSortMode));
+  }
+
+  void _pruneSelectionToProjects(List<Project> projects) {
+    _selectedProjectIds = _selectedIdsForProjects(projects);
+    if (projects.isEmpty) {
+      _isSelectionMode = false;
+    }
+  }
+
   void _toggleSelectionMode(List<Project> projects) {
     if (projects.isEmpty) {
       return;
@@ -367,6 +391,16 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     if (!mounted) {
       return;
     }
+
+    final updatedProjects = await ref.read(projectsControllerProvider.future);
+    if (!mounted) {
+      return;
+    }
+
+    final visibleProjects = _filteredProjects(updatedProjects);
+    setState(() {
+      _pruneSelectionToProjects(visibleProjects);
+    });
     if (updatedCount == 0) {
       _showProjectListSnackBar(
         'Selected projects are already type ${type.label}.',
@@ -564,7 +598,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
   List<Widget> _buildDefaultAppBarActions({
     required BuildContext context,
-    required List<Project> loadedProjects,
+    required List<Project> visibleProjects,
     required bool isCompactAppBar,
   }) {
     if (!isCompactAppBar) {
@@ -572,9 +606,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         IconButton(
           key: const Key('toggleProjectSelectionModeButton'),
           tooltip: 'Select Projects',
-          onPressed: loadedProjects.isEmpty
+          onPressed: visibleProjects.isEmpty
               ? null
-              : () => _toggleSelectionMode(loadedProjects),
+              : () => _toggleSelectionMode(visibleProjects),
           icon: const Icon(Icons.checklist_rounded),
         ),
         IconButton(
@@ -622,7 +656,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         onSelected: (action) async {
           switch (action) {
             case _ProjectListAppBarAction.selectProjects:
-              _toggleSelectionMode(loadedProjects);
+              _toggleSelectionMode(visibleProjects);
             case _ProjectListAppBarAction.exportAll:
               await _onExportAllProjectsPressed();
             case _ProjectListAppBarAction.importFile:
@@ -642,7 +676,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         itemBuilder: (context) => [
           PopupMenuItem(
             value: _ProjectListAppBarAction.selectProjects,
-            enabled: loadedProjects.isNotEmpty,
+            enabled: visibleProjects.isNotEmpty,
             child: const Text('Select Projects'),
           ),
           const PopupMenuItem(
@@ -676,7 +710,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
   List<Widget> _buildSelectionModeActions({
     required BuildContext context,
-    required List<Project> loadedProjects,
+    required List<Project> visibleProjects,
     required int selectedCount,
     required bool isCompactAppBar,
   }) {
@@ -685,9 +719,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         IconButton(
           key: const Key('selectAllProjectsButton'),
           tooltip: 'Select All Projects',
-          onPressed: selectedCount == loadedProjects.length
+          onPressed: selectedCount == visibleProjects.length
               ? null
-              : () => _selectAllProjects(loadedProjects),
+              : () => _selectAllProjects(visibleProjects),
           icon: const Icon(Icons.select_all_rounded),
         ),
         IconButton(
@@ -703,7 +737,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           tooltip: 'Duplicate Selected Projects',
           onPressed: selectedCount == 0
               ? null
-              : () => _onDuplicateSelectedProjectsPressed(loadedProjects),
+              : () => _onDuplicateSelectedProjectsPressed(visibleProjects),
           icon: const Icon(Icons.copy_all_rounded),
         ),
         PopupMenuButton<ProjectType>(
@@ -712,7 +746,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           enabled: selectedCount > 0,
           onSelected: (type) async {
             await _onSetSelectedProjectsType(
-              projects: loadedProjects,
+              projects: visibleProjects,
               type: type,
             );
           },
@@ -737,7 +771,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           tooltip: 'Export Selected Projects JSON',
           onPressed: selectedCount == 0
               ? null
-              : () => _onExportSelectedProjectsPressed(loadedProjects),
+              : () => _onExportSelectedProjectsPressed(visibleProjects),
           icon: const Icon(Icons.download_rounded),
         ),
         IconButton(
@@ -745,7 +779,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           tooltip: 'Delete Selected Projects',
           onPressed: selectedCount == 0
               ? null
-              : () => _onDeleteSelectedProjectsPressed(loadedProjects),
+              : () => _onDeleteSelectedProjectsPressed(visibleProjects),
           icon: const Icon(Icons.delete_outline_rounded),
         ),
       ];
@@ -758,36 +792,36 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         onSelected: (action) async {
           switch (action) {
             case _ProjectSelectionAction.selectAll:
-              _selectAllProjects(loadedProjects);
+              _selectAllProjects(visibleProjects);
             case _ProjectSelectionAction.clear:
               _clearProjectSelection(exitMode: false);
             case _ProjectSelectionAction.duplicate:
-              await _onDuplicateSelectedProjectsPressed(loadedProjects);
+              await _onDuplicateSelectedProjectsPressed(visibleProjects);
             case _ProjectSelectionAction.setTypeAd:
               await _onSetSelectedProjectsType(
-                projects: loadedProjects,
+                projects: visibleProjects,
                 type: ProjectType.ad,
               );
             case _ProjectSelectionAction.setTypeSeries:
               await _onSetSelectedProjectsType(
-                projects: loadedProjects,
+                projects: visibleProjects,
                 type: ProjectType.series,
               );
             case _ProjectSelectionAction.setTypeOther:
               await _onSetSelectedProjectsType(
-                projects: loadedProjects,
+                projects: visibleProjects,
                 type: ProjectType.other,
               );
             case _ProjectSelectionAction.exportSelected:
-              await _onExportSelectedProjectsPressed(loadedProjects);
+              await _onExportSelectedProjectsPressed(visibleProjects);
             case _ProjectSelectionAction.deleteSelected:
-              await _onDeleteSelectedProjectsPressed(loadedProjects);
+              await _onDeleteSelectedProjectsPressed(visibleProjects);
           }
         },
         itemBuilder: (context) => [
           PopupMenuItem(
             value: _ProjectSelectionAction.selectAll,
-            enabled: selectedCount != loadedProjects.length,
+            enabled: selectedCount != visibleProjects.length,
             child: const Text('Select All Projects'),
           ),
           PopupMenuItem(
@@ -838,9 +872,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       loading: () => const <Project>[],
       error: (_, _) => const <Project>[],
     );
-    final selectedIds = _selectedIdsForProjects(loadedProjects);
+    final filteredProjects = _filteredProjects(loadedProjects);
+    final selectedIds = _selectedIdsForProjects(filteredProjects);
     final selectedCount = selectedIds.length;
-    final showSelectionMode = _isSelectionMode && loadedProjects.isNotEmpty;
+    final showSelectionMode = _isSelectionMode && filteredProjects.isNotEmpty;
     final isCompactAppBar =
         widget.forceCompactAppBar ?? MediaQuery.sizeOf(context).width < 720;
 
@@ -864,13 +899,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         actions: showSelectionMode
             ? _buildSelectionModeActions(
                 context: context,
-                loadedProjects: loadedProjects,
+                visibleProjects: filteredProjects,
                 selectedCount: selectedCount,
                 isCompactAppBar: isCompactAppBar,
               )
             : _buildDefaultAppBarActions(
                 context: context,
-                loadedProjects: loadedProjects,
+                visibleProjects: filteredProjects,
                 isCompactAppBar: isCompactAppBar,
               ),
       ),
@@ -899,31 +934,12 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 );
               }
 
-              final normalizedQuery = _searchQuery.trim().toLowerCase();
               final typeCounts = <ProjectType, int>{
                 for (final type in ProjectType.values) type: 0,
               };
               for (final project in projects) {
                 typeCounts[project.type] = (typeCounts[project.type] ?? 0) + 1;
               }
-              final filteredProjects =
-                  projects
-                      .where((project) {
-                        final matchesQuery =
-                            normalizedQuery.isEmpty ||
-                            project.name.toLowerCase().contains(
-                              normalizedQuery,
-                            );
-                        final matchesType =
-                            _selectedTypeFilter == null ||
-                            project.type == _selectedTypeFilter;
-                        return matchesQuery && matchesType;
-                      })
-                      .toList(growable: false)
-                    ..sort(_projectSortComparator(_selectedSortMode));
-              final selectedIdsForCurrentProjects = _selectedIdsForProjects(
-                projects,
-              );
               final readinessSummary = _buildProjectPortfolioReadinessSummary(
                 filteredProjects,
               );
@@ -963,6 +979,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     onChanged: (value) {
                       setState(() {
                         _searchQuery = value;
+                        _pruneSelectionToProjects(_filteredProjects(projects));
                       });
                     },
                   ),
@@ -996,6 +1013,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             onChanged: (value) {
                               setState(() {
                                 _selectedTypeFilter = value;
+                                _pruneSelectionToProjects(
+                                  _filteredProjects(projects),
+                                );
                               });
                             },
                           ),
@@ -1016,6 +1036,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                   }
                                   setState(() {
                                     _selectedTypeFilter = null;
+                                    _pruneSelectionToProjects(
+                                      _filteredProjects(projects),
+                                    );
                                   });
                                 },
                               ),
@@ -1032,6 +1055,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                     }
                                     setState(() {
                                       _selectedTypeFilter = type;
+                                      _pruneSelectionToProjects(
+                                        _filteredProjects(projects),
+                                      );
                                     });
                                   },
                                 ),
@@ -1076,6 +1102,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             _selectedSortMode = _ProjectSortMode.updatedNewest;
                             _searchQuery = '';
                             _searchController.clear();
+                            _pruneSelectionToProjects(
+                              _filteredProjects(projects),
+                            );
                           });
                         },
                         child: const Text('Reset'),
@@ -1246,7 +1275,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       _isSelectionMode
-                          ? 'Selected ${selectedIdsForCurrentProjects.length} of ${projects.length} projects'
+                          ? 'Selected $selectedCount of ${filteredProjects.length} projects'
                           : 'Showing ${filteredProjects.length} of ${projects.length} projects',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
@@ -1258,9 +1287,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 return _ProjectCard(
                   project: project,
                   selectionMode: _isSelectionMode,
-                  isSelected: selectedIdsForCurrentProjects.contains(
-                    project.id,
-                  ),
+                  isSelected: selectedIds.contains(project.id),
                   onSelectionChanged: (isSelected) {
                     _setProjectSelected(
                       projectId: project.id,

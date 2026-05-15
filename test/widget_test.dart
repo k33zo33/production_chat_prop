@@ -460,6 +460,287 @@ void main() {
     expect(find.text('No projects yet'), findsOneWidget);
   });
 
+  testWidgets(
+    'bulk project selection prunes hidden matches before destructive actions',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      final initialProjects = await container.read(
+        projectsControllerProvider.future,
+      );
+      final sortedProjects = [...initialProjects]
+        ..sort((left, right) => left.name.compareTo(right.name));
+      final adProject = sortedProjects.first;
+      final otherProject = sortedProjects.last;
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .setProjectType(
+            projectId: adProject.id,
+            type: ProjectType.ad,
+          );
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(800, 900),
+        child: const ProjectListScreen(),
+      );
+
+      await tester.tap(
+        find.byKey(const Key('toggleProjectSelectionModeButton')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 selected'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.text('Selected 1 of 1 projects'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('deleteSelectedProjectsButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        find.textContaining('Deleted 1 selected project.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(Key('projectCard_${adProject.id}')), findsNothing);
+      expect(find.byKey(Key('projectCard_${otherProject.id}')), findsNothing);
+      expect(find.text('No projects match current filters.'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('projectTypeFilter_all')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(Key('projectCard_${otherProject.id}')), findsOneWidget);
+      expect(find.text('Type: Other'), findsOneWidget);
+      expect(
+        container
+            .read(projectsControllerProvider)
+            .asData!
+            .value
+            .any((project) => project.id == otherProject.id),
+        isTrue,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'bulk project selection prunes hidden search matches before destructive actions',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final sortedProjects = [...projects]
+        ..sort((left, right) => left.name.compareTo(right.name));
+      final firstProject = sortedProjects.first;
+      final secondProject = sortedProjects.last;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(800, 900),
+        child: const ProjectListScreen(),
+      );
+
+      await tester.tap(
+        find.byKey(const Key('toggleProjectSelectionModeButton')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 selected'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        secondProject.name,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsOneWidget);
+      expect(find.text('Selected 1 of 1 projects'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('deleteSelectedProjectsButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        find.textContaining('Deleted 1 selected project.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(Key('projectCard_${secondProject.id}')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('projectResetFiltersButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(Key('projectCard_${firstProject.id}')), findsOneWidget);
+      expect(find.byKey(Key('projectCard_${secondProject.id}')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'bulk project selection exits when filters hide every visible project',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(800, 900),
+        child: const ProjectListScreen(),
+      );
+
+      await tester.tap(
+        find.byKey(const Key('toggleProjectSelectionModeButton')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project List'), findsOneWidget);
+      expect(find.byKey(const Key('newProjectFab')), findsOneWidget);
+      expect(
+        find.byKey(const Key('exitProjectSelectionModeButton')),
+        findsNothing,
+      );
+      expect(find.text('No projects match current filters.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'bulk project selection exits when search hides every visible project',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(800, 900),
+        child: const ProjectListScreen(),
+      );
+
+      await tester.tap(
+        find.byKey(const Key('toggleProjectSelectionModeButton')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 selected'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'missing project',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project List'), findsOneWidget);
+      expect(find.byKey(const Key('newProjectFab')), findsOneWidget);
+      expect(
+        find.byKey(const Key('exitProjectSelectionModeButton')),
+        findsNothing,
+      );
+      expect(find.text('No projects match current filters.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'bulk project selection exits cleanly when type filter removes updated results',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      final initialProjects = await container.read(
+        projectsControllerProvider.future,
+      );
+      final sortedProjects = [...initialProjects]
+        ..sort((left, right) => left.name.compareTo(right.name));
+      final adProject = sortedProjects.first;
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .setProjectType(
+            projectId: adProject.id,
+            type: ProjectType.ad,
+          );
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(800, 900),
+        child: const ProjectListScreen(),
+      );
+
+      await tester.tap(find.byKey(const Key('projectTypeFilter_ad')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('toggleProjectSelectionModeButton')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('selectAllProjectsButton')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('setSelectedProjectsTypeButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Set Type: Series').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Updated 1 selected project to type Series.'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('toggleProjectSelectionModeButton')),
+        findsOneWidget,
+      );
+      expect(find.text('Project List'), findsOneWidget);
+      expect(find.text('No projects match current filters.'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('projectTypeFilter_all')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(Key('projectCard_${adProject.id}')), findsOneWidget);
+      expect(find.text('Type: Series'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('bulk project selection sets type for selected projects', (
     tester,
   ) async {
@@ -1952,8 +2233,9 @@ void main() {
       );
 
       container
-          .read(sceneSelectionProvider(projectId).notifier)
-          .selectedSceneId = secondSceneId;
+              .read(sceneSelectionProvider(projectId).notifier)
+              .selectedSceneId =
+          secondSceneId;
       await tester.pump();
       await tester.pumpAndSettle();
 
@@ -2827,8 +3109,9 @@ void main() {
       );
 
       container
-          .read(sceneSelectionProvider(projectId).notifier)
-          .selectedSceneId = secondSceneId;
+              .read(sceneSelectionProvider(projectId).notifier)
+              .selectedSceneId =
+          secondSceneId;
       await tester.pump();
       await tester.pumpAndSettle();
 
