@@ -120,6 +120,11 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
 
     final activeProjectId = widget.projectId!;
     final snapshotState = ref.watch(sceneSnapshotProvider(activeProjectId));
+    final selectedSceneId = ref.watch(sceneSelectionProvider(activeProjectId));
+    // Prefer the scene already resolved by the snapshot so navigation matches
+    // the scene currently shown in playback, including stale-selection fallbacks.
+    final effectiveSceneId =
+        snapshotState.asData?.value?.scene?.id ?? selectedSceneId;
 
     return Scaffold(
       appBar: AppBar(
@@ -127,6 +132,7 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
         actions: _buildAppBarActions(
           context,
           activeProjectId: activeProjectId,
+          selectedSceneId: effectiveSceneId,
           isCompactAppBar: isCompactAppBar,
         ),
       ),
@@ -183,6 +189,7 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
   List<Widget> _buildAppBarActions(
     BuildContext context, {
     required String activeProjectId,
+    required String? selectedSceneId,
     required bool isCompactAppBar,
   }) {
     if (!isCompactAppBar) {
@@ -193,6 +200,7 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
           onPressed: () => context.goNamed(
             'editorProject',
             pathParameters: {'projectId': activeProjectId},
+            queryParameters: _editorRouteQueryParameters(selectedSceneId),
           ),
           icon: const Icon(Icons.chat_bubble_outline_rounded),
         ),
@@ -214,6 +222,7 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
               context.goNamed(
                 'editorProject',
                 pathParameters: {'projectId': activeProjectId},
+                queryParameters: _editorRouteQueryParameters(selectedSceneId),
               );
               return;
             case _PlaybackAppBarAction.backToProjects:
@@ -239,6 +248,14 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
 enum _PlaybackAppBarAction {
   openChatEditor,
   backToProjects,
+}
+
+Map<String, String> _editorRouteQueryParameters(String? sceneId) {
+  if (sceneId == null) {
+    return const <String, String>{};
+  }
+
+  return {'sceneId': sceneId};
 }
 
 class _PlaybackTimeline extends ConsumerStatefulWidget {
@@ -364,6 +381,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       onPressed: () => context.goNamed(
         'editorProject',
         pathParameters: {'projectId': project.id},
+        queryParameters: _editorRouteQueryParameters(scene?.id),
       ),
       icon: const Icon(Icons.chat_bubble_outline_rounded),
       label: const Text('Open Chat Editor'),

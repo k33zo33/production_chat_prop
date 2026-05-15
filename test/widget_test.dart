@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/app/app.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
@@ -2465,6 +2466,196 @@ void main() {
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'playback app bar navigation keeps the currently selected scene',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(960, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+      await _openPlaybackFromProjectList(tester, projectName: 'Demo Project 1');
+
+      await tester.tap(find.byKey(const Key('playbackSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('playbackAppBarOpenEditorButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Scene summary: 2 characters • 3 messages • max 8s',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'playback open editor defaults to the first scene before manual selection',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(960, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+      await _openPlaybackFromProjectList(tester, projectName: 'Demo Project 1');
+
+      final openEditorButton = find.byKey(
+        const Key('playbackOpenEditorButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, openEditorButton);
+      await tester.tap(openEditorButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'compact playback overflow open editor keeps the currently selected scene',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final router = GoRouter(
+        initialLocation: '/playback/$projectId',
+        routes: [
+          GoRoute(
+            path: '/playback/:projectId',
+            name: 'playbackProject',
+            builder: (context, state) => MediaQuery(
+              data: const MediaQueryData(size: Size(390, 844)),
+              child: PlaybackScreen(
+                projectId: state.pathParameters['projectId'],
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/editor/:projectId',
+            name: 'editorProject',
+            builder: (context, state) => MediaQuery(
+              data: const MediaQueryData(size: Size(390, 844)),
+              child: ChatEditorScreen(
+                projectId: state.pathParameters['projectId'],
+                initialSceneId: state.uri.queryParameters['sceneId'],
+                forceCompactLayout: true,
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('compactPlaybackSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('playbackOverflowMenuButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Chat Editor').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Scene summary: 2 characters • 3 messages • max 8s',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'playback footer open editor keeps the currently selected scene',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(960, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+      await _openPlaybackFromProjectList(tester, projectName: 'Demo Project 1');
+
+      await tester.tap(find.byKey(const Key('playbackSceneDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Scene 2 - Rolling').last);
+      await tester.pumpAndSettle();
+
+      final openEditorButton = find.byKey(
+        const Key('playbackOpenEditorButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, openEditorButton);
+      await tester.tap(openEditorButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chat Editor'), findsOneWidget);
+      expect(find.text('Scene: Scene 2 - Rolling'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Scene summary: 2 characters • 3 messages • max 8s',
+        ),
+        findsOneWidget,
+      );
     },
   );
 
