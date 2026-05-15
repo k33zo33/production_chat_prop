@@ -1825,9 +1825,39 @@ Future<void> _downloadProjectJson(
     return;
   }
 
+  if (result.failure == ProjectPackageExportFailure.downloadUnavailable) {
+    try {
+      await Clipboard.setData(ClipboardData(text: result.jsonText));
+    } on PlatformException {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Project package export failed: download and clipboard are unavailable on this platform.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Download unavailable. Project package JSON copied to clipboard.',
+        ),
+      ),
+    );
+    return;
+  }
+
   final message = result.isSuccess
       ? 'Project package exported: ${result.filename}.'
-      : 'Project package export failed: download is not available on this platform.';
+      : 'Project package export failed.';
   ScaffoldMessenger.of(
     context,
   ).showSnackBar(SnackBar(content: Text(message)));

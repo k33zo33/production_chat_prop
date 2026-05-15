@@ -29,12 +29,12 @@ void main() {
 
     expect(result.isSuccess, isTrue);
     expect(result.filename, capturedFilename);
+    expect(result.jsonText, utf8.decode(capturedBytes!));
     expect(capturedMimeType, 'application/json');
     expect(capturedFilename, startsWith('pcp_project_export_project_'));
     expect(capturedFilename, endsWith('.json'));
 
-    final decoded =
-        jsonDecode(utf8.decode(capturedBytes!)) as Map<String, dynamic>;
+    final decoded = jsonDecode(result.jsonText) as Map<String, dynamic>;
     final meta = decoded['meta'] as Map<String, dynamic>;
     final project = decoded['project'] as Map<String, dynamic>;
 
@@ -60,7 +60,8 @@ void main() {
 
       expect(result.isSuccess, isFalse);
       expect(result.failure, ProjectPackageExportFailure.downloadUnavailable);
-      expect(result.filename, isNull);
+      expect(result.filename, startsWith('pcp_project_export_project_'));
+      expect(result.jsonText, contains('"format": "project_package"'));
     },
   );
 
@@ -82,6 +83,29 @@ void main() {
     expect(result.isSuccess, isTrue);
     expect(capturedFilename, startsWith('pcp_project_project_'));
   });
+
+  test(
+    'buildProjectPackageJson returns readable payload without downloader',
+    () {
+      final service = ProjectPackageExportService();
+
+      final decoded =
+          jsonDecode(
+                service.buildProjectPackageJson(project: _sampleProject()),
+              )
+              as Map<String, dynamic>;
+
+      expect(decoded['project'], isA<Map<String, dynamic>>());
+      expect(
+        (decoded['meta'] as Map<String, dynamic>)['format'],
+        'project_package',
+      );
+      expect(
+        ((decoded['project'] as Map<String, dynamic>)['scenes'] as List).length,
+        1,
+      );
+    },
+  );
 }
 
 Project _sampleProject({String name = 'Export Project'}) {

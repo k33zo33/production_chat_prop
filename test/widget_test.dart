@@ -585,8 +585,26 @@ void main() {
   });
 
   testWidgets(
-    'project popup download json shows fallback feedback on unsupported platform',
+    'project popup download json copies fallback payload on unsupported platform',
     (tester) async {
+      String? clipboardText;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            ..setMockMethodCallHandler(SystemChannels.platform, (
+              methodCall,
+            ) async {
+              if (methodCall.method == 'Clipboard.setData') {
+                final arguments = methodCall.arguments;
+                if (arguments is Map) {
+                  clipboardText = arguments['text'] as String?;
+                }
+              }
+              return null;
+            });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
       await tester.pumpWidget(
         const ProviderScope(child: ProductionChatPropApp()),
       );
@@ -609,7 +627,56 @@ void main() {
 
       expect(
         find.text(
-          'Project package export failed: download is not available on this platform.',
+          'Download unavailable. Project package JSON copied to clipboard.',
+        ),
+        findsOneWidget,
+      );
+      expect(clipboardText, isNotNull);
+      expect(clipboardText, contains('"format": "project_package"'));
+      expect(clipboardText, contains('"name": "New Project 1"'));
+    },
+  );
+
+  testWidgets(
+    'project popup download json shows error when clipboard fallback also fails',
+    (tester) async {
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            ..setMockMethodCallHandler(SystemChannels.platform, (
+              methodCall,
+            ) async {
+              if (methodCall.method == 'Clipboard.setData') {
+                throw PlatformException(code: 'clipboard-unavailable');
+              }
+              return null;
+            });
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _scrollProjectListToCards(tester);
+
+      await _openProjectMenuForProject(
+        tester,
+        'New Project 1',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Download JSON').last);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        find.text(
+          'Project package export failed: download and clipboard are unavailable on this platform.',
         ),
         findsOneWidget,
       );

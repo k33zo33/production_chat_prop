@@ -11,20 +11,31 @@ enum ProjectPackageExportFailure {
 class ProjectPackageExportResult {
   const ProjectPackageExportResult._({
     required this.isSuccess,
+    required this.jsonText,
     this.failure,
     this.filename,
   });
 
-  const ProjectPackageExportResult.success({required String filename})
-    : this._(isSuccess: true, filename: filename);
+  const ProjectPackageExportResult.success({
+    required String filename,
+    required String jsonText,
+  }) : this._(isSuccess: true, filename: filename, jsonText: jsonText);
 
   const ProjectPackageExportResult.failure({
     required ProjectPackageExportFailure failure,
-  }) : this._(isSuccess: false, failure: failure);
+    required String jsonText,
+    String? filename,
+  }) : this._(
+         isSuccess: false,
+         failure: failure,
+         filename: filename,
+         jsonText: jsonText,
+       );
 
   final bool isSuccess;
   final ProjectPackageExportFailure? failure;
   final String? filename;
+  final String jsonText;
 }
 
 class ProjectPackageExportService {
@@ -33,13 +44,17 @@ class ProjectPackageExportService {
 
   final BytesDownloader _downloader;
 
+  String buildProjectPackageJson({required Project project}) {
+    return const JsonEncoder.withIndent('  ').convert(
+      _buildPayload(project: project),
+    );
+  }
+
   Future<ProjectPackageExportResult> exportProjectPackage({
     required Project project,
   }) async {
-    final payload = _buildPayload(project: project);
-    final encoded = utf8.encode(
-      const JsonEncoder.withIndent('  ').convert(payload),
-    );
+    final jsonText = buildProjectPackageJson(project: project);
+    final encoded = utf8.encode(jsonText);
     final filename = _buildFileName(projectName: project.name);
 
     final isDownloaded = await _downloader(
@@ -48,12 +63,17 @@ class ProjectPackageExportService {
       mimeType: 'application/json',
     );
     if (!isDownloaded) {
-      return const ProjectPackageExportResult.failure(
+      return ProjectPackageExportResult.failure(
         failure: ProjectPackageExportFailure.downloadUnavailable,
+        filename: filename,
+        jsonText: jsonText,
       );
     }
 
-    return ProjectPackageExportResult.success(filename: filename);
+    return ProjectPackageExportResult.success(
+      filename: filename,
+      jsonText: jsonText,
+    );
   }
 
   Map<String, dynamic> _buildPayload({required Project project}) {
