@@ -104,6 +104,12 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
     final activeProjectId = widget.projectId!;
     final snapshotState = ref.watch(sceneSnapshotProvider(activeProjectId));
     final selectedSceneId = ref.watch(sceneSelectionProvider(activeProjectId));
+    // Prefer the scene already resolved by the snapshot so navigation matches
+    // the scene currently shown in the editor, including stale-selection
+    // fallbacks from invalid deep links or removed scenes.
+    final effectiveSceneId =
+        snapshotState.asData?.value?.scene?.id ?? selectedSceneId;
+    final canOpenPlayback = snapshotState.asData?.value != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -111,8 +117,9 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
         actions: _buildAppBarActions(
           context,
           activeProjectId: activeProjectId,
-          selectedSceneId: selectedSceneId,
+          selectedSceneId: effectiveSceneId,
           isCompactAppBar: isCompactAppBar,
+          canOpenPlayback: canOpenPlayback,
         ),
       ),
       body: SafeArea(
@@ -166,17 +173,22 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
     required String activeProjectId,
     required String? selectedSceneId,
     required bool isCompactAppBar,
+    required bool canOpenPlayback,
   }) {
     if (!isCompactAppBar) {
       return [
         IconButton(
           key: const Key('chatEditorAppBarOpenPlaybackButton'),
           tooltip: 'Open Playback',
-          onPressed: () => context.goNamed(
-            'playbackProject',
-            pathParameters: {'projectId': activeProjectId},
-            queryParameters: _playbackRouteQueryParameters(selectedSceneId),
-          ),
+          onPressed: canOpenPlayback
+              ? () => context.goNamed(
+                  'playbackProject',
+                  pathParameters: {'projectId': activeProjectId},
+                  queryParameters: _playbackRouteQueryParameters(
+                    selectedSceneId,
+                  ),
+                )
+              : null,
           icon: const Icon(Icons.play_circle_outline_rounded),
         ),
         IconButton(
@@ -205,12 +217,13 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
               return;
           }
         },
-        itemBuilder: (context) => const [
+        itemBuilder: (context) => [
           PopupMenuItem(
             value: _ChatEditorAppBarAction.openPlayback,
-            child: Text('Open Playback'),
+            enabled: canOpenPlayback,
+            child: const Text('Open Playback'),
           ),
-          PopupMenuItem(
+          const PopupMenuItem(
             value: _ChatEditorAppBarAction.backToProjects,
             child: Text('Back to Projects'),
           ),

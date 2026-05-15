@@ -1884,6 +1884,132 @@ void main() {
     },
   );
 
+  testWidgets(
+    'chat editor app bar playback action normalizes stale deep-link scene ids',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(960, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final project = (await container.read(
+        projectsControllerProvider.future,
+      )).singleWhere((candidate) => candidate.id == projectId);
+      final primarySceneId = project.scenes.first.id;
+      String? playbackSceneId;
+
+      final router = GoRouter(
+        initialLocation: '/editor/$projectId?sceneId=missing-scene',
+        routes: [
+          GoRoute(
+            path: '/editor/:projectId',
+            name: 'editorProject',
+            builder: (context, state) => ChatEditorScreen(
+              projectId: state.pathParameters['projectId'],
+              initialSceneId: state.uri.queryParameters['sceneId'],
+            ),
+          ),
+          GoRoute(
+            path: '/playback/:projectId',
+            name: 'playbackProject',
+            builder: (context, state) {
+              playbackSceneId = state.uri.queryParameters['sceneId'];
+              return const Scaffold(body: Text('Playback Stub'));
+            },
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const Key('chatEditorAppBarOpenPlaybackButton')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback Stub'), findsOneWidget);
+      expect(playbackSceneId, primarySceneId);
+    },
+  );
+
+  testWidgets(
+    'compact editor overflow playback action normalizes stale deep-link scene ids',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final project = (await container.read(
+        projectsControllerProvider.future,
+      )).singleWhere((candidate) => candidate.id == projectId);
+      final primarySceneId = project.scenes.first.id;
+      String? playbackSceneId;
+
+      final router = GoRouter(
+        initialLocation: '/editor/$projectId?sceneId=missing-scene',
+        routes: [
+          GoRoute(
+            path: '/editor/:projectId',
+            name: 'editorProject',
+            builder: (context, state) => MediaQuery(
+              data: const MediaQueryData(size: Size(390, 844)),
+              child: ChatEditorScreen(
+                projectId: state.pathParameters['projectId'],
+                initialSceneId: state.uri.queryParameters['sceneId'],
+                forceCompactLayout: true,
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/playback/:projectId',
+            name: 'playbackProject',
+            builder: (context, state) {
+              playbackSceneId = state.uri.queryParameters['sceneId'];
+              return const Scaffold(body: Text('Playback Stub'));
+            },
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene: Scene 1 - Prep Chat'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('chatEditorOverflowMenuButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open Playback').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback Stub'), findsOneWidget);
+      expect(playbackSceneId, primarySceneId);
+    },
+  );
+
   testWidgets('compact scene settings dialog stays usable on narrow screens', (
     tester,
   ) async {
