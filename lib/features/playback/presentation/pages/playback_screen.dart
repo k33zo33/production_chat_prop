@@ -643,6 +643,48 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       videoExportFallbackService: videoExportFallbackService,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Container(
+                    key: const Key('videoExportWorkflowHint'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Video export beta workflow',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Export Video currently saves a documented .json handoff package instead of a final encoded video file.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'The package keeps the selected scene, aspect ratio, device-frame option, and clean-preview setting aligned for downstream render.',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -2866,6 +2866,11 @@ void main() {
       find.text('Keyboard: Space play/pause • ←/→ seek • R restart'),
       findsNothing,
     );
+    expect(find.byKey(const Key('videoExportWorkflowHint')), findsOneWidget);
+    expect(
+      find.textContaining('documented .json handoff package'),
+      findsOneWidget,
+    );
 
     final exportScreenshotButton = find.byKey(
       const Key('exportScreenshotButton'),
