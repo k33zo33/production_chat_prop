@@ -126,6 +126,7 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
     // the scene currently shown in playback, including stale-selection fallbacks.
     final effectiveSceneId =
         snapshotState.asData?.value?.scene?.id ?? selectedSceneId;
+    final canOpenEditor = snapshotState.asData?.value != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -135,6 +136,7 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
           activeProjectId: activeProjectId,
           selectedSceneId: effectiveSceneId,
           isCompactAppBar: isCompactAppBar,
+          canOpenEditor: canOpenEditor,
         ),
       ),
       body: SafeArea(
@@ -192,17 +194,20 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
     required String activeProjectId,
     required String? selectedSceneId,
     required bool isCompactAppBar,
+    required bool canOpenEditor,
   }) {
     if (!isCompactAppBar) {
       return [
         IconButton(
           key: const Key('playbackAppBarOpenEditorButton'),
           tooltip: 'Open Chat Editor',
-          onPressed: () => context.goNamed(
-            'editorProject',
-            pathParameters: {'projectId': activeProjectId},
-            queryParameters: _editorRouteQueryParameters(selectedSceneId),
-          ),
+          onPressed: canOpenEditor
+              ? () => context.goNamed(
+                  'editorProject',
+                  pathParameters: {'projectId': activeProjectId},
+                  queryParameters: _editorRouteQueryParameters(selectedSceneId),
+                )
+              : null,
           icon: const Icon(Icons.chat_bubble_outline_rounded),
         ),
         IconButton(
@@ -231,12 +236,13 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
               return;
           }
         },
-        itemBuilder: (context) => const [
+        itemBuilder: (context) => [
           PopupMenuItem(
             value: _PlaybackAppBarAction.openChatEditor,
-            child: Text('Open Chat Editor'),
+            enabled: canOpenEditor,
+            child: const Text('Open Chat Editor'),
           ),
-          PopupMenuItem(
+          const PopupMenuItem(
             value: _PlaybackAppBarAction.backToProjects,
             child: Text('Back to Projects'),
           ),

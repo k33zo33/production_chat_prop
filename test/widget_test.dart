@@ -1629,6 +1629,59 @@ void main() {
     },
   );
 
+  testWidgets(
+    'playback app bar disables open editor when the project is missing',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: PlaybackScreen(projectId: 'missing-project'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project not found.'), findsOneWidget);
+
+      final openEditorButton = tester.widget<IconButton>(
+        find.byKey(const Key('playbackAppBarOpenEditorButton')),
+      );
+      expect(openEditorButton.onPressed, isNull);
+    },
+  );
+
+  testWidgets(
+    'compact playback overflow disables open editor when the project is missing',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const PlaybackScreen(projectId: 'missing-project'),
+      );
+
+      expect(find.text('Project not found.'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('playbackOverflowMenuButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open Chat Editor'), findsOneWidget);
+
+      await tester.tap(find.text('Open Chat Editor'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PlaybackScreen), findsOneWidget);
+      expect(find.text('Project not found.'), findsOneWidget);
+      expect(find.text('Open Chat Editor'), findsOneWidget);
+    },
+  );
+
   testWidgets('compact import project dialog stays usable on narrow screens', (
     tester,
   ) async {
