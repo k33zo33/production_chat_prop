@@ -1,0 +1,19 @@
+services:
+  desktop:
+    build:
+      context: .
+      dockerfile: docker/desktop/Dockerfile
+    image: production-chat-prop-desktop:local
+    ports:
+      - "127.0.0.1:6080:6080"
+      - "127.0.0.1:5900:5900"
+    environment:
+      VNC_GEOMETRY: "1440x900x24"
+      NOVNC_PORT: "6080"
+      VNC_PORT: "5900"
+    shm_size: "1gb"
+    volumes:
+      - desktop_config:/home/appuser/.config
+
+volumes:
+  desktop_config:

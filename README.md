@@ -52,6 +52,36 @@ Ako `flutter` nije globalno na PATH-u, koristi apsolutnu putanju:
 /home/server/flutter/bin/flutter run -d web-server
 ```
 
+## Desktop u Dockeru
+
+Desktop varijanta koristi službeni Flutter Linux scaffold i pokreće aplikaciju u Docker kontejneru preko virtualnog X ekrana. GUI je dostupan kroz noVNC u browseru, tako da na hostu ne treba imati Flutter desktop toolchain.
+
+Sigurnosna napomena: ovaj setup je namijenjen lokalnom developmentu na istom računalu. noVNC i VNC portovi su sada vezani samo na `127.0.0.1`; ne izlaži ih dalje bez dodatne autentikacije/proxy sloja.
+
+```bash
+./tool/desktop_docker.sh
+```
+
+Za brzi health/smoke check Docker desktop flowa bez ručnog otvaranja preglednika koristi:
+
+```bash
+./tool/desktop_smoke.sh
+```
+
+Nakon što se image izgradi i aplikacija pokrene, otvori:
+
+```text
+http://localhost:6080/vnc.html?host=localhost&port=6080&autoconnect=true&resize=remote
+```
+
+Direktna Compose komanda je:
+
+```bash
+docker compose -f docker-compose.desktop.yml up --build
+```
+
+Kontejner expose-a i VNC port `5900` samo na `localhost`. Lokalni app podaci spremaju se u Docker volume `production_chat_prop_desktop_config`.
+
 ## Quality Gate
 
 GitHub Actions i lokalni beta handoff koriste isti redoslijed:
@@ -69,6 +99,7 @@ Najčešće komande:
 ./tool/import_smoke.sh
 ./tool/release_smoke.sh
 ./tool/compact_smoke.sh
+./tool/desktop_smoke.sh
 ./tool/verify.sh
 ./tool/beta_handoff.sh
 ```
