@@ -113,14 +113,20 @@ checks = [
      'README quality gate sequence is missing import_smoke or is out of date'),
     ('./tool/import_smoke.sh' in readme,
      'README common commands should mention ./tool/import_smoke.sh'),
+    ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
+     'README should mention the separate desktop_smoke gate'),
     (expected_sequence in web_done,
      'docs/05-web-done-checklist.md should describe the current beta handoff order'),
+    ('./tool/desktop_smoke.sh' in web_done,
+     'docs/05-web-done-checklist.md should mention the desktop smoke gate'),
     ('IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"' in beta_handoff,
      'tool/beta_handoff.sh must define the import smoke gate'),
     (re.search(r'echo "\[beta-handoff\] import/recovery preflight"\s*\n"\$IMPORT_SMOKE_SCRIPT"', beta_handoff) is not None,
      'tool/beta_handoff.sh must execute the import smoke gate after the import/recovery preflight label'),
     ('run: ./tool/beta_handoff.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
+    ('desktop_smoke:' in workflow and 'run: ./tool/desktop_smoke.sh' in workflow,
+     'GitHub Actions should keep invoking ./tool/desktop_smoke.sh in the desktop_smoke job'),
 ]
 
 for passed, message in checks:
@@ -220,6 +226,7 @@ assert_names_exist(
 
 print('[docs-handoff-smoke] validated README/docs/workflow beta handoff alignment')
 print(f'[docs-handoff-smoke] sequence: {expected_sequence}')
+print('[docs-handoff-smoke] desktop smoke documentation/workflow checks are in sync')
 print('[docs-handoff-smoke] smoke script test-name catalogs are in sync')
 PY
 

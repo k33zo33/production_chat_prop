@@ -40,3 +40,14 @@ jobs:
           name: production-chat-prop-web
           path: build/web
           if-no-files-found: error
+
+  desktop_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run desktop Docker smoke gate
+        run: ./tool/desktop_smoke.sh
