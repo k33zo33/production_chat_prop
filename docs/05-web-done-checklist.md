@@ -52,6 +52,7 @@ These are not current blockers for the automated web gate, but are sensible next
 
 - [ ] Small web polish/release pass (spacing, typography, visual consistency audit)
 - [ ] Manual export QA on real browser session for PNG/video output quality and browser-specific download/clipboard behavior
+- [x] Video fallback handoff is now explicitly documented for downstream render users (`11-video-fallback-workflow.md`)
 - [x] Short demo flow / smoke checklist for stakeholder review (`07-demo-script.md`, `08-web-smoke-checklist.md`)
 - [ ] Decide whether next phase is mobile kickoff or extra web polish
 
@@ -60,7 +61,7 @@ These are not current blockers for the automated web gate, but are sensible next
 1. Run `./tool/beta_handoff.sh` for the standard beta preflight order (`web_shell_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`)
 2. Run the quick browser pass from `08-web-smoke-checklist.md`
 3. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
-4. Run the focused export pass from `04-export-qa-checklist.md`
+4. Run the focused export pass from `04-export-qa-checklist.md` and keep `11-video-fallback-workflow.md` alongside the handoff
 5. If all four are clean, treat web MVP as functionally ready and choose between:
    - mobile kickoff, or
    - one final web polish-only pass
@@ -72,6 +73,7 @@ Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 ## Latest verification snapshot
 
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
+- video fallback export now has a dedicated handoff explainer so beta users know that `Export Video` currently emits a documented `.json` render package rather than a final encoded movie file
 - `bash tool/demo_smoke.sh` now covers the core beta walkthrough path plus portfolio-readiness CTA navigation and import/export handoff regressions before the heavier release gates
 - `bash tool/import_smoke.sh` now catches JSON import, sanitizer, and persisted-project recovery regressions before export/mobile passes
 - `bash tool/compact_smoke.sh` passed for targeted compact/export regressions, including narrow project-list search/filter/sort controls, portfolio-readiness CTA flows, and stale-link recovery paths

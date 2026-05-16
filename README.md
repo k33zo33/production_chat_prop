@@ -22,7 +22,7 @@ Production Chat Prop je Flutter web-first MVP za kreiranje i reprodukciju simuli
   - PNG screenshot export pipeline (web download + fallback poruka)
   - video fallback package export (`.json`) za post-produkcijski workflow
   - kontrola scene omjera 9:16 / 16:9 u Playbacku
-- Sprint 5 polish (u tijeku):
+- Sprint 5 feature scope isporučen; završni release-gate QA/polish je i dalje aktivan:
   - demo seed akcija iz Project Lista (`Add Demo Project`) za brzi showcase flow
   - empty-state quick actions (`Create Project`, `Load Demo Project`)
   - scene style presetovi (`studio_default`, `cleanroom_day`, `night_shift`, `warm_paper`)
@@ -113,7 +113,9 @@ Napomene:
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`
+  - `docs/11-video-fallback-workflow.md`
 - Standardni ručni import/export QA sample je `docs/fixtures/export-qa-project.json`.
+- Trenutni `Export Video` workflow isporučuje dokumentirani `.json` handoff paket za downstream render, ne gotovi video file iz samog appa.
 
 ## Demo Flow
 
@@ -155,3 +157,4 @@ Izvor istine za scope i arhitekturu nalazi se u `docs/`:
 - `07-demo-script.md`
 - `08-web-smoke-checklist.md`
 - `09-compact-smoke-checklist.md`
+- `11-video-fallback-workflow.md`

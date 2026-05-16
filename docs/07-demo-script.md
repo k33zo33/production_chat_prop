@@ -33,6 +33,7 @@ U 2-3 minute pokazati tri MVP use-casea:
 - pokaži `Export readiness`
 - klikni `Export Screenshot` ili `Export Video`
 - objasni fallback ponašanje na platformama bez direktnog download/export supporta
+- ako pokazuješ `Export Video`, reci jasno da beta MVP trenutno izvozi dokumentirani `.json` handoff paket za downstream render (`docs/11-video-fallback-workflow.md`), ne gotovi encoded video iz samog appa
 
 ## Završna poruka (10s)
 "Production Chat Prop omogućuje produkcijskom timu da od ideje do playback-ready chata dođe u nekoliko minuta, uz predvidljiv output za set i post-produkciju."

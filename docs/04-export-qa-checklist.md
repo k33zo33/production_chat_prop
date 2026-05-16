@@ -25,6 +25,8 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
   - [ ] sadržaj odgovara trenutnom previewu, uključujući frame/clean toggle stanje (timeline, status chipovi, typing)
 
 ## 3) Video fallback export (`.json`)
+Referenca za expected downstream handoff: `docs/11-video-fallback-workflow.md`
+
 - [ ] Ostati na `Scene 1 - Hero Portrait` ili prebaciti na `Scene 2 - Hero Landscape`
 - [ ] Kliknuti `Export Video`
 - [ ] Provjeriti:
@@ -60,4 +62,5 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 - [ ] `flutter analyze` prolazi bez issuea
 - [ ] `flutter test` prolazi
 - [ ] `flutter build web` prolazi
+- [ ] video fallback handoff iz `docs/11-video-fallback-workflow.md` je jasan osobi koja preuzima export paket
 - [ ] ručni QA iz ove liste odrađen barem jednom prije release/deploy odluke
