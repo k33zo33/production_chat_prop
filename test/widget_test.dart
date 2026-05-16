@@ -2995,10 +2995,10 @@ void main() {
           .seekBy(delta: 5, maxSecond: 11);
       await tester.pumpAndSettle();
 
-      expect(
-        find.textContaining('t=5s / 11 s', skipOffstage: false),
-        findsOneWidget,
+      final playbackState = container.read(
+        playbackControllerProvider(projectId),
       );
+      expect(playbackState.currentSecond, 5);
 
       await tester.tap(find.byKey(const Key('compactPlaybackSceneDropdown')));
       await tester.pumpAndSettle();
@@ -3011,16 +3011,28 @@ void main() {
         find.textContaining('Scene ratio: 16:9', skipOffstage: false),
         findsOneWidget,
       );
-      expect(
-        find.textContaining('t=0s / 8 s', skipOffstage: false),
-        findsOneWidget,
+      final switchedPlaybackState = container.read(
+        playbackControllerProvider(projectId),
+      );
+      expect(switchedPlaybackState.currentSecond, 0);
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackStatusSummary')),
+      );
+      final switchedStatusSummary = tester.widget<Text>(
+        find.byKey(const Key('playbackStatusSummary')),
+      );
+      expect(switchedStatusSummary.data, contains('t=0s / 8 s'));
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackProgressSummary')),
+      );
+      final progressSummary = tester.widget<Text>(
+        find.byKey(const Key('playbackProgressSummary')),
       );
       expect(
-        find.textContaining(
-          'Progress: 0% • Visible messages: 1/3',
-          skipOffstage: false,
-        ),
-        findsOneWidget,
+        progressSummary.data,
+        contains('Progress: 0% • Visible messages: 1/3'),
       );
     },
   );
@@ -3056,10 +3068,10 @@ void main() {
           .seekBy(delta: 5, maxSecond: 11);
       await tester.pumpAndSettle();
 
-      expect(
-        find.textContaining('t=5s / 11 s', skipOffstage: false),
-        findsOneWidget,
+      final playbackState = container.read(
+        playbackControllerProvider(projectId),
       );
+      expect(playbackState.currentSecond, 5);
 
       await tester.tap(find.byKey(const Key('playbackSceneDropdown')));
       await tester.pumpAndSettle();
@@ -3071,16 +3083,28 @@ void main() {
         find.textContaining('Scene ratio: 16:9', skipOffstage: false),
         findsOneWidget,
       );
-      expect(
-        find.textContaining('t=0s / 8 s', skipOffstage: false),
-        findsOneWidget,
+      final switchedPlaybackState = container.read(
+        playbackControllerProvider(projectId),
+      );
+      expect(switchedPlaybackState.currentSecond, 0);
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackStatusSummary')),
+      );
+      final switchedStatusSummary = tester.widget<Text>(
+        find.byKey(const Key('playbackStatusSummary')),
+      );
+      expect(switchedStatusSummary.data, contains('t=0s / 8 s'));
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackProgressSummary')),
+      );
+      final progressSummary = tester.widget<Text>(
+        find.byKey(const Key('playbackProgressSummary')),
       );
       expect(
-        find.textContaining(
-          'Progress: 0% • Visible messages: 1/3',
-          skipOffstage: false,
-        ),
-        findsOneWidget,
+        progressSummary.data,
+        contains('Progress: 0% • Visible messages: 1/3'),
       );
       expect(tester.takeException(), isNull);
     },
@@ -5857,7 +5881,10 @@ void main() {
       find.text('Screenshot exported as fake_capture.png.'),
       findsOneWidget,
     );
-    expect(find.byKey(const Key('cleanPreviewHeader')), findsOneWidget);
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      find.byKey(const Key('cleanPreviewHeader')),
+    );
     expect(find.text('Playback Timeline (read-only)'), findsNothing);
     expect(find.text('INCOMING'), findsNothing);
     expect(find.text('OUTGOING'), findsNothing);
@@ -6206,13 +6233,6 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining(
-          'No messages available for playback yet',
-          skipOffstage: false,
-        ),
-        findsOneWidget,
-      );
-      expect(
         find.textContaining('Keyboard: Space play/pause', skipOffstage: false),
         findsNothing,
       );
@@ -6244,6 +6264,15 @@ void main() {
       expect(
         find.textContaining('Status: playing', skipOffstage: false),
         findsNothing,
+      );
+
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('playbackPreviewEmptyState')),
+      );
+      expect(
+        find.byKey(const Key('playbackPreviewEmptyStateText')),
+        findsOneWidget,
       );
     },
   );

@@ -490,7 +490,9 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       ),
                     ] else
                       KeyedSubtree(
-                        key: ValueKey<String?>('playbackSceneDropdown_${scene?.id}'),
+                        key: ValueKey<String?>(
+                          'playbackSceneDropdown_${scene?.id}',
+                        ),
                         child: DropdownButtonFormField<String>(
                           key: const Key('playbackSceneDropdown'),
                           initialValue: scene?.id,
@@ -702,6 +704,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   ),
                   const SizedBox(height: 8),
                   Text(
+                    key: const Key('playbackStatusSummary'),
                     'Status: ${playbackState.status.name} • '
                     't=${playbackState.currentSecond}s / $maxSecond s '
                     '(${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)})',
@@ -1235,6 +1238,9 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
               ? constraints.maxWidth
               : targetPreviewWidth;
           final previewWidth = math.min(targetPreviewWidth, availableWidth);
+          final previewAspectRatio = _aspectRatioValue(widget.aspectRatio);
+          final previewHeight = previewWidth / previewAspectRatio;
+          final isShortPreview = previewHeight < 220;
 
           return Align(
             alignment: Alignment.topCenter,
@@ -1242,7 +1248,7 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
               width: previewWidth,
               child: AspectRatio(
                 key: const Key('playbackPreviewAspectRatio'),
-                aspectRatio: _aspectRatioValue(widget.aspectRatio),
+                aspectRatio: previewAspectRatio,
                 child: Container(
                   decoration: BoxDecoration(
                     color: widget.showDeviceFrame
@@ -1273,34 +1279,52 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
                       margin: EdgeInsets.zero,
                       color: widget.palette.surfaceColor,
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(isShortPreview ? 12 : 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (!widget.cleanPreview) ...[
                               Text(
                                 'Playback Timeline (read-only)',
-                                style: Theme.of(context).textTheme.titleMedium,
+                                style: isShortPreview
+                                    ? Theme.of(context).textTheme.titleSmall
+                                    : Theme.of(context).textTheme.titleMedium,
                               ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Timeline preview follows timecode: queued messages stay dim until their cue time.',
+                              SizedBox(height: isShortPreview ? 6 : 8),
+                              Text(
+                                isShortPreview
+                                    ? 'Timeline preview follows cue time.'
+                                    : 'Timeline preview follows timecode: queued messages stay dim until their cue time.',
+                                style: isShortPreview
+                                    ? Theme.of(context).textTheme.bodySmall
+                                    : null,
+                                maxLines: isShortPreview ? 2 : null,
+                                overflow: isShortPreview
+                                    ? TextOverflow.ellipsis
+                                    : TextOverflow.visible,
                               ),
-                              const SizedBox(height: 12),
+                              SizedBox(height: isShortPreview ? 8 : 12),
                             ],
                             if (widget.cleanPreview)
                               Text(
                                 'Preview • ${_formatTimecode(widget.currentSecond)} / ${_formatTimecode(widget.maxSecond)}',
                                 key: const Key('cleanPreviewHeader'),
-                                style: Theme.of(context).textTheme.labelLarge,
+                                style: isShortPreview
+                                    ? Theme.of(context).textTheme.labelMedium
+                                    : Theme.of(context).textTheme.labelLarge,
                               ),
-                            if (widget.cleanPreview) const SizedBox(height: 12),
+                            if (widget.cleanPreview)
+                              SizedBox(height: isShortPreview ? 8 : 12),
                             Expanded(
                               child: widget.messages.isEmpty
                                   ? const Align(
+                                      key: Key('playbackPreviewEmptyState'),
                                       alignment: Alignment.topLeft,
                                       child: Text(
                                         'No messages available for playback yet. Add messages in Chat Editor to build the preview.',
+                                        key: Key(
+                                          'playbackPreviewEmptyStateText',
+                                        ),
                                       ),
                                     )
                                   : SingleChildScrollView(
