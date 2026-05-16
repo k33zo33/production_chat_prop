@@ -341,7 +341,9 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                     ),
                   ] else
                     KeyedSubtree(
-                      key: ValueKey<String?>('editorSceneDropdown_${selectedScene?.id}'),
+                      key: ValueKey<String?>(
+                        'editorSceneDropdown_${selectedScene?.id}',
+                      ),
                       child: DropdownButtonFormField<String>(
                         key: const Key('editorSceneDropdown'),
                         initialValue: selectedScene?.id,
@@ -1658,23 +1660,29 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedCharacterId,
-              decoration: const InputDecoration(labelText: 'Character'),
-              items: [
-                for (final character in widget.characters)
-                  DropdownMenuItem(
-                    value: character.id,
-                    child: Text(character.displayName),
-                  ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _selectedCharacterId = value;
-                  });
-                }
-              },
+            KeyedSubtree(
+              key: ValueKey<String>(
+                'messageCharacterDropdown_${widget.sceneId}_${widget.characters.map((character) => character.id).join('_')}',
+              ),
+              child: DropdownButtonFormField<String>(
+                key: const Key('messageCharacterDropdown'),
+                initialValue: _selectedCharacterId,
+                decoration: const InputDecoration(labelText: 'Character'),
+                items: [
+                  for (final character in widget.characters)
+                    DropdownMenuItem(
+                      value: character.id,
+                      child: Text(character.displayName),
+                    ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedCharacterId = value;
+                    });
+                  }
+                },
+              ),
             ),
             const SizedBox(height: 8),
             TextField(

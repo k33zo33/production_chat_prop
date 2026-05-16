@@ -4532,6 +4532,86 @@ void main() {
     expect(timestampField.controller?.text, '42');
   });
 
+  testWidgets(
+    'composer character selection follows the selected scene by default',
+    (
+      tester,
+    ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createProject();
+      final secondSceneId = await container
+          .read(projectsControllerProvider.notifier)
+          .addScene(projectId: projectId, title: 'Scene 2');
+      final project = (await container.read(
+        projectsControllerProvider.future,
+      )).singleWhere((candidate) => candidate.id == projectId);
+      final firstScene = project.scenes.first;
+      final secondScene = project.scenes.singleWhere(
+        (scene) => scene.id == secondSceneId,
+      );
+      final firstSceneCharacterId = firstScene.characters.first.id;
+      final secondSceneCharacterId = secondScene.characters.first.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(960, 900),
+        child: ChatEditorScreen(projectId: projectId),
+      );
+      await _ensureMessageComposerVisible(tester);
+
+      expect(
+        _dropdownFieldValue(tester, const Key('messageCharacterDropdown')),
+        firstSceneCharacterId,
+      );
+
+      container
+              .read(sceneSelectionProvider(projectId).notifier)
+              .selectedSceneId =
+          secondSceneId;
+      await tester.pumpAndSettle();
+      await _ensureMessageComposerVisible(tester);
+
+      expect(
+        _dropdownFieldValue(tester, const Key('messageCharacterDropdown')),
+        secondSceneCharacterId,
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Message Text'),
+        'Scene 2 character sync check',
+      );
+      final addMessageButton = find.widgetWithText(FilledButton, 'Add Message');
+      await tester.ensureVisible(addMessageButton);
+      await tester.pumpAndSettle();
+      await tester.tap(addMessageButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final updatedProject = (await container.read(
+        projectsControllerProvider.future,
+      )).singleWhere((candidate) => candidate.id == projectId);
+      final updatedSecondScene = updatedProject.scenes.singleWhere(
+        (scene) => scene.id == secondSceneId,
+      );
+
+      expect(updatedSecondScene.messages, hasLength(1));
+      expect(
+        updatedSecondScene.messages.single.characterId,
+        secondSceneCharacterId,
+      );
+      expect(
+        updatedSecondScene.messages.single.characterId,
+        isNot(firstSceneCharacterId),
+      );
+      expect(find.text('Scene 2 character sync check'), findsOneWidget);
+    },
+  );
+
   testWidgets('character add rename delete flow in chat editor', (
     tester,
   ) async {
@@ -5827,14 +5907,19 @@ void main() {
       await tester.pumpAndSettle();
       await _openPlaybackFromProjectList(tester);
 
-      expect(
-        find.textContaining('Status: idle', skipOffstage: false),
-        findsOneWidget,
+      final statusSummary = find.textContaining(
+        'Status: idle',
+        skipOffstage: false,
       );
-      expect(
-        find.textContaining('t=0s / 0 s', skipOffstage: false),
-        findsOneWidget,
+      final timecodeSummary = find.textContaining(
+        't=0s / 0 s',
+        skipOffstage: false,
       );
+      await _ensureFinderVisibleInPrimaryListView(tester, statusSummary);
+      await _ensureFinderVisibleInPrimaryListView(tester, timecodeSummary);
+
+      expect(statusSummary, findsOneWidget);
+      expect(timecodeSummary, findsOneWidget);
     },
   );
 
@@ -6271,10 +6356,10 @@ void main() {
       await tester.pumpAndSettle();
       await _openPlaybackFromProjectList(tester);
 
-      await tester.drag(find.byType(ListView).first, const Offset(0, -280));
-      await tester.pumpAndSettle();
+      final emptyStateHint = find.byKey(const Key('playbackEmptyStateHint'));
+      await _ensureFinderVisibleInPrimaryListView(tester, emptyStateHint);
 
-      expect(find.byKey(const Key('playbackEmptyStateHint')), findsOneWidget);
+      expect(emptyStateHint, findsOneWidget);
       expect(
         find.text(
           'Add at least one timed message in Chat Editor to enable playback and export.',
@@ -6411,10 +6496,12 @@ void main() {
         .scrubTo(second: 2, maxSecond: 9);
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('t=2s / 9 s', skipOffstage: false),
-      findsOneWidget,
+    final playbackSummary = find.textContaining(
+      't=2s / 9 s',
+      skipOffstage: false,
     );
+    await _ensureFinderVisibleInPrimaryListView(tester, playbackSummary);
+    expect(playbackSummary, findsOneWidget);
 
     await container
         .read(projectsControllerProvider.notifier)
