@@ -29,6 +29,7 @@ Referenca za expected downstream handoff: `docs/11-video-fallback-workflow.md`
 
 - [ ] Ostati na `Scene 1 - Hero Portrait` ili prebaciti na `Scene 2 - Hero Landscape`
 - [ ] Kliknuti `Export Video`
+- [ ] Po potrebi kliknuti `Copy Handoff JSON` za brzi pregled/copy fallback payloada bez downloada datoteke
 - [ ] Provjeriti:
   - [ ] na webu se pokreće download `.json` datoteke ili, ako download nije dostupan, app jasno javlja da je fallback JSON kopiran u clipboard
   - [ ] payload sadrži `project`, `selectedScene`, `renderHints`, `workflow`

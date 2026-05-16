@@ -681,6 +681,21 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                                 'The package keeps the selected scene, aspect ratio, device-frame option, and clean-preview setting aligned for downstream render.',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                key: const Key('copyVideoFallbackButton'),
+                                onPressed:
+                                    sortedMessages.isEmpty || _isExporting
+                                    ? null
+                                    : () => _copyVideoFallbackPackage(
+                                        project: project,
+                                        scene: scene,
+                                        videoExportFallbackService:
+                                            videoExportFallbackService,
+                                      ),
+                                icon: const Icon(Icons.content_copy_outlined),
+                                label: const Text('Copy Handoff JSON'),
+                              ),
                             ],
                           ),
                         ),
@@ -970,6 +985,43 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
       _isExporting = false;
     });
     _showSnackBar('Video export failed: unknown error.');
+  }
+
+  Future<void> _copyVideoFallbackPackage({
+    required Project project,
+    required Scene? scene,
+    required VideoExportFallbackService videoExportFallbackService,
+  }) async {
+    if (_isExporting) {
+      return;
+    }
+    if (scene == null) {
+      _showSnackBar('Video handoff copy failed: no scene selected.');
+      return;
+    }
+
+    final copied = await _copyTextToClipboard(
+      videoExportFallbackService.buildFallbackPackageJson(
+        project: project,
+        scene: scene,
+        includeDeviceFrame: _showDeviceFrame,
+        cleanPreview: _cleanPreview,
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _lastExportState = copied
+          ? _ExportState.videoOk
+          : _ExportState.videoError;
+    });
+    _showSnackBar(
+      copied
+          ? 'Video fallback JSON copied to clipboard.'
+          : 'Video handoff copy failed: clipboard is not available on this platform.',
+    );
   }
 
   Future<void> _setSceneAspectRatio({

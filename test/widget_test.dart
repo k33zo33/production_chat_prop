@@ -5944,6 +5944,51 @@ void main() {
     },
   );
 
+  testWidgets('copy handoff button copies fallback package to clipboard', (
+    tester,
+  ) async {
+    String? clipboardText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          ..setMockMethodCallHandler(SystemChannels.platform, (
+            methodCall,
+          ) async {
+            if (methodCall.method == 'Clipboard.setData') {
+              clipboardText = (methodCall.arguments as Map)['text'] as String?;
+              return null;
+            }
+            return null;
+          });
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester);
+
+    final copyHandoffButton = find.byKey(const Key('copyVideoFallbackButton'));
+    await tester.ensureVisible(copyHandoffButton);
+    await tester.pumpAndSettle();
+    await tester.tap(copyHandoffButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Video fallback JSON copied to clipboard.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Export: Video OK'), findsOneWidget);
+    expect(clipboardText, isNotNull);
+    expect(clipboardText, contains('"format": "video_fallback_package"'));
+  });
+
   testWidgets(
     'compact playback video fallback export reflects preview toggles and aspect ratio',
     (tester) async {
@@ -6179,9 +6224,13 @@ void main() {
     final videoButton = tester.widget<OutlinedButton>(
       find.byKey(const Key('exportVideoButton')),
     );
+    final copyHandoffButton = tester.widget<TextButton>(
+      find.byKey(const Key('copyVideoFallbackButton')),
+    );
 
     expect(screenshotButton.onPressed, isNull);
     expect(videoButton.onPressed, isNull);
+    expect(copyHandoffButton.onPressed, isNull);
     expect(
       find.textContaining('Export readiness: No messages in scene'),
       findsOneWidget,
