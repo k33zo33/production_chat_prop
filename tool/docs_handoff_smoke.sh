@@ -7,6 +7,8 @@ cd "$ROOT_DIR"
 README_PATH="$ROOT_DIR/README.md"
 WEB_DONE_PATH="$ROOT_DIR/docs/05-web-done-checklist.md"
 EXPORT_QA_PATH="$ROOT_DIR/docs/04-export-qa-checklist.md"
+WEB_SMOKE_PATH="$ROOT_DIR/docs/08-web-smoke-checklist.md"
+COMPACT_SMOKE_DOC_PATH="$ROOT_DIR/docs/09-compact-smoke-checklist.md"
 VIDEO_WORKFLOW_PATH="$ROOT_DIR/docs/11-video-fallback-workflow.md"
 WORKFLOW_PATH="$ROOT_DIR/.github/workflows/flutter_ci.yml"
 BETA_HANDOFF_PATH="$ROOT_DIR/tool/beta_handoff.sh"
@@ -27,6 +29,8 @@ for path in \
   "$README_PATH" \
   "$WEB_DONE_PATH" \
   "$EXPORT_QA_PATH" \
+  "$WEB_SMOKE_PATH" \
+  "$COMPACT_SMOKE_DOC_PATH" \
   "$VIDEO_WORKFLOW_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
@@ -52,6 +56,8 @@ python3 - \
   "$README_PATH" \
   "$WEB_DONE_PATH" \
   "$EXPORT_QA_PATH" \
+  "$WEB_SMOKE_PATH" \
+  "$COMPACT_SMOKE_DOC_PATH" \
   "$VIDEO_WORKFLOW_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
@@ -76,6 +82,8 @@ import sys
     readme_raw,
     web_done_raw,
     export_qa_raw,
+    web_smoke_raw,
+    compact_smoke_doc_raw,
     video_workflow_raw,
     workflow_raw,
     beta_handoff_raw,
@@ -96,6 +104,8 @@ import sys
 readme_path = pathlib.Path(readme_raw)
 web_done_path = pathlib.Path(web_done_raw)
 export_qa_path = pathlib.Path(export_qa_raw)
+web_smoke_path = pathlib.Path(web_smoke_raw)
+compact_smoke_doc_path = pathlib.Path(compact_smoke_doc_raw)
 video_workflow_path = pathlib.Path(video_workflow_raw)
 workflow_path = pathlib.Path(workflow_raw)
 beta_handoff_path = pathlib.Path(beta_handoff_raw)
@@ -115,6 +125,8 @@ fixture_test_path = pathlib.Path(fixture_test_raw)
 readme = readme_path.read_text(encoding='utf-8')
 web_done = web_done_path.read_text(encoding='utf-8')
 export_qa = export_qa_path.read_text(encoding='utf-8')
+web_smoke = web_smoke_path.read_text(encoding='utf-8')
+compact_smoke_doc = compact_smoke_doc_path.read_text(encoding='utf-8')
 video_workflow = video_workflow_path.read_text(encoding='utf-8')
 workflow = workflow_path.read_text(encoding='utf-8')
 beta_handoff = beta_handoff_path.read_text(encoding='utf-8')
@@ -167,6 +179,10 @@ checks = [
      'GitHub Actions should keep invoking ./tool/desktop_smoke.sh in the desktop_smoke job'),
     ('docs/11-video-fallback-workflow.md' in release_smoke,
      'tool/release_smoke.sh manual follow-up should mention docs/11-video-fallback-workflow.md'),
+    ('?sceneId=' in web_smoke and 'Ručno makni `?sceneId=...` iz URL-a dok si u editoru' in web_smoke and 'Ručno makni `?sceneId=...` iz playback URL-a' in web_smoke,
+     'docs/08-web-smoke-checklist.md should spell out cleared scene-query spot-checks for editor and playback'),
+    ('?sceneId=' in compact_smoke_doc and 'ručno makni query' in compact_smoke_doc and 'compact playback vrati aktivnu scenu' in compact_smoke_doc,
+     'docs/09-compact-smoke-checklist.md should spell out compact cleared scene-query spot-checks'),
     ('docs/11-video-fallback-workflow.md' in export_qa,
      'docs/04-export-qa-checklist.md should reference the video fallback workflow explainer'),
     ('docs/04-export-qa-checklist.md' in video_workflow and
@@ -305,6 +321,15 @@ assert_names_exist(
     target_label='test/widget/project_not_found_recovery_test.dart',
     target_text=recovery_test,
 )
+assert_catalog_includes(
+    script_label='tool/navigation_smoke.sh',
+    array_name='SCENE_ROUTE_SYNC_TEST_NAMES',
+    script_text=navigation_smoke,
+    required_names=[
+        'chat editor restores selected scene query when external route clears it',
+        'playback restores selected scene query when external route clears it',
+    ],
+)
 assert_names_exist(
     script_label='tool/import_smoke.sh',
     array_name='CONTROLLER_TEST_NAMES',
@@ -331,6 +356,7 @@ print('[docs-handoff-smoke] validated README/docs/workflow beta handoff alignmen
 print(f'[docs-handoff-smoke] sequence: {expected_sequence}')
 print('[docs-handoff-smoke] desktop smoke documentation/workflow checks are in sync')
 print('[docs-handoff-smoke] navigation smoke documentation/workflow checks are in sync')
+print('[docs-handoff-smoke] navigation smoke keeps cleared-query route-restore regressions gated')
 print('[docs-handoff-smoke] video fallback handoff docs stay linked to the manual release gates')
 print('[docs-handoff-smoke] smoke script test-name catalogs are in sync')
 print('[docs-handoff-smoke] compact smoke keeps the critical narrow-screen name/dialog regressions gated')

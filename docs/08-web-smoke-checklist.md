@@ -24,6 +24,7 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 - [ ] Potvrdi da su scene, likovi i poruke vidljivi
 - [ ] Na uskom viewportu potvrdi da su scene akcije dostupne kroz overflow meni
 - [ ] Ako koristiš scene deep-link (`?sceneId=...`), probaj browser back/forward i potvrdi da aktivna scena ostane sinkronizirana s URL-om
+- [ ] Ručno makni `?sceneId=...` iz URL-a dok si u editoru i potvrdi da app vrati trenutno odabranu scenu u query bez zaglavljenog starog statea
 - [ ] Promijeni barem jednu poruku ili timestamp
 - [ ] Vrati se natrag na project list bez rušenja stanja
 
@@ -31,6 +32,7 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 - [ ] Otvori `Open Playback`
 - [ ] Provjeri `Play`, `Pause`, `Restart`, slider i cue gumbe
 - [ ] Ako koristiš scene deep-link (`?sceneId=...`), probaj browser back/forward i potvrdi da playback prebaci scenu bez zaglavljenog starog odabira
+- [ ] Ručno makni `?sceneId=...` iz playback URL-a i potvrdi da app vrati trenutno aktivnu scenu u query bez gubitka sinkronizacije
 - [ ] Klikni `Open Focus Preview` i potvrdi da možeš pustiti/pauzirati preview, koristiti cue/seek gumbe i scrub slider te ga zatvoriti bez rušenja stanja
 - [ ] Na uskom viewportu potvrdi da nema očitog overlap/overflow loma u export i transport kontrolama
 - [ ] Provjeri da `Space`, `←`, `→`, `R` rade ako je fokus na appu
