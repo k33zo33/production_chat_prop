@@ -11,6 +11,9 @@ smoke_print_flutter_banner "compact-smoke" "$FLUTTER_BIN"
 smoke_run_analyze "compact-smoke" "$FLUTTER_BIN"
 
 declare -a TEST_NAMES=(
+  "compact project delete confirmation stays usable on narrow screens"
+  "compact project delete confirmation keeps long project names readable on narrow screens"
+  "compact editor and playback headers clamp long project names without exceptions"
   "compact project list app bar uses overflow menu actions"
   "ultra-compact project list uses one scroll and keeps lower cards reachable"
   "compact project list search, filters, and sort controls stay usable on narrow screens"

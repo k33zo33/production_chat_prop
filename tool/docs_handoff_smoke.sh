@@ -228,6 +228,23 @@ def assert_names_exist(
         )
 
 
+def assert_catalog_includes(
+    *,
+    script_label: str,
+    array_name: str,
+    script_text: str,
+    required_names: list[str],
+) -> None:
+    names = extract_declared_names(script_text, array_name)
+    missing = [name for name in required_names if name not in names]
+    if missing:
+        missing_lines = '\n'.join(f'  - {name}' for name in missing)
+        raise SystemExit(
+            f'[docs-handoff-smoke] {script_label} is missing expected {array_name} coverage:\n'
+            f'{missing_lines}'
+        )
+
+
 assert_names_exist(
     script_label='tool/demo_smoke.sh',
     array_name='TEST_NAMES',
@@ -255,6 +272,17 @@ assert_names_exist(
     script_text=compact_smoke,
     target_label='test/widget/project_not_found_recovery_test.dart',
     target_text=recovery_test,
+)
+assert_catalog_includes(
+    script_label='tool/compact_smoke.sh',
+    array_name='TEST_NAMES',
+    script_text=compact_smoke,
+    required_names=[
+        'compact project delete confirmation stays usable on narrow screens',
+        'compact project delete confirmation keeps long project names readable on narrow screens',
+        'compact editor and playback headers clamp long project names without exceptions',
+        'compact demo flow stays usable across project list, editor, and playback',
+    ],
 )
 assert_names_exist(
     script_label='tool/navigation_smoke.sh',
@@ -305,6 +333,7 @@ print('[docs-handoff-smoke] desktop smoke documentation/workflow checks are in s
 print('[docs-handoff-smoke] navigation smoke documentation/workflow checks are in sync')
 print('[docs-handoff-smoke] video fallback handoff docs stay linked to the manual release gates')
 print('[docs-handoff-smoke] smoke script test-name catalogs are in sync')
+print('[docs-handoff-smoke] compact smoke keeps the critical narrow-screen name/dialog regressions gated')
 PY
 
 echo "[docs-handoff-smoke] done"

@@ -76,7 +76,7 @@ Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 - video fallback export now has a dedicated handoff explainer so beta users know that `Export Video` currently emits a documented `.json` render package rather than a final encoded movie file
 - `bash tool/demo_smoke.sh` now covers the core beta walkthrough path plus portfolio-readiness CTA navigation and import/export handoff regressions before the heavier release gates
 - `bash tool/import_smoke.sh` now catches JSON import, sanitizer, and persisted-project recovery regressions before export/mobile passes
-- `./tool/compact_smoke.sh` passed for targeted compact/export regressions, including narrow project-list search/filter/sort controls, portfolio-readiness CTA flows, and stale-link recovery paths
+- `./tool/compact_smoke.sh` passed for targeted compact/export regressions, including narrow delete confirmations, long project-name/header clamping, project-list search/filter/sort controls, portfolio-readiness CTA flows, and stale-link recovery paths
 - `./tool/navigation_smoke.sh` now catches scene deep-link sync, stale route query normalization, and recovery navigation regressions before the heavier full-suite verify step
 - `bash tool/release_smoke.sh` now covers empty-scene export disabling, focus-preview transport/keyboard flow, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
 - GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `web_shell_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke` before uploading the web artifact

@@ -14,12 +14,15 @@ Preporučeni viewport:
 - [ ] Ako je vidljiv portfolio readiness summary, potvrdi da su `Continue Editing`, `Preview Ready Project` i `Review Attention Project` klikabilni bez overlap/overflow loma
 - [ ] Klikni `Preview Ready Project` i potvrdi da vodi u Playback
 - [ ] Vrati se natrag pa klikni `Continue Editing`; ako postoji attention projekt, potvrdi da otvara prvi problematični/empty scene
+- [ ] Otvori `Delete Project` potvrdu i potvrdi da `Cancel` / `Delete` ostaju klikabilni na ~390 px
+- [ ] Ako projekt ima dugo ime, potvrdi da naslov kartice i delete potvrda ostaju čitljivi bez layout loma
 - [ ] Probaj search, type filter i sort dropdown
 - [ ] Uđi u `Select Projects` i potvrdi da bulk akcije ostaju dostupne kroz overflow meni
 
 ## 2. Chat editor
 - [ ] Otvori `Open Chat Editor`
 - [ ] Potvrdi da compact app bar koristi overflow meni za `Open Playback` i `Back to Projects`
+- [ ] Ako projekt ima dugo ime, potvrdi da header ostaje čitljiv (max 2 reda, bez overflow exceptiona)
 - [ ] Potvrdi da je scene selector upotrebljiv na uskoj širini
 - [ ] Otvori scene overflow meni i provjeri `Duplicate Scene` i `Edit Scene Settings`
 - [ ] U `Edit Scene Settings` promijeni preset i aspect ratio pa spremi
@@ -29,6 +32,7 @@ Preporučeni viewport:
 ## 3. Playback
 - [ ] Otvori `Open Playback`
 - [ ] Potvrdi da compact app bar koristi overflow meni za `Open Chat Editor` i `Back to Projects`
+- [ ] Ako projekt ima dugo ime, potvrdi da header ostaje čitljiv (max 2 reda, bez overflow exceptiona)
 - [ ] Potvrdi da export kontrole rade u compact layoutu
 - [ ] Potvrdi da transport kontrole rade bez overlap/overflow loma
 - [ ] Na ~320 px širine provjeri ultra-compact varijantu `Play/Pause`, `Restart`, seek i cue gumba
