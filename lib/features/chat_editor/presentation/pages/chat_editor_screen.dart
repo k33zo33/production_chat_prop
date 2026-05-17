@@ -1286,22 +1286,47 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                   ? null
                   : () async {
                       final messenger = ScaffoldMessenger.of(context);
+                      final selectedMessages = widget.sceneMessages
+                          .where(
+                            (message) =>
+                                _selectedMessageIds.contains(message.id),
+                          )
+                          .toList(growable: false);
+                      if (selectedMessages.isEmpty) {
+                        assert(
+                          false,
+                          'Shift action requires at least one selected message.',
+                        );
+                        return;
+                      }
+                      final normalizedSelectedMessageIds = selectedMessages
+                          .map((message) => message.id)
+                          .toSet();
+                      if (normalizedSelectedMessageIds.length !=
+                          _selectedMessageIds.length) {
+                        setState(() {
+                          _selectedMessageIds
+                            ..clear()
+                            ..addAll(normalizedSelectedMessageIds);
+                        });
+                      }
+                      final earliestSelectedTimestamp = selectedMessages
+                          .skip(1)
+                          .fold<int>(
+                            selectedMessages.first.timestampSeconds,
+                            (earliest, message) =>
+                                message.timestampSeconds < earliest
+                                ? message.timestampSeconds
+                                : earliest,
+                          );
                       final offsetSeconds =
                           await _showShiftSelectedMessagesDialog(
                             context,
-                            selectedCount: _selectedMessageIds.length,
+                            selectedCount: selectedMessages.length,
+                            earliestSelectedTimestamp:
+                                earliestSelectedTimestamp,
                           );
                       if (!context.mounted || offsetSeconds == null) {
-                        return;
-                      }
-                      if (offsetSeconds == 0) {
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Enter a non-zero time shift before applying.',
-                            ),
-                          ),
-                        );
                         return;
                       }
 
@@ -1310,13 +1335,15 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                           .shiftMessagesByIds(
                             projectId: widget.projectId,
                             sceneId: widget.sceneId,
-                            messageIds: _selectedMessageIds,
+                            messageIds: normalizedSelectedMessageIds,
                             offsetSeconds: offsetSeconds,
                           );
                       if (!mounted) {
                         return;
                       }
                       if (result.wouldGoNegative) {
+                        // Keep a controller-side guard in case the scene changes
+                        // after the dialog opens but before the shift is applied.
                         messenger.showSnackBar(
                           const SnackBar(
                             content: Text(
@@ -1512,56 +1539,149 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
   Future<int?> _showShiftSelectedMessagesDialog(
     BuildContext context, {
     required int selectedCount,
-  }) async {
-    var rawOffset = '';
-    final result = await showDialog<int>(
+    required int earliestSelectedTimestamp,
+  }) {
+    return showDialog<int>(
       context: context,
       builder: (context) {
-        return ResponsiveAlertDialog(
-          title: const Text('Shift Selected Message Times'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Move $selectedCount selected ${selectedCount == 1 ? 'message' : 'messages'} earlier or later by a shared second offset.',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                key: const Key('shiftSelectedMessagesOffsetField'),
-                keyboardType: const TextInputType.numberWithOptions(
-                  signed: true,
-                ),
-                onChanged: (value) => rawOffset = value,
-                decoration: const InputDecoration(
-                  labelText: 'Shift offset (seconds)',
-                  hintText: 'Example: -2 or 3',
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Use negative values to move earlier and positive values to move later.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              key: const Key('confirmShiftSelectedMessagesButton'),
-              onPressed: () => Navigator.of(
-                context,
-              ).pop(int.tryParse(rawOffset.trim())),
-              child: const Text('Apply Shift'),
-            ),
-          ],
+        return _ShiftSelectedMessagesDialog(
+          selectedCount: selectedCount,
+          earliestSelectedTimestamp: earliestSelectedTimestamp,
+          validateShiftOffset: _validateShiftOffset,
         );
       },
     );
-    return result;
+  }
+
+  String? _validateShiftOffset({
+    required String rawOffset,
+    required int earliestSelectedTimestamp,
+  }) {
+    final trimmed = rawOffset.trim();
+    if (trimmed.isEmpty) {
+      return 'Enter a whole-second offset.';
+    }
+
+    final offset = int.tryParse(trimmed);
+    if (offset == null) {
+      return 'Use whole seconds, like -2 or 3.';
+    }
+
+    if (offset == 0) {
+      return 'Enter a non-zero time shift.';
+    }
+
+    if (earliestSelectedTimestamp + offset < 0) {
+      return 'Selected messages cannot shift before 0s.';
+    }
+
+    return null;
+  }
+}
+
+class _ShiftSelectedMessagesDialog extends StatefulWidget {
+  const _ShiftSelectedMessagesDialog({
+    required this.selectedCount,
+    required this.earliestSelectedTimestamp,
+    required this.validateShiftOffset,
+  });
+
+  final int selectedCount;
+  final int earliestSelectedTimestamp;
+  final String? Function({
+    required String rawOffset,
+    required int earliestSelectedTimestamp,
+  })
+  validateShiftOffset;
+
+  @override
+  State<_ShiftSelectedMessagesDialog> createState() =>
+      _ShiftSelectedMessagesDialogState();
+}
+
+class _ShiftSelectedMessagesDialogState
+    extends State<_ShiftSelectedMessagesDialog> {
+  late final TextEditingController _offsetController;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _offsetController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _offsetController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final validationError = widget.validateShiftOffset(
+      rawOffset: _offsetController.text,
+      earliestSelectedTimestamp: widget.earliestSelectedTimestamp,
+    );
+    if (validationError != null) {
+      setState(() {
+        _errorText = validationError;
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(int.parse(_offsetController.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ResponsiveAlertDialog(
+      title: const Text('Shift Selected Message Times'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Move ${widget.selectedCount} selected ${widget.selectedCount == 1 ? 'message' : 'messages'} earlier or later by a shared second offset.',
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const Key('shiftSelectedMessagesOffsetField'),
+            controller: _offsetController,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(signed: true),
+            onChanged: (_) {
+              if (_errorText == null) {
+                return;
+              }
+              setState(() {
+                _errorText = null;
+              });
+            },
+            onSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: 'Shift offset (seconds)',
+              hintText: 'Example: -2 or 3',
+              errorText: _errorText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use negative values to move earlier and positive values to move later.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          key: const Key('confirmShiftSelectedMessagesButton'),
+          onPressed: _submit,
+          child: const Text('Apply Shift'),
+        ),
+      ],
+    );
   }
 }
 

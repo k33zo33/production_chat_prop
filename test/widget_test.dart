@@ -5767,6 +5767,311 @@ void main() {
     expect(find.textContaining('Mia • t=7s'), findsOneWidget);
   });
 
+  testWidgets('shift dialog allows valid earlier offsets above zero', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('toggleMessageSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    final secondCheckbox = find.byType(Checkbox).at(1);
+    await tester.ensureVisible(secondCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(secondCheckbox);
+    await tester.pumpAndSettle();
+
+    final shiftSelectedButton = find.byKey(
+      const Key('shiftSelectedMessagesButton'),
+    );
+    await tester.ensureVisible(shiftSelectedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(shiftSelectedButton);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('shiftSelectedMessagesOffsetField')),
+      '-2',
+    );
+    await tester.tap(
+      find.byKey(const Key('confirmShiftSelectedMessagesButton')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Shift Selected Message Times'), findsNothing);
+    expect(
+      find.textContaining('Shifted 1 selected message 2 seconds earlier.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Mia • t=2s'), findsOneWidget);
+  });
+
+  testWidgets('shift dialog validates empty and zero offsets inline', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('toggleMessageSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    final firstCheckbox = find.byType(Checkbox).at(0);
+    await tester.ensureVisible(firstCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(firstCheckbox);
+    await tester.pumpAndSettle();
+
+    final shiftSelectedButton = find.byKey(
+      const Key('shiftSelectedMessagesButton'),
+    );
+    await tester.ensureVisible(shiftSelectedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(shiftSelectedButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('confirmShiftSelectedMessagesButton')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a whole-second offset.'), findsOneWidget);
+    expect(find.text('Shift Selected Message Times'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('shiftSelectedMessagesOffsetField')),
+      '1',
+    );
+    await tester.pump();
+    expect(find.text('Enter a whole-second offset.'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('shiftSelectedMessagesOffsetField')),
+      '0',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a non-zero time shift.'), findsOneWidget);
+    expect(find.text('Shift Selected Message Times'), findsOneWidget);
+    expect(
+      find.textContaining('No selected message times were changed.'),
+      findsNothing,
+    );
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Shift Selected Message Times'), findsNothing);
+  });
+
+  testWidgets('shift dialog keeps invalid offsets open with inline guidance', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('toggleMessageSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    final firstCheckbox = find.byType(Checkbox).at(0);
+    await tester.ensureVisible(firstCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(firstCheckbox);
+    await tester.pumpAndSettle();
+
+    final shiftSelectedButton = find.byKey(
+      const Key('shiftSelectedMessagesButton'),
+    );
+    await tester.ensureVisible(shiftSelectedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(shiftSelectedButton);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('shiftSelectedMessagesOffsetField')),
+      'later please',
+    );
+    await tester.tap(
+      find.byKey(const Key('confirmShiftSelectedMessagesButton')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Shift Selected Message Times'), findsOneWidget);
+    expect(find.text('Use whole seconds, like -2 or 3.'), findsOneWidget);
+    expect(
+      find.textContaining('No selected message times were changed.'),
+      findsNothing,
+    );
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Shift Selected Message Times'), findsNothing);
+  });
+
+  testWidgets('shift dialog submits valid offsets from the keyboard', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('toggleMessageSelectionModeButton')));
+    await tester.pumpAndSettle();
+
+    final firstCheckbox = find.byType(Checkbox).at(0);
+    await tester.ensureVisible(firstCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(firstCheckbox);
+    await tester.pumpAndSettle();
+
+    final shiftSelectedButton = find.byKey(
+      const Key('shiftSelectedMessagesButton'),
+    );
+    await tester.ensureVisible(shiftSelectedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(shiftSelectedButton);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('shiftSelectedMessagesOffsetField')),
+      '2',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Shift Selected Message Times'), findsNothing);
+    expect(
+      find.textContaining('Shifted 1 selected message 2 seconds later.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'shift dialog blocks offsets that would move messages before zero',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openChatEditorFromProjectList(tester);
+
+      for (var i = 0; i < 4; i++) {
+        await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('toggleMessageSelectionModeButton')),
+      );
+      await tester.pumpAndSettle();
+
+      final firstCheckbox = find.byType(Checkbox).at(0);
+      await tester.ensureVisible(firstCheckbox);
+      await tester.pumpAndSettle();
+      await tester.tap(firstCheckbox);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('t=0s'), findsOneWidget);
+
+      final shiftSelectedButton = find.byKey(
+        const Key('shiftSelectedMessagesButton'),
+      );
+      await tester.ensureVisible(shiftSelectedButton);
+      await tester.pumpAndSettle();
+      await tester.tap(shiftSelectedButton);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('shiftSelectedMessagesOffsetField')),
+        '-1',
+      );
+      await tester.tap(
+        find.byKey(const Key('confirmShiftSelectedMessagesButton')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Shift Selected Message Times'), findsOneWidget);
+      expect(
+        find.text('Selected messages cannot shift before 0s.'),
+        findsOneWidget,
+      );
+      expect(find.text('-1'), findsOneWidget);
+      expect(
+        find.textContaining('Shifted 1 selected message'),
+        findsNothing,
+      );
+
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.text('Shift Selected Message Times'), findsNothing);
+    },
+  );
+
   testWidgets('clear scene chat removes all messages in editor', (
     tester,
   ) async {
