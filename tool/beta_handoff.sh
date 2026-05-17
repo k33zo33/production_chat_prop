@@ -11,11 +11,12 @@ IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"
 RELEASE_SMOKE_SCRIPT="./tool/release_smoke.sh"
 COMPACT_SMOKE_SCRIPT="./tool/compact_smoke.sh"
 NAVIGATION_SMOKE_SCRIPT="./tool/navigation_smoke.sh"
+BRAND_NEUTRALITY_SMOKE_SCRIPT="./tool/brand_neutrality_smoke.sh"
 VERIFY_SCRIPT="./tool/verify.sh"
 WEB_SHELL_SMOKE_SCRIPT="./tool/web_shell_smoke.sh"
 DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"
 
-for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$NAVIGATION_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT"; do
+for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$NAVIGATION_SMOKE_SCRIPT" "$BRAND_NEUTRALITY_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT"; do
   if [[ ! -f "$script_path" ]]; then
     echo "[beta-handoff] missing required script: $script_path" >&2
     exit 1
@@ -38,6 +39,9 @@ echo "[beta-handoff] docs/release instructions preflight"
 
 echo "[beta-handoff] web shell metadata preflight"
 "$WEB_SHELL_SMOKE_SCRIPT" web
+
+echo "[beta-handoff] brand-neutrality preflight"
+"$BRAND_NEUTRALITY_SMOKE_SCRIPT" lib web
 
 echo "[beta-handoff] demo flow preflight"
 "$DEMO_SMOKE_SCRIPT"
@@ -65,6 +69,9 @@ SKIP_PUB_GET=1 "$VERIFY_SCRIPT"
 echo
 echo "[beta-handoff] built web shell metadata check"
 "$WEB_SHELL_SMOKE_SCRIPT" build/web
+
+echo "[beta-handoff] built web brand-neutrality check"
+"$BRAND_NEUTRALITY_SMOKE_SCRIPT" build/web
 
 echo
 echo "[beta-handoff] manual follow-up"

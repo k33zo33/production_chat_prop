@@ -12,6 +12,7 @@ COMPACT_SMOKE_DOC_PATH="$ROOT_DIR/docs/09-compact-smoke-checklist.md"
 VIDEO_WORKFLOW_PATH="$ROOT_DIR/docs/11-video-fallback-workflow.md"
 WORKFLOW_PATH="$ROOT_DIR/.github/workflows/flutter_ci.yml"
 BETA_HANDOFF_PATH="$ROOT_DIR/tool/beta_handoff.sh"
+BRAND_SMOKE_PATH="$ROOT_DIR/tool/brand_neutrality_smoke.sh"
 DEMO_SMOKE_PATH="$ROOT_DIR/tool/demo_smoke.sh"
 RELEASE_SMOKE_PATH="$ROOT_DIR/tool/release_smoke.sh"
 COMPACT_SMOKE_PATH="$ROOT_DIR/tool/compact_smoke.sh"
@@ -34,6 +35,7 @@ for path in \
   "$VIDEO_WORKFLOW_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
+  "$BRAND_SMOKE_PATH" \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
   "$COMPACT_SMOKE_PATH" \
@@ -61,6 +63,7 @@ python3 - \
   "$VIDEO_WORKFLOW_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
+  "$BRAND_SMOKE_PATH" \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
   "$COMPACT_SMOKE_PATH" \
@@ -87,6 +90,7 @@ import sys
     video_workflow_raw,
     workflow_raw,
     beta_handoff_raw,
+    brand_smoke_raw,
     demo_smoke_raw,
     release_smoke_raw,
     compact_smoke_raw,
@@ -109,6 +113,7 @@ compact_smoke_doc_path = pathlib.Path(compact_smoke_doc_raw)
 video_workflow_path = pathlib.Path(video_workflow_raw)
 workflow_path = pathlib.Path(workflow_raw)
 beta_handoff_path = pathlib.Path(beta_handoff_raw)
+brand_smoke_path = pathlib.Path(brand_smoke_raw)
 demo_smoke_path = pathlib.Path(demo_smoke_raw)
 release_smoke_path = pathlib.Path(release_smoke_raw)
 compact_smoke_path = pathlib.Path(compact_smoke_raw)
@@ -130,6 +135,7 @@ compact_smoke_doc = compact_smoke_doc_path.read_text(encoding='utf-8')
 video_workflow = video_workflow_path.read_text(encoding='utf-8')
 workflow = workflow_path.read_text(encoding='utf-8')
 beta_handoff = beta_handoff_path.read_text(encoding='utf-8')
+brand_smoke = brand_smoke_path.read_text(encoding='utf-8')
 demo_smoke = demo_smoke_path.read_text(encoding='utf-8')
 release_smoke = release_smoke_path.read_text(encoding='utf-8')
 compact_smoke = compact_smoke_path.read_text(encoding='utf-8')
@@ -144,8 +150,9 @@ repository_test = repository_test_path.read_text(encoding='utf-8')
 fixture_test = fixture_test_path.read_text(encoding='utf-8')
 
 expected_sequence = (
-    'web_shell_smoke -> demo_smoke -> import_smoke -> '
-    'release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke'
+    'web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> '
+    'release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> '
+    'built brand_neutrality_smoke'
 )
 
 checks = [
@@ -153,6 +160,8 @@ checks = [
      'README quality gate sequence is missing navigation_smoke or is out of date'),
     ('./tool/import_smoke.sh' in readme,
      'README common commands should mention ./tool/import_smoke.sh'),
+    ('./tool/brand_neutrality_smoke.sh' in readme,
+     'README common commands should mention ./tool/brand_neutrality_smoke.sh'),
     ('./tool/navigation_smoke.sh' in readme,
      'README common commands should mention ./tool/navigation_smoke.sh'),
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
@@ -161,16 +170,24 @@ checks = [
      'docs/05-web-done-checklist.md should describe the current beta handoff order'),
     ('./tool/desktop_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the desktop smoke gate'),
+    ('./tool/brand_neutrality_smoke.sh' in web_done,
+     'docs/05-web-done-checklist.md should mention the brand-neutrality smoke gate'),
     ('navigation_smoke' in web_done and './tool/navigation_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the navigation smoke gate'),
+    ('BRAND_NEUTRALITY_SMOKE_SCRIPT="./tool/brand_neutrality_smoke.sh"' in beta_handoff,
+     'tool/beta_handoff.sh must define the brand-neutrality smoke gate'),
     ('IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"' in beta_handoff,
      'tool/beta_handoff.sh must define the import smoke gate'),
     ('NAVIGATION_SMOKE_SCRIPT="./tool/navigation_smoke.sh"' in beta_handoff,
      'tool/beta_handoff.sh must define the navigation smoke gate'),
+    (re.search(r'echo "\[beta-handoff\] brand-neutrality preflight"\s*\n"\$BRAND_NEUTRALITY_SMOKE_SCRIPT" lib web', beta_handoff) is not None,
+     'tool/beta_handoff.sh must execute the brand-neutrality smoke gate after the brand-neutrality preflight label'),
     (re.search(r'echo "\[beta-handoff\] import/recovery preflight"\s*\n"\$IMPORT_SMOKE_SCRIPT"', beta_handoff) is not None,
      'tool/beta_handoff.sh must execute the import smoke gate after the import/recovery preflight label'),
     (re.search(r'echo "\[beta-handoff\] navigation/deep-link preflight"\s*\n"\$NAVIGATION_SMOKE_SCRIPT"', beta_handoff) is not None,
      'tool/beta_handoff.sh must execute the navigation smoke gate after the navigation/deep-link preflight label'),
+    (re.search(r'echo "\[beta-handoff\] built web brand-neutrality check"\s*\n"\$BRAND_NEUTRALITY_SMOKE_SCRIPT" build/web', beta_handoff) is not None,
+     'tool/beta_handoff.sh must execute the built web brand-neutrality smoke gate after the built-web label'),
     ('docs/11-video-fallback-workflow.md' in beta_handoff,
      'tool/beta_handoff.sh manual follow-up should include docs/11-video-fallback-workflow.md'),
     ('run: ./tool/beta_handoff.sh' in workflow,
@@ -194,6 +211,8 @@ checks = [
      'docs/04-export-qa-checklist.md should keep the video fallback payload expectations spelled out'),
     ('selectedScene.messages' in video_workflow and 'renderHints.includeDeviceFrame' in video_workflow and 'renderHints.cleanPreview' in video_workflow,
      'docs/11-video-fallback-workflow.md should keep the downstream render contract explicit'),
+    ('forbidden messaging-brand copy' in brand_smoke,
+     'tool/brand_neutrality_smoke.sh should report the forbidden messaging-brand copy check clearly'),
     ('parses the tracked export QA project for manual beta passes' in fixture_test and
      'video fallback export keeps the selected QA scene synchronized' in fixture_test,
      'export_qa_fixture_test.dart should keep both fixture parsing and fallback synchronization coverage'),
@@ -358,6 +377,7 @@ print('[docs-handoff-smoke] desktop smoke documentation/workflow checks are in s
 print('[docs-handoff-smoke] navigation smoke documentation/workflow checks are in sync')
 print('[docs-handoff-smoke] navigation smoke keeps cleared-query route-restore regressions gated')
 print('[docs-handoff-smoke] video fallback handoff docs stay linked to the manual release gates')
+print('[docs-handoff-smoke] brand-neutrality release-gate documentation/workflow checks are in sync')
 print('[docs-handoff-smoke] smoke script test-name catalogs are in sync')
 print('[docs-handoff-smoke] compact smoke keeps the critical narrow-screen name/dialog regressions gated')
 PY
