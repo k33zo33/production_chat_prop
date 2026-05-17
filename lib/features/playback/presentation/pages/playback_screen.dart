@@ -1611,6 +1611,18 @@ class _PlaybackFocusPreviewScreenState
                 ? 0
                 : sortedMessages.last.timestampSeconds;
             final hasPlaybackMessages = sortedMessages.isNotEmpty;
+            final previousCue = findPreviousCueSecond(
+              sortedMessages: sortedMessages,
+              currentSecond: playbackState.currentSecond,
+            );
+            final nextCue = findNextCueSecond(
+              sortedMessages: sortedMessages,
+              currentSecond: playbackState.currentSecond,
+            );
+            final sliderMax = maxSecond > 0 ? maxSecond.toDouble() : 1.0;
+            final sliderValue = playbackState.currentSecond > maxSecond
+                ? maxSecond.toDouble()
+                : playbackState.currentSecond.toDouble();
 
             void togglePlayback() {
               if (!hasPlaybackMessages) {
@@ -1641,6 +1653,7 @@ class _PlaybackFocusPreviewScreenState
                         constraints.maxHeight - 148.0,
                       )
                       .toDouble();
+                  final isCompactLayout = constraints.maxWidth < 560;
 
                   return Stack(
                     children: [
@@ -1730,44 +1743,58 @@ class _PlaybackFocusPreviewScreenState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                alignment: WrapAlignment.center,
-                                children: [
-                                  FilledButton.icon(
-                                    key: const Key(
-                                      'focusPreviewTogglePlaybackButton',
-                                    ),
-                                    onPressed: hasPlaybackMessages
-                                        ? togglePlayback
-                                        : null,
-                                    icon: Icon(
-                                      playbackState.isPlaying
-                                          ? Icons.pause_rounded
-                                          : Icons.play_arrow_rounded,
-                                    ),
-                                    label: Text(
-                                      playbackState.isPlaying
-                                          ? 'Pause'
-                                          : 'Play',
-                                    ),
-                                  ),
-                                  OutlinedButton.icon(
-                                    key: const Key('focusPreviewRestartButton'),
-                                    onPressed:
-                                        hasPlaybackMessages ||
-                                            playbackState.currentSecond > 0
-                                        ? playbackController.restart
-                                        : null,
-                                    icon: const Icon(Icons.restart_alt_rounded),
-                                    label: const Text('Restart'),
-                                  ),
-                                ],
+                              _FocusPreviewTransportControls(
+                                isCompactLayout: isCompactLayout,
+                                hasPlaybackMessages: hasPlaybackMessages,
+                                isPlaying: playbackState.isPlaying,
+                                currentSecond: playbackState.currentSecond,
+                                maxSecond: maxSecond,
+                                sliderMax: sliderMax,
+                                sliderValue: sliderValue,
+                                previousCue: previousCue,
+                                nextCue: nextCue,
+                                onSliderChanged: maxSecond == 0
+                                    ? null
+                                    : (value) => playbackController.scrubTo(
+                                        second: value.round(),
+                                        maxSecond: maxSecond,
+                                      ),
+                                onPrevCue: previousCue == null
+                                    ? null
+                                    : () => playbackController.scrubTo(
+                                        second: previousCue,
+                                        maxSecond: maxSecond,
+                                      ),
+                                onSeekBackward: maxSecond == 0
+                                    ? null
+                                    : () => playbackController.seekBy(
+                                        delta: -1,
+                                        maxSecond: maxSecond,
+                                      ),
+                                onTogglePlayback: hasPlaybackMessages
+                                    ? togglePlayback
+                                    : null,
+                                onSeekForward: maxSecond == 0
+                                    ? null
+                                    : () => playbackController.seekBy(
+                                        delta: 1,
+                                        maxSecond: maxSecond,
+                                      ),
+                                onNextCue: nextCue == null
+                                    ? null
+                                    : () => playbackController.scrubTo(
+                                        second: nextCue,
+                                        maxSecond: maxSecond,
+                                      ),
+                                onRestart:
+                                    hasPlaybackMessages ||
+                                        playbackState.currentSecond > 0
+                                    ? playbackController.restart
+                                    : null,
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Tap the preview to play or pause. Long press anywhere to exit.',
+                                'Tap the preview to play or pause. Use the slider or cue buttons to fine-tune timing. Long press anywhere to exit.',
                                 key: const Key('focusPreviewHintLabel'),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodySmall
@@ -1831,6 +1858,153 @@ String _formatTimecode(int seconds) {
   final minutes = (safe ~/ 60).toString().padLeft(2, '0');
   final remainingSeconds = (safe % 60).toString().padLeft(2, '0');
   return '$minutes:$remainingSeconds';
+}
+
+class _FocusPreviewTransportControls extends StatelessWidget {
+  const _FocusPreviewTransportControls({
+    required this.isCompactLayout,
+    required this.hasPlaybackMessages,
+    required this.isPlaying,
+    required this.currentSecond,
+    required this.maxSecond,
+    required this.sliderMax,
+    required this.sliderValue,
+    required this.previousCue,
+    required this.nextCue,
+    required this.onSliderChanged,
+    required this.onPrevCue,
+    required this.onSeekBackward,
+    required this.onTogglePlayback,
+    required this.onSeekForward,
+    required this.onNextCue,
+    required this.onRestart,
+  });
+
+  final bool isCompactLayout;
+  final bool hasPlaybackMessages;
+  final bool isPlaying;
+  final int currentSecond;
+  final int maxSecond;
+  final double sliderMax;
+  final double sliderValue;
+  final int? previousCue;
+  final int? nextCue;
+  final ValueChanged<double>? onSliderChanged;
+  final VoidCallback? onPrevCue;
+  final VoidCallback? onSeekBackward;
+  final VoidCallback? onTogglePlayback;
+  final VoidCallback? onSeekForward;
+  final VoidCallback? onNextCue;
+  final VoidCallback? onRestart;
+
+  @override
+  Widget build(BuildContext context) {
+    final timelineLabelStyle = Theme.of(
+      context,
+    ).textTheme.labelMedium?.copyWith(color: Colors.white70);
+
+    final slider = SliderTheme(
+      data: SliderTheme.of(context).copyWith(
+        activeTrackColor: Colors.white,
+        inactiveTrackColor: Colors.white24,
+        thumbColor: Colors.white,
+        overlayColor: Colors.white24,
+      ),
+      child: Slider(
+        key: const Key('focusPreviewProgressSlider'),
+        value: sliderValue,
+        max: sliderMax,
+        onChanged: onSliderChanged,
+      ),
+    );
+
+    final controls = [
+      Tooltip(
+        message: previousCue == null ? 'No previous cue' : 'Previous cue',
+        child: IconButton.filledTonal(
+          key: const Key('focusPreviewPrevCueButton'),
+          onPressed: onPrevCue,
+          icon: const Icon(Icons.skip_previous_rounded),
+        ),
+      ),
+      Tooltip(
+        message: hasPlaybackMessages ? 'Back 1 second' : 'No playback messages',
+        child: IconButton.filledTonal(
+          key: const Key('focusPreviewSeekBackwardButton'),
+          onPressed: onSeekBackward,
+          icon: const Icon(Icons.replay_rounded),
+        ),
+      ),
+      FilledButton.icon(
+        key: const Key('focusPreviewTogglePlaybackButton'),
+        onPressed: onTogglePlayback,
+        icon: Icon(
+          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+        ),
+        label: Text(isPlaying ? 'Pause' : 'Play'),
+      ),
+      Tooltip(
+        message: hasPlaybackMessages
+            ? 'Forward 1 second'
+            : 'No playback messages',
+        child: IconButton.filledTonal(
+          key: const Key('focusPreviewSeekForwardButton'),
+          onPressed: onSeekForward,
+          icon: const Icon(Icons.forward_rounded),
+        ),
+      ),
+      Tooltip(
+        message: nextCue == null ? 'No next cue' : 'Next cue',
+        child: IconButton.filledTonal(
+          key: const Key('focusPreviewNextCueButton'),
+          onPressed: onNextCue,
+          icon: const Icon(Icons.skip_next_rounded),
+        ),
+      ),
+      OutlinedButton.icon(
+        key: const Key('focusPreviewRestartButton'),
+        onPressed: onRestart,
+        icon: const Icon(Icons.restart_alt_rounded),
+        label: const Text('Restart'),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              _formatTimecode(currentSecond),
+              key: const Key('focusPreviewCurrentTimeLabel'),
+              style: timelineLabelStyle,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: slider),
+            const SizedBox(width: 8),
+            Text(
+              _formatTimecode(maxSecond),
+              key: const Key('focusPreviewMaxTimeLabel'),
+              style: timelineLabelStyle,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: [
+            for (final control in controls)
+              if (isCompactLayout)
+                SizedBox(height: 40, child: control)
+              else
+                control,
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class _PlaybackExportActions extends StatelessWidget {

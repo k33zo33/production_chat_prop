@@ -29,7 +29,7 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 ## 4. Playback flow
 - [ ] Otvori `Open Playback`
 - [ ] Provjeri `Play`, `Pause`, `Restart`, slider i cue gumbe
-- [ ] Klikni `Open Focus Preview` i potvrdi da možeš pustiti/pauzirati preview te ga zatvoriti bez rušenja stanja
+- [ ] Klikni `Open Focus Preview` i potvrdi da možeš pustiti/pauzirati preview, koristiti cue/seek gumbe i scrub slider te ga zatvoriti bez rušenja stanja
 - [ ] Na uskom viewportu potvrdi da nema očitog overlap/overflow loma u export i transport kontrolama
 - [ ] Provjeri da `Space`, `←`, `→`, `R` rade ako je fokus na appu
 - [ ] Potvrdi da se timecode i visible message summary mijenjaju tijekom playbacka

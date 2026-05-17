@@ -6514,6 +6514,73 @@ void main() {
   );
 
   testWidgets(
+    'focus preview transport controls scrub and jump between cues',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openPlaybackFromProjectList(tester);
+
+      final focusPreviewButton = find.byKey(
+        const Key('openPlaybackFocusPreviewButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+      await tester.tap(focusPreviewButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('focusPreviewNextCueButton')));
+      await tester.pump();
+
+      var focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:04 / 00:09'));
+      expect(focusStatus.data, contains('paused'));
+
+      await tester.tap(find.byKey(const Key('focusPreviewSeekBackwardButton')));
+      await tester.pump();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:03 / 00:09'));
+
+      final slider = tester.widget<Slider>(
+        find.byKey(const Key('focusPreviewProgressSlider')),
+      );
+      slider.onChanged?.call(7);
+      await tester.pump();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:07 / 00:09'));
+
+      await tester.tap(find.byKey(const Key('focusPreviewPrevCueButton')));
+      await tester.pump();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:04 / 00:09'));
+
+      await tester.tap(find.byKey(const Key('focusPreviewRestartButton')));
+      await tester.pump();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:00 / 00:09'));
+    },
+  );
+
+  testWidgets(
     'focus preview responds to keyboard play pause and restart shortcuts',
     (
       tester,
@@ -6602,6 +6669,20 @@ void main() {
     expect(find.byKey(const Key('playbackFocusPreviewScreen')), findsOneWidget);
     expect(find.byKey(const Key('focusPreviewHintLabel')), findsOneWidget);
     expect(find.byKey(const Key('focusPreviewCloseButton')), findsOneWidget);
+    expect(find.byKey(const Key('focusPreviewProgressSlider')), findsOneWidget);
+    expect(find.byKey(const Key('focusPreviewNextCueButton')), findsOneWidget);
+    expect(
+      find.byKey(const Key('focusPreviewSeekForwardButton')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('focusPreviewSeekForwardButton')));
+    await tester.pump();
+
+    final focusStatus = tester.widget<Text>(
+      find.byKey(const Key('focusPreviewStatusLabel')),
+    );
+    expect(focusStatus.data, contains('00:01'));
 
     final previewSize = tester.getSize(
       find.byKey(const Key('playbackPreviewAspectRatio')),

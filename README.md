@@ -38,6 +38,7 @@ Production Chat Prop je Flutter web-first MVP za kreiranje i reprodukciju simuli
     - export readiness status (`Ready` / `No messages in scene` / `Export in progress`)
     - quick seek kontrole `-5s` i `+5s`
     - keyboard kontrole (`Space`, `←`, `→`, `R`) za web playback
+    - focus preview transport overlay s cue/seek gumbima i scrub sliderom za brže on-set podešavanje
   - Chat editor feedback:
     - validacijski snackbari za neispravan timestamp, negativan timestamp i prazan tekst poruke
 
