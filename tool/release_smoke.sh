@@ -75,6 +75,7 @@ echo "- Then do the browser pass from docs/08-web-smoke-checklist.md."
 echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md."
 echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
 echo "- Import docs/fixtures/export-qa-project.json for the standard portrait/landscape/empty/long-scene export pass."
+echo "- Keep docs/11-video-fallback-workflow.md with the handoff so downstream render users know Export Video emits a documented .json package."
 echo "- Finish with docs/04-export-qa-checklist.md before a release/deploy decision."
 
 echo "[release-smoke] done"
