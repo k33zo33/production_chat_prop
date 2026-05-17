@@ -29,6 +29,7 @@ declare -a TEST_NAMES=(
   "compact playback export and transport controls remain usable"
   "compact playback scene selector switches demo scenes and resets progress"
   "compact playback scene switch resets deep preview scroll in long scenes"
+  "compact playback focus preview stays usable on narrow screens"
   "compact playback video fallback export reflects preview toggles and aspect ratio"
   "ultra-compact playback footer actions expose navigation actions on phone-width screens"
   "compact demo flow stays usable across project list, editor, and playback"

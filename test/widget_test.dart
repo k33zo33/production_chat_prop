@@ -6454,6 +6454,170 @@ void main() {
     },
   );
 
+  testWidgets(
+    'playback focus preview opens with transport controls and closes cleanly',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openPlaybackFromProjectList(tester);
+
+      final focusPreviewButton = find.byKey(
+        const Key('openPlaybackFocusPreviewButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+      await tester.tap(focusPreviewButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('playbackFocusPreviewScreen')),
+        findsOneWidget,
+      );
+
+      var focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('idle'));
+
+      await tester.tap(
+        find.byKey(const Key('focusPreviewTogglePlaybackButton')),
+      );
+      await tester.pump();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('playing'));
+
+      await tester.tap(find.byKey(const Key('focusPreviewTapSurface')));
+      await tester.pump();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('paused'));
+
+      await tester.tap(find.byKey(const Key('focusPreviewCloseButton')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('playbackFocusPreviewScreen')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'focus preview responds to keyboard play pause and restart shortcuts',
+    (
+      tester,
+    ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container.read(projectsControllerProvider.notifier).createProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final project = projects.single;
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(home: PlaybackScreen(projectId: project.id)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final focusPreviewButton = find.byKey(
+        const Key('openPlaybackFocusPreviewButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+      await tester.tap(focusPreviewButton);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(
+        container.read(playbackControllerProvider(project.id)).isPlaying,
+        isTrue,
+      );
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pumpAndSettle();
+      expect(
+        container.read(playbackControllerProvider(project.id)).isPlaying,
+        isFalse,
+      );
+
+      container
+          .read(playbackControllerProvider(project.id).notifier)
+          .scrubTo(second: 2, maxSecond: 9);
+      await tester.pumpAndSettle();
+
+      var focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:02 / 00:09'));
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyR);
+      await tester.pumpAndSettle();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:00 / 00:09'));
+    },
+  );
+
+  testWidgets('compact playback focus preview stays usable on narrow screens', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container
+        .read(projectsControllerProvider.notifier)
+        .createDemoProject();
+    final projects = await container.read(projectsControllerProvider.future);
+    final projectId = projects.single.id;
+
+    await _pumpNarrowScreenWithContainer(
+      tester,
+      container: container,
+      child: PlaybackScreen(projectId: projectId),
+    );
+
+    final focusPreviewButton = find.byKey(
+      const Key('openPlaybackFocusPreviewButton'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+    await tester.tap(focusPreviewButton);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('playbackFocusPreviewScreen')), findsOneWidget);
+    expect(find.byKey(const Key('focusPreviewHintLabel')), findsOneWidget);
+    expect(find.byKey(const Key('focusPreviewCloseButton')), findsOneWidget);
+
+    final previewSize = tester.getSize(
+      find.byKey(const Key('playbackPreviewAspectRatio')),
+    );
+    expect(previewSize.width, lessThanOrEqualTo(360));
+    expect(previewSize.height, greaterThan(previewSize.width));
+
+    await tester.tap(find.byKey(const Key('focusPreviewCloseButton')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('playbackFocusPreviewScreen')),
+      findsNothing,
+    );
+  });
+
   testWidgets('playback export buttons are disabled for empty scenes', (
     tester,
   ) async {

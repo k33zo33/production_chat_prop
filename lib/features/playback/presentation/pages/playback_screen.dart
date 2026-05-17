@@ -294,6 +294,18 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     );
   }
 
+  Future<void> _openFocusPreview({required Project project}) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => _PlaybackFocusPreviewScreen(
+          projectId: project.id,
+          initialShowDeviceFrame: _showDeviceFrame,
+          initialCleanPreview: _cleanPreview,
+        ),
+      ),
+    );
+  }
+
   @override
   void didUpdateWidget(covariant _PlaybackTimeline oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -851,6 +863,18 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
             showTypingIndicator: showsTypingIndicatorAtSecond,
           ),
           const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const Key('openPlaybackFocusPreviewButton'),
+              onPressed: sortedMessages.isEmpty || scene == null
+                  ? null
+                  : () => _openFocusPreview(project: project),
+              icon: const Icon(Icons.fullscreen_rounded),
+              label: const Text('Open Focus Preview'),
+            ),
+          ),
+          const SizedBox(height: 12),
           if (isUltraCompactLayout)
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1083,23 +1107,6 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     };
   }
 
-  String _resolveSpeakerName({
-    required String characterId,
-    required Map<String, String> speakerNameById,
-  }) {
-    return speakerNameById[characterId] ?? 'Unknown';
-  }
-
-  Map<String, String> _buildSpeakerNameById(Project project) {
-    final map = <String, String>{};
-    for (final item in project.scenes) {
-      for (final character in item.characters) {
-        map[character.id] = character.displayName;
-      }
-    }
-    return map;
-  }
-
   void _syncPlaybackWithScene({
     required String? previousSceneId,
     required String? currentSceneId,
@@ -1149,6 +1156,7 @@ class _PlaybackPreviewCard extends StatefulWidget {
     required this.characterBubbleColorById,
     required this.resolveSpeakerName,
     required this.showTypingIndicator,
+    this.maxPreviewHeight,
   });
 
   final String? sceneId;
@@ -1172,6 +1180,7 @@ class _PlaybackPreviewCard extends StatefulWidget {
     required int currentSecond,
   })
   showTypingIndicator;
+  final double? maxPreviewHeight;
 
   @override
   State<_PlaybackPreviewCard> createState() => _PlaybackPreviewCardState();
@@ -1295,8 +1304,21 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
           final availableWidth = constraints.hasBoundedWidth
               ? constraints.maxWidth
               : targetPreviewWidth;
-          final previewWidth = math.min(targetPreviewWidth, availableWidth);
           final previewAspectRatio = _aspectRatioValue(widget.aspectRatio);
+          final constrainedMaxHeight = widget.maxPreviewHeight == null
+              ? null
+              : math.max(160, widget.maxPreviewHeight!).toDouble();
+          final previewWidth = math
+              .max(
+                120,
+                math.min(
+                  math.min(targetPreviewWidth, availableWidth),
+                  constrainedMaxHeight == null
+                      ? double.infinity
+                      : constrainedMaxHeight * previewAspectRatio,
+                ),
+              )
+              .toDouble();
           final previewHeight = previewWidth / previewAspectRatio;
           final isShortPreview = previewHeight < 220;
 
@@ -1471,6 +1493,330 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
       ),
     );
   }
+}
+
+class _PlaybackFocusPreviewScreen extends ConsumerStatefulWidget {
+  const _PlaybackFocusPreviewScreen({
+    required this.projectId,
+    required this.initialShowDeviceFrame,
+    required this.initialCleanPreview,
+  });
+
+  final String projectId;
+  final bool initialShowDeviceFrame;
+  final bool initialCleanPreview;
+
+  @override
+  ConsumerState<_PlaybackFocusPreviewScreen> createState() =>
+      _PlaybackFocusPreviewScreenState();
+}
+
+class _PlaybackFocusPreviewScreenState
+    extends ConsumerState<_PlaybackFocusPreviewScreen> {
+  final GlobalKey _previewBoundaryKey = GlobalKey();
+
+  KeyEventResult _handlePlaybackKeyEvent(
+    KeyEvent event, {
+    required bool hasPlaybackMessages,
+    required int maxSecond,
+    required PlaybackState playbackState,
+    required PlaybackController playbackController,
+  }) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.space) {
+      if (maxSecond == 0) {
+        return KeyEventResult.handled;
+      }
+      if (playbackState.isPlaying) {
+        playbackController.pause();
+      } else {
+        playbackController.play(maxSecond: maxSecond);
+      }
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      if (maxSecond == 0) {
+        return KeyEventResult.handled;
+      }
+      playbackController.seekBy(delta: 1, maxSecond: maxSecond);
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      if (maxSecond == 0) {
+        return KeyEventResult.handled;
+      }
+      playbackController.seekBy(delta: -1, maxSecond: maxSecond);
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.keyR) {
+      if (!hasPlaybackMessages && playbackState.currentSecond == 0) {
+        return KeyEventResult.handled;
+      }
+      playbackController.restart();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final snapshotState = ref.watch(sceneSnapshotProvider(widget.projectId));
+
+    return Scaffold(
+      key: const Key('playbackFocusPreviewScreen'),
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: snapshotState.when(
+          data: (snapshot) {
+            if (snapshot == null) {
+              return Center(
+                child: FilledButton.icon(
+                  key: const Key('focusPreviewCloseFallbackButton'),
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_fullscreen_rounded),
+                  label: const Text('Close Focus Preview'),
+                ),
+              );
+            }
+
+            final project = snapshot.project;
+            final scene = snapshot.scene;
+            final selectedAspectRatio =
+                scene?.aspectRatio ?? SceneAspectRatio.portrait9x16;
+            final sortedMessages = scene == null
+                ? <Message>[]
+                : sortMessagesByTimeline(scene.messages);
+            final palette = resolveChatStylePalette(
+              scene?.styleId ?? 'studio_default',
+            );
+            final speakerNameById = _buildSpeakerNameById(project);
+            final characterBubbleColorById = {
+              for (final character in scene?.characters ?? const <Character>[])
+                character.id: character.bubbleColor,
+            };
+            final playbackState = ref.watch(
+              playbackControllerProvider(project.id),
+            );
+            final playbackController = ref.read(
+              playbackControllerProvider(project.id).notifier,
+            );
+            final maxSecond = sortedMessages.isEmpty
+                ? 0
+                : sortedMessages.last.timestampSeconds;
+            final hasPlaybackMessages = sortedMessages.isNotEmpty;
+
+            void togglePlayback() {
+              if (!hasPlaybackMessages) {
+                return;
+              }
+
+              if (playbackState.isPlaying) {
+                playbackController.pause();
+              } else {
+                playbackController.play(maxSecond: maxSecond);
+              }
+            }
+
+            return Focus(
+              autofocus: true,
+              onKeyEvent: (node, event) => _handlePlaybackKeyEvent(
+                event,
+                hasPlaybackMessages: hasPlaybackMessages,
+                maxSecond: maxSecond,
+                playbackState: playbackState,
+                playbackController: playbackController,
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final previewMaxHeight = math
+                      .max(
+                        220,
+                        constraints.maxHeight - 148.0,
+                      )
+                      .toDouble();
+
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: GestureDetector(
+                          key: const Key('focusPreviewTapSurface'),
+                          behavior: HitTestBehavior.opaque,
+                          onTap: hasPlaybackMessages ? togglePlayback : null,
+                          onLongPress: () => Navigator.of(context).pop(),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                72,
+                                16,
+                                88,
+                              ),
+                              child: _PlaybackPreviewCard(
+                                sceneId: scene?.id,
+                                boundaryKey: _previewBoundaryKey,
+                                aspectRatio: selectedAspectRatio,
+                                palette: palette,
+                                showDeviceFrame: widget.initialShowDeviceFrame,
+                                cleanPreview: widget.initialCleanPreview,
+                                currentSecond: playbackState.currentSecond,
+                                maxSecond: maxSecond,
+                                messages: sortedMessages,
+                                speakerNameById: speakerNameById,
+                                characterBubbleColorById:
+                                    characterBubbleColorById,
+                                resolveSpeakerName: _resolveSpeakerName,
+                                showTypingIndicator:
+                                    showsTypingIndicatorAtSecond,
+                                maxPreviewHeight: previewMaxHeight,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        right: 8,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            IconButton.filledTonal(
+                              key: const Key('focusPreviewCloseButton'),
+                              tooltip: 'Close Focus Preview',
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(
+                                Icons.close_fullscreen_rounded,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xB3000000),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  '${scene?.title ?? 'No scene'} • ${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)} • ${playbackState.status.name}',
+                                  key: const Key('focusPreviewStatusLabel'),
+                                  style: Theme.of(context).textTheme.labelLarge
+                                      ?.copyWith(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        left: 12,
+                        right: 12,
+                        bottom: 12,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xB3000000),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  FilledButton.icon(
+                                    key: const Key(
+                                      'focusPreviewTogglePlaybackButton',
+                                    ),
+                                    onPressed: hasPlaybackMessages
+                                        ? togglePlayback
+                                        : null,
+                                    icon: Icon(
+                                      playbackState.isPlaying
+                                          ? Icons.pause_rounded
+                                          : Icons.play_arrow_rounded,
+                                    ),
+                                    label: Text(
+                                      playbackState.isPlaying
+                                          ? 'Pause'
+                                          : 'Play',
+                                    ),
+                                  ),
+                                  OutlinedButton.icon(
+                                    key: const Key('focusPreviewRestartButton'),
+                                    onPressed:
+                                        hasPlaybackMessages ||
+                                            playbackState.currentSecond > 0
+                                        ? playbackController.restart
+                                        : null,
+                                    icon: const Icon(Icons.restart_alt_rounded),
+                                    label: const Text('Restart'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tap the preview to play or pause. Long press anywhere to exit.',
+                                key: const Key('focusPreviewHintLabel'),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Unable to open focus preview.\n$error',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Map<String, String> _buildSpeakerNameById(Project project) {
+  final map = <String, String>{};
+  for (final item in project.scenes) {
+    for (final character in item.characters) {
+      map[character.id] = character.displayName;
+    }
+  }
+  return map;
+}
+
+String _resolveSpeakerName({
+  required String characterId,
+  required Map<String, String> speakerNameById,
+}) {
+  return speakerNameById[characterId] ?? 'Unknown';
 }
 
 double _aspectRatioValue(SceneAspectRatio aspectRatio) {
