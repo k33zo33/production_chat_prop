@@ -351,6 +351,23 @@ assert_catalog_includes(
 )
 assert_names_exist(
     script_label='tool/import_smoke.sh',
+    array_name='WIDGET_TEST_NAMES',
+    script_text=import_smoke,
+    target_label='test/widget_test.dart',
+    target_text=widget_test,
+)
+assert_catalog_includes(
+    script_label='tool/import_smoke.sh',
+    array_name='WIDGET_TEST_NAMES',
+    script_text=import_smoke,
+    required_names=[
+        'import project json preview lists projected projects and skipped invalid entries',
+        'import project json preview cancel keeps projects unchanged',
+        'compact import project dialog stays usable on narrow screens',
+    ],
+)
+assert_names_exist(
+    script_label='tool/import_smoke.sh',
     array_name='CONTROLLER_TEST_NAMES',
     script_text=import_smoke,
     target_label='projects_controller_test.dart',

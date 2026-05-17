@@ -1256,6 +1256,125 @@ void main() {
     );
   });
 
+  testWidgets(
+    'import project json preview lists projected projects and skipped invalid entries',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      final payload = jsonEncode({
+        'projects': [
+          for (var index = 1; index <= 6; index++)
+            {
+              'id': 'preview-import-$index',
+              'name': 'Preview Import $index',
+              'type': index.isEven ? 'series' : 'other',
+              'createdAt': DateTime.utc(2026, 1, index).toIso8601String(),
+              'updatedAt': DateTime.utc(2026, 1, index).toIso8601String(),
+              'scenes': [
+                {
+                  'id': 'preview-scene-$index',
+                  'title': 'Preview Scene $index',
+                  'styleId': 'studio_slate',
+                  'aspectRatio': 'portrait9x16',
+                  'characters': [
+                    {
+                      'id': 'preview-char-$index',
+                      'displayName': 'Taylor $index',
+                      'avatarPath': null,
+                      'bubbleColor': '#2E90FA',
+                    },
+                  ],
+                  'messages': <Object>[],
+                },
+              ],
+            },
+          {'invalid': true},
+          {'alsoInvalid': true},
+        ],
+      });
+
+      await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        payload,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Import 6 projects?'), findsOneWidget);
+      expect(find.text('Projects that will be imported:'), findsOneWidget);
+      for (var index = 1; index <= 5; index++) {
+        expect(find.text('• Preview Import $index'), findsOneWidget);
+      }
+      expect(find.text('• Preview Import 6'), findsNothing);
+      expect(find.text('• +1 more'), findsOneWidget);
+      expect(find.text('Invalid entries to skip: 2'), findsOneWidget);
+      expect(
+        find.byKey(const Key('confirmImportFromJsonButton')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('import project json preview cancel keeps projects unchanged', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    final payload = jsonEncode({
+      'id': 'cancel-import-project',
+      'name': 'Cancelled Import Project',
+      'type': 'other',
+      'createdAt': DateTime.utc(2026, 1, 4).toIso8601String(),
+      'updatedAt': DateTime.utc(2026, 1, 4).toIso8601String(),
+      'scenes': [
+        {
+          'id': 'cancel-scene-1',
+          'title': 'Cancelled Scene',
+          'styleId': 'studio_slate',
+          'aspectRatio': 'portrait9x16',
+          'characters': [
+            {
+              'id': 'cancel-char-1',
+              'displayName': 'Casey',
+              'avatarPath': null,
+              'bubbleColor': '#12B76A',
+            },
+          ],
+          'messages': <Object>[],
+        },
+      ],
+    });
+
+    await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('importProjectJsonField')),
+      payload,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Import 1 project?'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cancelled Import Project'), findsNothing);
+    expect(find.text('No projects yet'), findsOneWidget);
+  });
+
   testWidgets('import project json shows validation for malformed json', (
     tester,
   ) async {

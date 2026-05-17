@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
 source "$ROOT_DIR/tool/smoke_common.sh"
 
+WIDGET_TEST_FILE="test/widget_test.dart"
 CONTROLLER_TEST_FILE="test/unit/features/projects/presentation/controllers/projects_controller_test.dart"
 SANITIZER_TEST_FILE="test/unit/features/projects/data/services/project_sanitizer_test.dart"
 REPOSITORY_TEST_FILE="test/unit/features/projects/data/repositories/local_project_repository_test.dart"
@@ -15,7 +16,7 @@ FIXTURE_TEST_FILE="test/unit/features/projects/domain/export_qa_fixture_test.dar
 smoke_print_flutter_banner "import-smoke" "$FLUTTER_BIN"
 smoke_run_analyze "import-smoke" "$FLUTTER_BIN"
 
-for test_file in "$CONTROLLER_TEST_FILE" "$SANITIZER_TEST_FILE" "$REPOSITORY_TEST_FILE" "$FIXTURE_TEST_FILE"; do
+for test_file in "$WIDGET_TEST_FILE" "$CONTROLLER_TEST_FILE" "$SANITIZER_TEST_FILE" "$REPOSITORY_TEST_FILE" "$FIXTURE_TEST_FILE"; do
   if [[ ! -f "$test_file" ]]; then
     echo "[import-smoke] missing expected test file: $test_file" >&2
     exit 1
@@ -24,6 +25,13 @@ done
 
 # Keep these names in sync with the Dart test descriptions so the smoke gate
 # stays focused without silently dropping renamed import/recovery coverage.
+declare -a WIDGET_TEST_NAMES=(
+  "import project json preview lists projected projects and skipped invalid entries"
+  "import project json preview cancel keeps projects unchanged"
+  "import json file button imports project from picker payload"
+  "compact import project dialog stays usable on narrow screens"
+)
+
 declare -a CONTROLLER_TEST_NAMES=(
   "previewProjectImportFromJson returns projected names for batch payload"
   "importProjectFromJson appends imported project with unique name"
@@ -54,6 +62,13 @@ declare -a FIXTURE_TEST_NAMES=(
   "project package export keeps all QA scenes in the handoff payload"
   "video fallback export keeps the selected QA scene synchronized"
 )
+
+for test_name in "${WIDGET_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$WIDGET_TEST_FILE"; then
+    echo "[import-smoke] missing expected widget test: $test_name" >&2
+    exit 1
+  fi
+done
 
 for test_name in "${CONTROLLER_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$CONTROLLER_TEST_FILE"; then
@@ -89,20 +104,23 @@ if [[ "$fixture_test_count" -ne ${#FIXTURE_TEST_NAMES[@]} ]]; then
   exit 1
 fi
 
+WIDGET_TEST_PATTERN="$(printf '%s\n' "${WIDGET_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 CONTROLLER_TEST_PATTERN="$(printf '%s\n' "${CONTROLLER_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SANITIZER_TEST_PATTERN="$(printf '%s\n' "${SANITIZER_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 REPOSITORY_TEST_PATTERN="$(printf '%s\n' "${REPOSITORY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FIXTURE_TEST_PATTERN="$(printf '%s\n' "${FIXTURE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-COMBINED_TEST_PATTERN="${CONTROLLER_TEST_PATTERN}|${SANITIZER_TEST_PATTERN}|${REPOSITORY_TEST_PATTERN}|${FIXTURE_TEST_PATTERN}"
+COMBINED_TEST_PATTERN="${WIDGET_TEST_PATTERN}|${CONTROLLER_TEST_PATTERN}|${SANITIZER_TEST_PATTERN}|${REPOSITORY_TEST_PATTERN}|${FIXTURE_TEST_PATTERN}"
 TOTAL_TARGETED_TESTS=$((
+  ${#WIDGET_TEST_NAMES[@]} +
   ${#CONTROLLER_TEST_NAMES[@]} +
   ${#SANITIZER_TEST_NAMES[@]} +
   ${#REPOSITORY_TEST_NAMES[@]} +
   ${#FIXTURE_TEST_NAMES[@]}
 ))
 
-echo "[import-smoke] tests: $TOTAL_TARGETED_TESTS targeted import/sanitizer/repository/fixture cases (batched)"
+echo "[import-smoke] tests: $TOTAL_TARGETED_TESTS targeted import/widget/sanitizer/repository/fixture cases (batched)"
 "$FLUTTER_BIN" test \
+  "$WIDGET_TEST_FILE" \
   "$CONTROLLER_TEST_FILE" \
   "$SANITIZER_TEST_FILE" \
   "$REPOSITORY_TEST_FILE" \
