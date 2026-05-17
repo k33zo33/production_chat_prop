@@ -13,8 +13,10 @@ BETA_HANDOFF_PATH="$ROOT_DIR/tool/beta_handoff.sh"
 DEMO_SMOKE_PATH="$ROOT_DIR/tool/demo_smoke.sh"
 RELEASE_SMOKE_PATH="$ROOT_DIR/tool/release_smoke.sh"
 COMPACT_SMOKE_PATH="$ROOT_DIR/tool/compact_smoke.sh"
+NAVIGATION_SMOKE_PATH="$ROOT_DIR/tool/navigation_smoke.sh"
 IMPORT_SMOKE_PATH="$ROOT_DIR/tool/import_smoke.sh"
 WIDGET_TEST_PATH="$ROOT_DIR/test/widget_test.dart"
+SCENE_ROUTE_SYNC_TEST_PATH="$ROOT_DIR/test/widget/scene_route_sync_test.dart"
 RECOVERY_TEST_PATH="$ROOT_DIR/test/widget/project_not_found_recovery_test.dart"
 CONTROLLER_TEST_PATH="$ROOT_DIR/test/unit/features/projects/presentation/controllers/projects_controller_test.dart"
 SANITIZER_TEST_PATH="$ROOT_DIR/test/unit/features/projects/data/services/project_sanitizer_test.dart"
@@ -31,8 +33,10 @@ for path in \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
   "$COMPACT_SMOKE_PATH" \
+  "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
+  "$SCENE_ROUTE_SYNC_TEST_PATH" \
   "$RECOVERY_TEST_PATH" \
   "$CONTROLLER_TEST_PATH" \
   "$SANITIZER_TEST_PATH" \
@@ -54,8 +58,10 @@ python3 - \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
   "$COMPACT_SMOKE_PATH" \
+  "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
+  "$SCENE_ROUTE_SYNC_TEST_PATH" \
   "$RECOVERY_TEST_PATH" \
   "$CONTROLLER_TEST_PATH" \
   "$SANITIZER_TEST_PATH" \
@@ -76,8 +82,10 @@ import sys
     demo_smoke_raw,
     release_smoke_raw,
     compact_smoke_raw,
+    navigation_smoke_raw,
     import_smoke_raw,
     widget_test_raw,
+    scene_route_sync_test_raw,
     recovery_test_raw,
     controller_test_raw,
     sanitizer_test_raw,
@@ -94,8 +102,10 @@ beta_handoff_path = pathlib.Path(beta_handoff_raw)
 demo_smoke_path = pathlib.Path(demo_smoke_raw)
 release_smoke_path = pathlib.Path(release_smoke_raw)
 compact_smoke_path = pathlib.Path(compact_smoke_raw)
+navigation_smoke_path = pathlib.Path(navigation_smoke_raw)
 import_smoke_path = pathlib.Path(import_smoke_raw)
 widget_test_path = pathlib.Path(widget_test_raw)
+scene_route_sync_test_path = pathlib.Path(scene_route_sync_test_raw)
 recovery_test_path = pathlib.Path(recovery_test_raw)
 controller_test_path = pathlib.Path(controller_test_raw)
 sanitizer_test_path = pathlib.Path(sanitizer_test_raw)
@@ -111,8 +121,10 @@ beta_handoff = beta_handoff_path.read_text(encoding='utf-8')
 demo_smoke = demo_smoke_path.read_text(encoding='utf-8')
 release_smoke = release_smoke_path.read_text(encoding='utf-8')
 compact_smoke = compact_smoke_path.read_text(encoding='utf-8')
+navigation_smoke = navigation_smoke_path.read_text(encoding='utf-8')
 import_smoke = import_smoke_path.read_text(encoding='utf-8')
 widget_test = widget_test_path.read_text(encoding='utf-8')
+scene_route_sync_test = scene_route_sync_test_path.read_text(encoding='utf-8')
 recovery_test = recovery_test_path.read_text(encoding='utf-8')
 controller_test = controller_test_path.read_text(encoding='utf-8')
 sanitizer_test = sanitizer_test_path.read_text(encoding='utf-8')
@@ -121,24 +133,32 @@ fixture_test = fixture_test_path.read_text(encoding='utf-8')
 
 expected_sequence = (
     'web_shell_smoke -> demo_smoke -> import_smoke -> '
-    'release_smoke -> compact_smoke -> verify -> built web_shell_smoke'
+    'release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke'
 )
 
 checks = [
     (expected_sequence in readme,
-     'README quality gate sequence is missing import_smoke or is out of date'),
+     'README quality gate sequence is missing navigation_smoke or is out of date'),
     ('./tool/import_smoke.sh' in readme,
      'README common commands should mention ./tool/import_smoke.sh'),
+    ('./tool/navigation_smoke.sh' in readme,
+     'README common commands should mention ./tool/navigation_smoke.sh'),
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
      'README should mention the separate desktop_smoke gate'),
     (expected_sequence in web_done,
      'docs/05-web-done-checklist.md should describe the current beta handoff order'),
     ('./tool/desktop_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the desktop smoke gate'),
+    ('navigation_smoke' in web_done and './tool/navigation_smoke.sh' in web_done,
+     'docs/05-web-done-checklist.md should mention the navigation smoke gate'),
     ('IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"' in beta_handoff,
      'tool/beta_handoff.sh must define the import smoke gate'),
+    ('NAVIGATION_SMOKE_SCRIPT="./tool/navigation_smoke.sh"' in beta_handoff,
+     'tool/beta_handoff.sh must define the navigation smoke gate'),
     (re.search(r'echo "\[beta-handoff\] import/recovery preflight"\s*\n"\$IMPORT_SMOKE_SCRIPT"', beta_handoff) is not None,
      'tool/beta_handoff.sh must execute the import smoke gate after the import/recovery preflight label'),
+    (re.search(r'echo "\[beta-handoff\] navigation/deep-link preflight"\s*\n"\$NAVIGATION_SMOKE_SCRIPT"', beta_handoff) is not None,
+     'tool/beta_handoff.sh must execute the navigation smoke gate after the navigation/deep-link preflight label'),
     ('docs/11-video-fallback-workflow.md' in beta_handoff,
      'tool/beta_handoff.sh manual follow-up should include docs/11-video-fallback-workflow.md'),
     ('run: ./tool/beta_handoff.sh' in workflow,
@@ -237,6 +257,27 @@ assert_names_exist(
     target_text=recovery_test,
 )
 assert_names_exist(
+    script_label='tool/navigation_smoke.sh',
+    array_name='WIDGET_TEST_NAMES',
+    script_text=navigation_smoke,
+    target_label='test/widget_test.dart',
+    target_text=widget_test,
+)
+assert_names_exist(
+    script_label='tool/navigation_smoke.sh',
+    array_name='SCENE_ROUTE_SYNC_TEST_NAMES',
+    script_text=navigation_smoke,
+    target_label='test/widget/scene_route_sync_test.dart',
+    target_text=scene_route_sync_test,
+)
+assert_names_exist(
+    script_label='tool/navigation_smoke.sh',
+    array_name='RECOVERY_TEST_NAMES',
+    script_text=navigation_smoke,
+    target_label='test/widget/project_not_found_recovery_test.dart',
+    target_text=recovery_test,
+)
+assert_names_exist(
     script_label='tool/import_smoke.sh',
     array_name='CONTROLLER_TEST_NAMES',
     script_text=import_smoke,
@@ -261,6 +302,7 @@ assert_names_exist(
 print('[docs-handoff-smoke] validated README/docs/workflow beta handoff alignment')
 print(f'[docs-handoff-smoke] sequence: {expected_sequence}')
 print('[docs-handoff-smoke] desktop smoke documentation/workflow checks are in sync')
+print('[docs-handoff-smoke] navigation smoke documentation/workflow checks are in sync')
 print('[docs-handoff-smoke] video fallback handoff docs stay linked to the manual release gates')
 print('[docs-handoff-smoke] smoke script test-name catalogs are in sync')
 PY

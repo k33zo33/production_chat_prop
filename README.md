@@ -87,7 +87,7 @@ Kontejner expose-a i VNC port `5900` samo na `localhost`. Lokalni app podaci spr
 
 GitHub Actions i lokalni beta handoff koriste isti redoslijed za web release gate:
 
-`web_shell_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke`
+`web_shell_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke`
 
 `./tool/beta_handoff.sh` dodatno vrti mali docs-sync preflight kako README, checklist i CI ne bi tiho odlutali iz stvarnog handoff reda.
 
@@ -102,6 +102,7 @@ Najčešće komande:
 ./tool/import_smoke.sh
 ./tool/release_smoke.sh
 ./tool/compact_smoke.sh
+./tool/navigation_smoke.sh
 ./tool/desktop_smoke.sh
 ./tool/verify.sh
 ./tool/beta_handoff.sh
@@ -110,7 +111,8 @@ Najčešće komande:
 Napomene:
 - `./tool/release_smoke.sh` je brži export/reliability/focus-preview preflight i sada pokriva i ciljane export unit testove, ali nije zamjena za puni `./tool/verify.sh` prije release odluke.
 - `./tool/compact_smoke.sh` sada hvata i stale-link/missing-project recovery putanje, ne samo narrow layout i export kontrole.
-- `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery gate, i na kraju podsjeti na ručne checklist provjere.
+- `./tool/navigation_smoke.sh` drži scene deep-link sync, stale query normalizaciju i recovery navigaciju u brzom web preflightu prije punog verify koraka.
+- `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery i navigation/deep-link gate, i na kraju podsjeti na ručne checklist provjere.
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`

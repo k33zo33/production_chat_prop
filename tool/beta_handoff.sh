@@ -10,11 +10,12 @@ DEMO_SMOKE_SCRIPT="./tool/demo_smoke.sh"
 IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"
 RELEASE_SMOKE_SCRIPT="./tool/release_smoke.sh"
 COMPACT_SMOKE_SCRIPT="./tool/compact_smoke.sh"
+NAVIGATION_SMOKE_SCRIPT="./tool/navigation_smoke.sh"
 VERIFY_SCRIPT="./tool/verify.sh"
 WEB_SHELL_SMOKE_SCRIPT="./tool/web_shell_smoke.sh"
 DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"
 
-for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT"; do
+for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$NAVIGATION_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT"; do
   if [[ ! -f "$script_path" ]]; then
     echo "[beta-handoff] missing required script: $script_path" >&2
     exit 1
@@ -52,6 +53,10 @@ echo "[beta-handoff] release preflight"
 echo
 echo "[beta-handoff] compact/mobile preflight"
 "$COMPACT_SMOKE_SCRIPT"
+
+echo
+echo "[beta-handoff] navigation/deep-link preflight"
+"$NAVIGATION_SMOKE_SCRIPT"
 
 echo
 echo "[beta-handoff] full verification gate"
