@@ -1529,9 +1529,14 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                     const SizedBox(width: 4),
                   ],
                   Expanded(
-                    child: Text(
-                      project.name,
-                      style: Theme.of(context).textTheme.titleLarge,
+                    child: Tooltip(
+                      message: project.name,
+                      child: Text(
+                        project.name,
+                        style: Theme.of(context).textTheme.titleLarge,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                   if (!selectionMode)
@@ -1555,9 +1560,14 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                     const SizedBox(width: 4),
                   ],
                   Expanded(
-                    child: Text(
-                      project.name,
-                      style: Theme.of(context).textTheme.titleLarge,
+                    child: Tooltip(
+                      message: project.name,
+                      child: Text(
+                        project.name,
+                        style: Theme.of(context).textTheme.titleLarge,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                   if (!selectionMode)
@@ -1835,9 +1845,9 @@ Future<bool> _confirmDeleteProject(
     context: context,
     builder: (context) {
       return ResponsiveAlertDialog(
-        title: Text('Delete ${project.name}?'),
-        content: const Text(
-          'This action removes the project from local storage.',
+        title: const Text('Delete Project'),
+        content: Text(
+          'Delete "${project.name}"? This action removes the project from local storage.',
         ),
         actions: [
           TextButton(

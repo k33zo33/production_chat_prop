@@ -549,9 +549,14 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    project.name,
-                    style: Theme.of(context).textTheme.titleLarge,
+                  Tooltip(
+                    message: project.name,
+                    child: Text(
+                      project.name,
+                      style: Theme.of(context).textTheme.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text('Scene: ${scene?.title ?? 'No scene'}'),

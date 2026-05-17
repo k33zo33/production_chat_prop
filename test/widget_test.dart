@@ -322,7 +322,13 @@ void main() {
     await tester.tap(find.text('Delete').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Delete New Project 1 Copy?'), findsOneWidget);
+    expect(find.text('Delete Project'), findsOneWidget);
+    expect(
+      find.text(
+        'Delete "New Project 1 Copy"? This action removes the project from local storage.',
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('confirmDeleteProjectButton')));
     await tester.pump();
@@ -354,7 +360,13 @@ void main() {
       await tester.tap(find.text('Delete').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Delete New Project 1?'), findsOneWidget);
+      expect(find.text('Delete Project'), findsOneWidget);
+      expect(
+        find.text(
+          'Delete "New Project 1"? This action removes the project from local storage.',
+        ),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const Key('cancelDeleteProjectButton')),
         findsOneWidget,
@@ -370,6 +382,111 @@ void main() {
 
       expect(find.text('New Project 1'), findsNothing);
       expect(find.text('No projects yet'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'compact project delete confirmation keeps long project names readable on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createProject();
+      const longProjectName =
+          'Production Chat Prop Beta Hand-off Project With Extra Long Client Review Name 01';
+      await container
+          .read(projectsControllerProvider.notifier)
+          .renameProject(
+            projectId: projectId,
+            newName: longProjectName,
+          );
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const ProjectListScreen(forceCompactAppBar: true),
+      );
+
+      final projectTitle = tester.widget<Text>(
+        find.text(longProjectName).first,
+      );
+      expect(projectTitle.maxLines, 2);
+      expect(projectTitle.overflow, TextOverflow.ellipsis);
+
+      await _openProjectMenuForProject(tester, longProjectName);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Project'), findsOneWidget);
+      expect(
+        find.text(
+          'Delete "$longProjectName"? This action removes the project from local storage.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('cancelDeleteProjectButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('confirmDeleteProjectButton')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'compact editor and playback headers clamp long project names without exceptions',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+      const longProjectName =
+          'Production Chat Prop Mobile Beta Review Project With Very Long Approval Label';
+      await container
+          .read(projectsControllerProvider.notifier)
+          .renameProject(
+            projectId: projectId,
+            newName: longProjectName,
+          );
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      final editorTitle = tester.widget<Text>(find.text(longProjectName).first);
+      expect(editorTitle.maxLines, 2);
+      expect(editorTitle.overflow, TextOverflow.ellipsis);
+      expect(tester.takeException(), isNull);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      final playbackTitle = tester.widget<Text>(
+        find.text(longProjectName).first,
+      );
+      expect(playbackTitle.maxLines, 2);
+      expect(playbackTitle.overflow, TextOverflow.ellipsis);
       expect(tester.takeException(), isNull);
     },
   );

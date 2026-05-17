@@ -384,9 +384,14 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  project.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                Tooltip(
+                  message: project.name,
+                  child: Text(
+                    project.name,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text('Project type: ${project.type.label}'),
