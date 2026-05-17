@@ -4,7 +4,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 
 ## 1) Preduvjeti
 - Pokrenut app lokalno (`flutter run -d web-server` ili browser target)
-- Prije ručnog passa pokrenuti `./tool/release_smoke.sh` kao brzi automatski preflight za export/reliability regressions (widget + export unit testovi)
+- Prije ručnog passa pokrenuti `./tool/release_smoke.sh` kao brzi automatski preflight za export/reliability/focus-preview regressions (widget + export unit testovi)
 - Prije release/deploy odluke i dalje odraditi puni `./tool/verify.sh`
 - U app učitati standardni QA projekt preko `Load Export QA Project` quick action ili ručno importati `docs/fixtures/export-qa-project.json`
 - Fixture već pokriva:
@@ -45,7 +45,15 @@ Referenca za expected downstream handoff: `docs/11-video-fallback-workflow.md`
   - [ ] stanje playbacka ostaje stabilno (timecode se ne resetira)
   - [ ] export fallback payload reflektira odabrani omjer kroz `selectedScene.aspectRatio`
 
-## 5) Edge-case provjere
+## 5) Focus Preview overlay
+- [ ] Na široj layout varijanti kliknuti `Open Focus Preview`
+- [ ] Potvrditi da overlay otvara isti playback trenutak kao glavni preview
+- [ ] Isprobati `Play/Pause`, cue/seek gumbe i scrub slider
+- [ ] Ako je fokus na appu, potvrditi da keyboard shortcuti (`Space`, `←`, `→`, `R`) rade i unutar Focus Previewa
+- [ ] Zatvoriti overlay i potvrditi da glavni Playback ostaje sinkroniziran
+- [ ] Na dugačkoj sceni scrubati dublje u timeline i potvrditi da preview auto-prati aktivne cueove bez zaglavljenog scrolla
+
+## 6) Edge-case provjere
 - [ ] Prazna scena (`Scene 3 - Empty Export Check`):
   - [ ] `Export readiness` prikazuje `No messages in scene`
   - [ ] `Export Screenshot` je disabled
@@ -58,7 +66,7 @@ Referenca za expected downstream handoff: `docs/11-video-fallback-workflow.md`
   - [ ] promjena ratio tijekom playbacka
   - [ ] bez exceptiona i bez gubitka stanja
 
-## 6) Minimalna release gate pravila
+## 7) Minimalna release gate pravila
 - [ ] `./tool/release_smoke.sh` prolazi
 - [ ] `flutter analyze` prolazi bez issuea
 - [ ] `flutter test` prolazi

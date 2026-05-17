@@ -77,7 +77,7 @@ Run `./tool/beta_handoff.sh`, then finish the three manual checklists.
 - `bash tool/demo_smoke.sh` now covers the core beta walkthrough path plus portfolio-readiness CTA navigation and import/export handoff regressions before the heavier release gates
 - `bash tool/import_smoke.sh` now catches JSON import, sanitizer, and persisted-project recovery regressions before export/mobile passes
 - `bash tool/compact_smoke.sh` passed for targeted compact/export regressions, including narrow project-list search/filter/sort controls, portfolio-readiness CTA flows, and stale-link recovery paths
-- `bash tool/release_smoke.sh` now covers empty-scene export disabling, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
+- `bash tool/release_smoke.sh` now covers empty-scene export disabling, focus-preview transport/keyboard flow, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
 - GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `web_shell_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> verify -> built web_shell_smoke` before uploading the web artifact
 - GitHub Actions now also runs `./tool/desktop_smoke.sh` as a separate `desktop_smoke` job so Docker desktop packaging/noVNC regressions surface before they become a beta handoff surprise
 - web shell metadata is now gated too, so title/manifest/icon regressions or accidental real-brand references get caught before beta handoff

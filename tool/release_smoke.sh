@@ -19,6 +19,10 @@ fi
 
 declare -a TEST_NAMES=(
   "playback preview expands on wide layouts and clarifies export scaling"
+  "playback focus preview opens with transport controls and closes cleanly"
+  "focus preview transport controls scrub and jump between cues"
+  "focus preview responds to keyboard play pause and restart shortcuts"
+  "playback preview auto-follows deep cues in long scenes"
   "playback preview surface and export target follow aspect ratio"
   "playback export buttons are disabled for empty scenes"
   "empty playback scene shows recovery guidance and disables transport controls"
@@ -69,6 +73,7 @@ echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
 echo "- Then do the browser pass from docs/08-web-smoke-checklist.md."
 echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md."
+echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
 echo "- Import docs/fixtures/export-qa-project.json for the standard portrait/landscape/empty/long-scene export pass."
 echo "- Finish with docs/04-export-qa-checklist.md before a release/deploy decision."
 

@@ -6631,7 +6631,36 @@ void main() {
       );
       expect(focusStatus.data, contains('00:02 / 00:09'));
 
-      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyR);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:03 / 00:09'));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:02 / 00:09'));
+
+      container
+          .read(playbackControllerProvider(project.id).notifier)
+          .scrubTo(second: 0, maxSecond: 9);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pumpAndSettle();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:00 / 00:09'));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
       await tester.pumpAndSettle();
 
       focusStatus = tester.widget<Text>(
