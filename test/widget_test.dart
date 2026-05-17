@@ -185,6 +185,34 @@ void main() {
     expect(find.text('Imported project: Export QA Project.'), findsOneWidget);
   });
 
+  testWidgets(
+    'load export QA project action does not duplicate bundled QA fixture',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            exportQaFixtureLoaderProvider.overrideWithValue(
+              () async => _exportQaFixtureJson,
+            ),
+          ],
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byTooltip('Load Export QA Project'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Load Export QA Project'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Export QA Project'), findsOneWidget);
+      expect(find.textContaining('(Imported)'), findsNothing);
+      expect(find.text('Export QA Project is already loaded.'), findsOneWidget);
+    },
+  );
+
   testWidgets('export all projects action shows empty portfolio feedback', (
     tester,
   ) async {
@@ -1516,6 +1544,41 @@ void main() {
 
     expect(find.text('Export QA Project'), findsOneWidget);
   });
+
+  testWidgets(
+    'compact project list overflow does not duplicate export QA project',
+    (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            exportQaFixtureLoaderProvider.overrideWithValue(
+              () async => _exportQaFixtureJson,
+            ),
+          ],
+          child: const MaterialApp(
+            home: ProjectListScreen(forceCompactAppBar: true),
+          ),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Load Export QA Project').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('projectListOverflowMenuButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Load Export QA Project').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Export QA Project'), findsOneWidget);
+      expect(find.textContaining('(Imported)'), findsNothing);
+      expect(find.text('Export QA Project is already loaded.'), findsOneWidget);
+    },
+  );
 
   testWidgets('compact selection app bar uses overflow menu actions', (
     tester,

@@ -19,6 +19,7 @@ final projectJsonFilePickerProvider = Provider<TextFilePicker>((ref) {
 });
 
 const _kExportQaFixtureAssetPath = 'docs/fixtures/export-qa-project.json';
+const _kExportQaProjectName = 'Export QA Project';
 
 final exportQaFixtureLoaderProvider = Provider<Future<String> Function()>((
   ref,
@@ -58,6 +59,16 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   Set<String> _selectedIdsForProjects(List<Project> projects) {
     final availableIds = projects.map((project) => project.id).toSet();
     return _selectedProjectIds.where(availableIds.contains).toSet();
+  }
+
+  bool _hasProjectNamed({
+    required List<Project> projects,
+    required String projectName,
+  }) {
+    final normalizedName = projectName.trim().toLowerCase();
+    return projects.any(
+      (project) => project.name.trim().toLowerCase() == normalizedName,
+    );
   }
 
   List<Project> _filteredProjects(List<Project> projects) {
@@ -175,6 +186,18 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     }
 
     if (!mounted) {
+      return;
+    }
+
+    final existingProjects = await ref.read(projectsControllerProvider.future);
+    if (!mounted) {
+      return;
+    }
+    if (_hasProjectNamed(
+      projects: existingProjects,
+      projectName: _kExportQaProjectName,
+    )) {
+      _showProjectListSnackBar('Export QA Project is already loaded.');
       return;
     }
 
