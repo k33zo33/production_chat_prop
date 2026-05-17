@@ -110,12 +110,12 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
       return;
     }
 
-    final syncKey = '$projectId::$selectedSceneId';
+    final currentSceneId = currentState.uri.queryParameters['sceneId'];
+    final syncKey = '$projectId::$selectedSceneId::${currentSceneId ?? ''}';
     if (_lastSyncedRouteSceneKey == syncKey) {
       return;
     }
 
-    final currentSceneId = currentState.uri.queryParameters['sceneId'];
     if (currentSceneId == selectedSceneId) {
       _lastSyncedRouteSceneKey = syncKey;
       return;

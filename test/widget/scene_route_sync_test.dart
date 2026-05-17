@@ -100,6 +100,43 @@ void main() {
     expect(find.text('Scene: ${firstScene.title}'), findsOneWidget);
   });
 
+  testWidgets(
+    'chat editor restores selected scene query when external route clears it',
+    (
+      tester,
+    ) async {
+      final harness = await _createDemoProjectHarness();
+      addTearDown(harness.dispose);
+
+      final secondScene = harness.project.scenes[1];
+      final router = _buildRouter(
+        initialLocation:
+            '/editor/${harness.project.id}?sceneId=${secondScene.id}',
+        builder: (state) => ChatEditorScreen(
+          projectId: state.pathParameters['projectId'],
+          initialSceneId: state.uri.queryParameters['sceneId'],
+        ),
+      );
+      addTearDown(router.dispose);
+
+      await _pumpRouter(tester, container: harness.container, router: router);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+
+      router.go('/editor/${harness.project.id}');
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+      expect(find.text('Scene: ${secondScene.title}'), findsOneWidget);
+
+      router.go('/editor/${harness.project.id}');
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+      expect(find.text('Scene: ${secondScene.title}'), findsOneWidget);
+    },
+  );
+
   testWidgets('playback keeps selected scene in the route query', (
     tester,
   ) async {
@@ -188,6 +225,43 @@ void main() {
     await _pumpUntilRouteSceneId(tester, router, firstScene.id);
     expect(find.text('Scene: ${firstScene.title}'), findsOneWidget);
   });
+
+  testWidgets(
+    'playback restores selected scene query when external route clears it',
+    (
+      tester,
+    ) async {
+      final harness = await _createDemoProjectHarness();
+      addTearDown(harness.dispose);
+
+      final secondScene = harness.project.scenes[1];
+      final router = _buildRouter(
+        initialLocation:
+            '/playback/${harness.project.id}?sceneId=${secondScene.id}',
+        builder: (state) => PlaybackScreen(
+          projectId: state.pathParameters['projectId'],
+          initialSceneId: state.uri.queryParameters['sceneId'],
+        ),
+      );
+      addTearDown(router.dispose);
+
+      await _pumpRouter(tester, container: harness.container, router: router);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+
+      router.go('/playback/${harness.project.id}');
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+      expect(find.text('Scene: ${secondScene.title}'), findsOneWidget);
+
+      router.go('/playback/${harness.project.id}');
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+      expect(find.text('Scene: ${secondScene.title}'), findsOneWidget);
+    },
+  );
 }
 
 class _DemoProjectHarness {
@@ -207,7 +281,9 @@ Future<_DemoProjectHarness> _createDemoProjectHarness() async {
       .read(projectsControllerProvider.notifier)
       .createDemoProject();
   final projects = await container.read(projectsControllerProvider.future);
-  final project = projects.singleWhere((candidate) => candidate.id == projectId);
+  final project = projects.singleWhere(
+    (candidate) => candidate.id == projectId,
+  );
   return _DemoProjectHarness(container: container, project: project);
 }
 
