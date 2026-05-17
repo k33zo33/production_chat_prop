@@ -38,6 +38,8 @@ class ChatEditorScreen extends ConsumerStatefulWidget {
 
 class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
   String? _lastAppliedInitialSceneKey;
+  String? _pendingInitialSceneKey;
+  String? _lastSyncedRouteSceneKey;
 
   @override
   void didChangeDependencies() {
@@ -63,6 +65,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
       return;
     }
     _lastAppliedInitialSceneKey = selectionKey;
+    _pendingInitialSceneKey = selectionKey;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -70,6 +73,64 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
       }
       ref.read(sceneSelectionProvider(projectId).notifier).selectedSceneId =
           initialSceneId;
+      _pendingInitialSceneKey = null;
+    });
+  }
+
+  void _syncSelectedSceneIntoRoute({
+    required String projectId,
+    required String selectedSceneId,
+  }) {
+    if (GoRouter.maybeOf(context) == null) {
+      return;
+    }
+
+    final currentState = GoRouterState.of(context);
+
+    if (currentState.pathParameters['projectId'] != projectId) {
+      return;
+    }
+
+    final syncKey = '$projectId::$selectedSceneId';
+    if (_lastSyncedRouteSceneKey == syncKey) {
+      return;
+    }
+
+    final currentSceneId = currentState.uri.queryParameters['sceneId'];
+    if (currentSceneId == selectedSceneId) {
+      _lastSyncedRouteSceneKey = syncKey;
+      return;
+    }
+
+    _lastSyncedRouteSceneKey = syncKey;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      if (GoRouter.maybeOf(context) == null) {
+        return;
+      }
+
+      final refreshedState = GoRouterState.of(context);
+
+      if (refreshedState.pathParameters['projectId'] != projectId) {
+        return;
+      }
+
+      final refreshedSceneId =
+          refreshedState.uri.queryParameters['sceneId'];
+      if (refreshedSceneId == selectedSceneId) {
+        _lastSyncedRouteSceneKey = syncKey;
+        return;
+      }
+
+      context.replaceNamed(
+        'editorProject',
+        pathParameters: {'projectId': projectId},
+        queryParameters: _sceneRouteQueryParameters(selectedSceneId),
+      );
     });
   }
 
@@ -110,6 +171,27 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
     final effectiveSceneId =
         snapshotState.asData?.value?.scene?.id ?? selectedSceneId;
     final canOpenPlayback = snapshotState.asData?.value != null;
+    final resolvedScene = snapshotState.asData?.value?.scene;
+    final initialSceneId = widget.initialSceneId;
+    final initialSceneKey =
+        initialSceneId == null ? null : '$activeProjectId::$initialSceneId';
+    final shouldDeferRouteSync =
+        initialSceneKey != null &&
+        selectedSceneId != initialSceneId &&
+        _pendingInitialSceneKey == initialSceneKey &&
+        snapshotState.asData?.value != null &&
+        snapshotState.asData!.value!.project.scenes.any(
+          (scene) => scene.id == initialSceneId,
+        );
+
+    if (!shouldDeferRouteSync &&
+        resolvedScene != null &&
+        resolvedScene.id.isNotEmpty) {
+      _syncSelectedSceneIntoRoute(
+        projectId: activeProjectId,
+        selectedSceneId: resolvedScene.id,
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -184,7 +266,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
               ? () => context.goNamed(
                   'playbackProject',
                   pathParameters: {'projectId': activeProjectId},
-                  queryParameters: _playbackRouteQueryParameters(
+                  queryParameters: _sceneRouteQueryParameters(
                     selectedSceneId,
                   ),
                 )
@@ -209,7 +291,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
               context.goNamed(
                 'playbackProject',
                 pathParameters: {'projectId': activeProjectId},
-                queryParameters: _playbackRouteQueryParameters(selectedSceneId),
+                queryParameters: _sceneRouteQueryParameters(selectedSceneId),
               );
               return;
             case _ChatEditorAppBarAction.backToProjects:
@@ -238,7 +320,7 @@ enum _ChatEditorAppBarAction {
   backToProjects,
 }
 
-Map<String, String> _playbackRouteQueryParameters(String? sceneId) {
+Map<String, String> _sceneRouteQueryParameters(String? sceneId) {
   if (sceneId == null) {
     return const <String, String>{};
   }
@@ -281,7 +363,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
       onPressed: () => context.goNamed(
         'playbackProject',
         pathParameters: {'projectId': project.id},
-        queryParameters: _playbackRouteQueryParameters(selectedScene?.id),
+        queryParameters: _sceneRouteQueryParameters(selectedScene?.id),
       ),
       icon: const Icon(Icons.play_circle_outline_rounded),
       label: const Text('Open Playback'),
