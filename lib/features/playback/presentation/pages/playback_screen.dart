@@ -138,8 +138,7 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
         return;
       }
 
-      final refreshedSceneId =
-          refreshedState.uri.queryParameters['sceneId'];
+      final refreshedSceneId = refreshedState.uri.queryParameters['sceneId'];
       if (refreshedSceneId == selectedSceneId) {
         _lastSyncedRouteSceneKey = syncKey;
         return;
@@ -190,8 +189,9 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
     final canOpenEditor = snapshotState.asData?.value != null;
     final resolvedScene = snapshotState.asData?.value?.scene;
     final initialSceneId = widget.initialSceneId;
-    final initialSceneKey =
-        initialSceneId == null ? null : '$activeProjectId::$initialSceneId';
+    final initialSceneKey = initialSceneId == null
+        ? null
+        : '$activeProjectId::$initialSceneId';
     final shouldDeferRouteSync =
         initialSceneKey != null &&
         selectedSceneId != initialSceneId &&
@@ -1276,7 +1276,11 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncAutoFollow(previousCurrentSecond: null, sceneChanged: false);
+      _syncAutoFollow(
+        previousCurrentSecond: null,
+        previousActiveCueId: null,
+        sceneChanged: false,
+      );
     });
   }
 
@@ -1286,6 +1290,10 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncAutoFollow(
         previousCurrentSecond: oldWidget.currentSecond,
+        previousActiveCueId: _activeCueIdFor(
+          messages: oldWidget.messages,
+          currentSecond: oldWidget.currentSecond,
+        ),
         sceneChanged: oldWidget.sceneId != widget.sceneId,
       );
     });
@@ -1299,6 +1307,7 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
 
   void _syncAutoFollow({
     required int? previousCurrentSecond,
+    required String? previousActiveCueId,
     required bool sceneChanged,
   }) {
     if (!mounted || !_scrollController.hasClients || widget.messages.isEmpty) {
@@ -1313,10 +1322,13 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
       return;
     }
 
-    final movedForward = previousCurrentSecond == null
-        ? widget.currentSecond > 0
-        : widget.currentSecond > previousCurrentSecond;
-    if (!movedForward) {
+    if (previousCurrentSecond == null && widget.currentSecond == 0) {
+      return;
+    }
+
+    final currentActiveCueId = _activeCueId();
+    if (currentActiveCueId == null ||
+        currentActiveCueId == previousActiveCueId) {
       return;
     }
 
@@ -1331,24 +1343,33 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
         alignment: 0.92,
-        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
       ),
     );
   }
 
   String? _activeCueId() {
-    for (final message in widget.messages) {
+    return _activeCueIdFor(
+      messages: widget.messages,
+      currentSecond: widget.currentSecond,
+    );
+  }
+
+  String? _activeCueIdFor({
+    required List<Message> messages,
+    required int currentSecond,
+  }) {
+    for (final message in messages) {
       if (widget.showTypingIndicator(
         message: message,
-        currentSecond: widget.currentSecond,
+        currentSecond: currentSecond,
       )) {
         return 'typing-${message.id}';
       }
     }
 
-    for (var index = widget.messages.length - 1; index >= 0; index -= 1) {
-      final message = widget.messages[index];
-      if (message.timestampSeconds <= widget.currentSecond) {
+    for (var index = messages.length - 1; index >= 0; index -= 1) {
+      final message = messages[index];
+      if (message.timestampSeconds <= currentSecond) {
         return 'message-${message.id}';
       }
     }

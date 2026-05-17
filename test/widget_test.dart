@@ -7090,6 +7090,75 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('playback preview re-follows earlier cues after backward scrub', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container
+        .read(projectsControllerProvider.notifier)
+        .importProjectFromJson(
+          _buildLargeProjectImportPayload(messageCount: 520),
+        );
+    final projects = await container.read(projectsControllerProvider.future);
+    final projectId = projects.single.id;
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(home: PlaybackScreen(projectId: projectId)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      find.byKey(const Key('playbackPreviewAspectRatio')),
+    );
+
+    final previewScrollViewFinder = find.byKey(
+      const Key('playbackPreviewScrollView'),
+      skipOffstage: false,
+    );
+
+    container
+        .read(playbackControllerProvider(projectId).notifier)
+        .scrubTo(second: 480, maxSecond: 519);
+    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      find.byKey(const Key('playbackPreviewAspectRatio')),
+    );
+
+    final deepPreviewScrollView = tester.widget<SingleChildScrollView>(
+      previewScrollViewFinder,
+    );
+    final deepOffset = deepPreviewScrollView.controller!.position.pixels;
+    expect(deepOffset, greaterThan(0));
+
+    container
+        .read(playbackControllerProvider(projectId).notifier)
+        .scrubTo(second: 60, maxSecond: 519);
+    await tester.pumpAndSettle();
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      find.byKey(const Key('playbackPreviewAspectRatio')),
+    );
+
+    final rewoundPreviewScrollView = tester.widget<SingleChildScrollView>(
+      previewScrollViewFinder,
+    );
+    expect(
+      rewoundPreviewScrollView.controller!.position.pixels,
+      lessThan(deepOffset),
+    );
+    expect(
+      find.byKey(const Key('activePreviewCue'), skipOffstage: false),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<void> _ensureOnProjectList(WidgetTester tester) async {
