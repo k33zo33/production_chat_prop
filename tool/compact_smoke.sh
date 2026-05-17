@@ -26,6 +26,8 @@ declare -a TEST_NAMES=(
   "compact chat editor keeps scene actions in overflow menu"
   "compact chat editor scene selector shows current scene context on narrow screens"
   "compact scene settings dialog stays usable on narrow screens"
+  "compact scene settings keep manual style entry preview in sync"
+  "compact scene settings keep legacy style aliases in sync"
   "ultra-compact chat editor composer stays usable on phone-width screens"
   "compact character manager keeps actions usable through overflow menu"
   "compact playback app bar uses overflow navigation actions"

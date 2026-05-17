@@ -2707,6 +2707,125 @@ void main() {
   });
 
   testWidgets(
+    'compact scene settings keep manual style entry preview in sync',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('sceneActionsOverflowMenuButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit Scene Settings'));
+      await tester.pumpAndSettle();
+
+      final dialogFinder = find.byType(AlertDialog);
+      final styleIdField = find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Style ID'),
+      );
+      await tester.enterText(styleIdField, 'night_shift');
+      await tester.pump();
+
+      expect(
+        find.descendant(of: dialogFinder, matching: find.text('Night Shift')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: dialogFinder,
+          matching: find.text('Night Shift (night_shift)'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.descendant(of: dialogFinder, matching: find.text('Save')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.textContaining('Style: Night Shift • Aspect: 9:16'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'compact scene settings keep legacy style aliases in sync',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: ChatEditorScreen(
+          projectId: projectId,
+          forceCompactLayout: true,
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('sceneActionsOverflowMenuButton')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit Scene Settings'));
+      await tester.pumpAndSettle();
+
+      final dialogFinder = find.byType(AlertDialog);
+      final styleIdField = find.descendant(
+        of: dialogFinder,
+        matching: find.widgetWithText(TextField, 'Style ID'),
+      );
+      await tester.enterText(styleIdField, 'studio_slate');
+      await tester.pump();
+
+      expect(
+        find.descendant(
+          of: dialogFinder,
+          matching: find.text('Studio Default'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: dialogFinder,
+          matching: find.text('Studio Default (studio_default)'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.descendant(of: dialogFinder, matching: find.text('Save')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.textContaining('Style: Studio Default • Aspect: 9:16'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'compact chat editor bulk message delete keeps stacked actions usable',
     (
       tester,

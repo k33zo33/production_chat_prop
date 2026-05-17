@@ -977,6 +977,24 @@ Future<bool> _showDeleteSceneDialog(
   return result ?? false;
 }
 
+String? _sceneSettingsPresetStyleId(String styleId) {
+  final trimmedStyleId = styleId.trim();
+  if (trimmedStyleId.isEmpty) {
+    return null;
+  }
+
+  final aliasedStyleId =
+      kLegacyChatStyleIdAliases[trimmedStyleId] ?? trimmedStyleId;
+  final matchesKnownPreset = kChatStylePalettes.any(
+    (style) => style.id == aliasedStyleId,
+  );
+  if (!matchesKnownPreset) {
+    return null;
+  }
+
+  return aliasedStyleId;
+}
+
 Future<_SceneSettingsInput?> _showSceneSettingsDialog(
   BuildContext context, {
   required Scene scene,
@@ -993,6 +1011,9 @@ Future<_SceneSettingsInput?> _showSceneSettingsDialog(
       return StatefulBuilder(
         builder: (context, setState) {
           final selectedPalette = resolveChatStylePalette(selectedStyleId);
+          final selectedPresetStyleId = _sceneSettingsPresetStyleId(
+            selectedStyleId,
+          );
           return ResponsiveAlertDialog(
             title: const Text('Edit Scene Settings'),
             content: Column(
@@ -1008,18 +1029,18 @@ Future<_SceneSettingsInput?> _showSceneSettingsDialog(
                   controller: styleIdController,
                   decoration: const InputDecoration(labelText: 'Style ID'),
                   onChanged: (value) {
-                    selectedStyleId = value.trim();
+                    setState(() {
+                      selectedStyleId = value.trim();
+                    });
                   },
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
+                  key: ValueKey<String>(
+                    'sceneStylePreset_${selectedPresetStyleId ?? 'custom'}',
+                  ),
                   isExpanded: true,
-                  initialValue:
-                      kChatStylePalettes.any(
-                        (style) => style.id == selectedStyleId,
-                      )
-                      ? selectedStyleId
-                      : null,
+                  initialValue: selectedPresetStyleId,
                   decoration: const InputDecoration(
                     labelText: 'Style Preset',
                   ),
