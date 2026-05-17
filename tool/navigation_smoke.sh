@@ -36,8 +36,10 @@ declare -a WIDGET_TEST_NAMES=(
 declare -a SCENE_ROUTE_SYNC_TEST_NAMES=(
   "chat editor keeps selected scene in the route query"
   "chat editor normalizes stale scene query ids after load"
+  "chat editor follows external scene query changes after load"
   "playback keeps selected scene in the route query"
   "playback normalizes stale scene query ids after load"
+  "playback follows external scene query changes after load"
 )
 
 declare -a RECOVERY_TEST_NAMES=(
