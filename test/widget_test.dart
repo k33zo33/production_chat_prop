@@ -5159,6 +5159,73 @@ void main() {
     expect(find.textContaining('Scene: Scene C'), findsOneWidget);
   });
 
+  testWidgets(
+    'deleting the last scene keeps selection on the adjacent surviving scene',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _openChatEditorFromProjectList(tester);
+
+      Future<void> addSceneNamed(String name) async {
+        await tester.tap(find.widgetWithText(FilledButton, 'Add Scene'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Scene Title'),
+          name,
+        );
+        await tester.tap(find.text('Save'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      await addSceneNamed('Scene B');
+      await addSceneNamed('Scene C');
+
+      final projectBeforeDelete = (await container.read(
+        projectsControllerProvider.future,
+      )).single;
+      final expectedSelectedSceneId = projectBeforeDelete.scenes
+          .singleWhere((scene) => scene.title == 'Scene B')
+          .id;
+
+      expect(find.textContaining('Scene: Scene C'), findsOneWidget);
+
+      final deleteSceneButton = find.widgetWithText(
+        OutlinedButton,
+        'Delete Scene',
+      );
+      await tester.ensureVisible(deleteSceneButton);
+      await tester.pumpAndSettle();
+      await tester.tap(deleteSceneButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.textContaining('Scene: Scene B'), findsOneWidget);
+      expect(
+        container.read(sceneSelectionProvider(projectId)),
+        expectedSelectedSceneId,
+      );
+    },
+  );
+
   testWidgets('duplicate scene creates and selects copied scene', (
     tester,
   ) async {

@@ -583,22 +583,21 @@ class _SceneActionSection extends ConsumerWidget {
         return;
       }
 
+      final nextSceneId = _nextSceneSelectionAfterDelete(
+        scenes: project.scenes,
+        deletedSceneIndex: selectedSceneIndex,
+      );
       final deleted = await ref
           .read(projectsControllerProvider.notifier)
           .deleteScene(
             projectId: project.id,
             sceneId: selectedScene.id,
           );
-      if (!deleted) {
+      if (!deleted || nextSceneId == null) {
         return;
       }
 
-      for (final scene in project.scenes) {
-        if (scene.id != selectedScene.id) {
-          onSceneSelected(scene.id);
-          break;
-        }
-      }
+      onSceneSelected(nextSceneId);
     }
 
     Future<void> editSceneSettings() async {
@@ -772,6 +771,23 @@ enum _CompactSceneAction {
   moveDown,
   editSettings,
   delete,
+}
+
+String? _nextSceneSelectionAfterDelete({
+  required List<Scene> scenes,
+  required int deletedSceneIndex,
+}) {
+  if (scenes.length <= 1 ||
+      deletedSceneIndex < 0 ||
+      deletedSceneIndex >= scenes.length) {
+    return null;
+  }
+
+  final survivingScenes = [...scenes]..removeAt(deletedSceneIndex);
+  final nextSceneIndex = deletedSceneIndex >= survivingScenes.length
+      ? survivingScenes.length - 1
+      : deletedSceneIndex;
+  return survivingScenes[nextSceneIndex].id;
 }
 
 Future<String?> _showSceneNameDialog(
