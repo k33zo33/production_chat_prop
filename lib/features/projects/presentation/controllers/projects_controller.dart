@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
+import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/features/projects/data/datasources/local_project_datasource.dart';
 import 'package:production_chat_prop/features/projects/data/repositories/local_project_repository.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_sanitizer.dart';
@@ -102,6 +103,27 @@ class ProjectJsonImportResult {
   final int skippedCount;
 
   bool get isSuccess => status == ProjectJsonImportStatus.success;
+}
+
+class ShiftMessagesByIdsResult {
+  const ShiftMessagesByIdsResult._({
+    required this.shiftedCount,
+    required this.wouldGoNegative,
+  });
+
+  const ShiftMessagesByIdsResult.success({required int shiftedCount})
+    : this._(shiftedCount: shiftedCount, wouldGoNegative: false);
+
+  const ShiftMessagesByIdsResult.noop()
+    : this._(shiftedCount: 0, wouldGoNegative: false);
+
+  const ShiftMessagesByIdsResult.wouldGoNegative()
+    : this._(shiftedCount: 0, wouldGoNegative: true);
+
+  final int shiftedCount;
+  final bool wouldGoNegative;
+
+  bool get isSuccess => shiftedCount > 0 && !wouldGoNegative;
 }
 
 class ProjectsController extends AsyncNotifier<List<Project>> {
@@ -499,28 +521,24 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                   return scene;
                 }
 
-                final updatedMessages =
-                    [
-                      ...scene.messages,
-                      Message(
-                        id: _uuid.v4(),
-                        characterId: characterId,
-                        text: trimmedText,
-                        timestampSeconds: timestampSeconds,
-                        status: status,
-                        isIncoming: isIncoming,
-                        showTypingBefore: showTypingBefore,
-                      ),
-                    ]..sort(
-                      (a, b) =>
-                          a.timestampSeconds.compareTo(b.timestampSeconds),
-                    );
+                final updatedMessages = [
+                  ...scene.messages,
+                  Message(
+                    id: _uuid.v4(),
+                    characterId: characterId,
+                    text: trimmedText,
+                    timestampSeconds: timestampSeconds,
+                    status: status,
+                    isIncoming: isIncoming,
+                    showTypingBefore: showTypingBefore,
+                  ),
+                ];
 
                 return Scene(
                   id: scene.id,
                   title: scene.title,
                   characters: scene.characters,
-                  messages: updatedMessages,
+                  messages: sortMessagesByTimeline(updatedMessages),
                   styleId: scene.styleId,
                   aspectRatio: scene.aspectRatio,
                 );
@@ -909,34 +927,29 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                   return scene;
                 }
 
-                final updatedMessages =
-                    scene.messages
-                        .map((message) {
-                          if (message.id != messageId) {
-                            return message;
-                          }
+                final updatedMessages = scene.messages
+                    .map((message) {
+                      if (message.id != messageId) {
+                        return message;
+                      }
 
-                          return Message(
-                            id: message.id,
-                            characterId: characterId,
-                            text: trimmedText,
-                            timestampSeconds: timestampSeconds,
-                            status: status,
-                            isIncoming: isIncoming,
-                            showTypingBefore: showTypingBefore,
-                          );
-                        })
-                        .toList(growable: false)
-                      ..sort(
-                        (a, b) =>
-                            a.timestampSeconds.compareTo(b.timestampSeconds),
+                      return Message(
+                        id: message.id,
+                        characterId: characterId,
+                        text: trimmedText,
+                        timestampSeconds: timestampSeconds,
+                        status: status,
+                        isIncoming: isIncoming,
+                        showTypingBefore: showTypingBefore,
                       );
+                    })
+                    .toList(growable: false);
 
                 return Scene(
                   id: scene.id,
                   title: scene.title,
                   characters: scene.characters,
-                  messages: updatedMessages,
+                  messages: sortMessagesByTimeline(updatedMessages),
                   styleId: scene.styleId,
                   aspectRatio: scene.aspectRatio,
                 );
@@ -1253,12 +1266,7 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                   return scene;
                 }
 
-                final orderedMessages = [...scene.messages]
-                  ..sort(
-                    (a, b) => a.timestampSeconds != b.timestampSeconds
-                        ? a.timestampSeconds.compareTo(b.timestampSeconds)
-                        : a.id.compareTo(b.id),
-                  );
+                final orderedMessages = sortMessagesByTimeline(scene.messages);
                 final fromIndex = orderedMessages.indexWhere(
                   (message) => message.id == messageId,
                 );
@@ -1292,18 +1300,13 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
                   isIncoming: adjacentMessage.isIncoming,
                   showTypingBefore: adjacentMessage.showTypingBefore,
                 );
-                reorderedMessages.sort(
-                  (a, b) => a.timestampSeconds != b.timestampSeconds
-                      ? a.timestampSeconds.compareTo(b.timestampSeconds)
-                      : a.id.compareTo(b.id),
-                );
                 moved = true;
 
                 return Scene(
                   id: scene.id,
                   title: scene.title,
                   characters: scene.characters,
-                  messages: reorderedMessages,
+                  messages: sortMessagesByTimeline(reorderedMessages),
                   styleId: scene.styleId,
                   aspectRatio: scene.aspectRatio,
                 );
@@ -1390,6 +1393,100 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
 
     await _persist(next);
     return removedCount;
+  }
+
+  Future<ShiftMessagesByIdsResult> shiftMessagesByIds({
+    required String projectId,
+    required String sceneId,
+    required Set<String> messageIds,
+    required int offsetSeconds,
+  }) async {
+    if (messageIds.isEmpty || offsetSeconds == 0) {
+      return const ShiftMessagesByIdsResult.noop();
+    }
+
+    final current = await future;
+    var shiftedCount = 0;
+    var wouldGoNegative = false;
+
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final selectedMessages = scene.messages
+                    .where((message) => messageIds.contains(message.id))
+                    .toList(growable: false);
+                if (selectedMessages.isEmpty) {
+                  return scene;
+                }
+
+                if (selectedMessages.any(
+                  (message) => message.timestampSeconds + offsetSeconds < 0,
+                )) {
+                  wouldGoNegative = true;
+                  return scene;
+                }
+
+                shiftedCount = selectedMessages.length;
+                final updatedMessages = scene.messages
+                    .map((message) {
+                      if (!messageIds.contains(message.id)) {
+                        return message;
+                      }
+
+                      return Message(
+                        id: message.id,
+                        characterId: message.characterId,
+                        text: message.text,
+                        timestampSeconds:
+                            message.timestampSeconds + offsetSeconds,
+                        status: message.status,
+                        isIncoming: message.isIncoming,
+                        showTypingBefore: message.showTypingBefore,
+                      );
+                    })
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: scene.characters,
+                  messages: sortMessagesByTimeline(updatedMessages),
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    if (wouldGoNegative) {
+      return const ShiftMessagesByIdsResult.wouldGoNegative();
+    }
+
+    if (shiftedCount == 0) {
+      return const ShiftMessagesByIdsResult.noop();
+    }
+
+    await _persist(next);
+    return ShiftMessagesByIdsResult.success(shiftedCount: shiftedCount);
   }
 
   Future<int> clearSceneMessages({

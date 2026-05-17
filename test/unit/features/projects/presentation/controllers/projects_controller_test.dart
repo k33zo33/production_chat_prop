@@ -506,6 +506,76 @@ void main() {
       expect(projects.first.scenes.first.messages, isEmpty);
     });
 
+    test(
+      'shiftMessagesByIds offsets selected timestamps and keeps stable order',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        await container
+            .read(projectsControllerProvider.notifier)
+            .addMessage(
+              projectId: 'p1',
+              sceneId: 's1',
+              characterId: 'c1',
+              text: 'Message C',
+              timestampSeconds: 6,
+              status: MessageStatus.sent,
+              isIncoming: false,
+              showTypingBefore: false,
+            );
+
+        final beforeShift = await container.read(
+          projectsControllerProvider.future,
+        );
+        final messageC = beforeShift.first.scenes.first.messages.firstWhere(
+          (message) => message.text == 'Message C',
+        );
+
+        final result = await container
+            .read(projectsControllerProvider.notifier)
+            .shiftMessagesByIds(
+              projectId: 'p1',
+              sceneId: 's1',
+              messageIds: {'m2', messageC.id},
+              offsetSeconds: -1,
+            );
+
+        final projects = await container.read(
+          projectsControllerProvider.future,
+        );
+        final messages = projects.first.scenes.first.messages;
+
+        expect(result.isSuccess, isTrue);
+        expect(result.shiftedCount, 2);
+        expect(messages.map((message) => message.timestampSeconds), [0, 4, 5]);
+        expect(messages.map((message) => message.id), [
+          'm1',
+          'm2',
+          messageC.id,
+        ]);
+      },
+    );
+
+    test('shiftMessagesByIds blocks offsets that would go negative', () async {
+      await container.read(projectsControllerProvider.future);
+
+      final result = await container
+          .read(projectsControllerProvider.notifier)
+          .shiftMessagesByIds(
+            projectId: 'p1',
+            sceneId: 's1',
+            messageIds: {'m1'},
+            offsetSeconds: -1,
+          );
+
+      final projects = await container.read(projectsControllerProvider.future);
+      final messages = projects.first.scenes.first.messages;
+
+      expect(result.wouldGoNegative, isTrue);
+      expect(result.isSuccess, isFalse);
+      expect(messages.map((message) => message.timestampSeconds), [0, 5]);
+    });
+
     test('clearSceneMessages removes all scene messages', () async {
       await container.read(projectsControllerProvider.future);
 

@@ -5699,6 +5699,74 @@ void main() {
     },
   );
 
+  testWidgets('bulk select shift updates selected message timestamps', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openChatEditorFromProjectList(tester);
+
+    for (var i = 0; i < 4; i++) {
+      await tester.drag(find.byType(ListView).first, const Offset(0, -220));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+
+    final toggleSelectionButton = find.byKey(
+      const Key('toggleMessageSelectionModeButton'),
+    );
+    await tester.ensureVisible(toggleSelectionButton);
+    await tester.pumpAndSettle();
+    await tester.tap(toggleSelectionButton);
+    await tester.pumpAndSettle();
+
+    final firstCheckbox = find.byType(Checkbox).at(0);
+    await tester.ensureVisible(firstCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(firstCheckbox);
+    await tester.pumpAndSettle();
+
+    final secondCheckbox = find.byType(Checkbox).at(1);
+    await tester.ensureVisible(secondCheckbox);
+    await tester.pumpAndSettle();
+    await tester.tap(secondCheckbox);
+    await tester.pumpAndSettle();
+
+    final shiftSelectedButton = find.byKey(
+      const Key('shiftSelectedMessagesButton'),
+    );
+    await tester.ensureVisible(shiftSelectedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(shiftSelectedButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Shift Selected Message Times'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('shiftSelectedMessagesOffsetField')),
+      '3',
+    );
+    await tester.tap(
+      find.byKey(const Key('confirmShiftSelectedMessagesButton')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      find.textContaining('Shifted 2 selected messages 3 seconds later.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Alex • t=3s'), findsOneWidget);
+    expect(find.textContaining('Mia • t=7s'), findsOneWidget);
+  });
+
   testWidgets('clear scene chat removes all messages in editor', (
     tester,
   ) async {

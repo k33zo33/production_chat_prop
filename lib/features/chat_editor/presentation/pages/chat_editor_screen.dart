@@ -119,8 +119,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
         return;
       }
 
-      final refreshedSceneId =
-          refreshedState.uri.queryParameters['sceneId'];
+      final refreshedSceneId = refreshedState.uri.queryParameters['sceneId'];
       if (refreshedSceneId == selectedSceneId) {
         _lastSyncedRouteSceneKey = syncKey;
         return;
@@ -173,8 +172,9 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
     final canOpenPlayback = snapshotState.asData?.value != null;
     final resolvedScene = snapshotState.asData?.value?.scene;
     final initialSceneId = widget.initialSceneId;
-    final initialSceneKey =
-        initialSceneId == null ? null : '$activeProjectId::$initialSceneId';
+    final initialSceneKey = initialSceneId == null
+        ? null
+        : '$activeProjectId::$initialSceneId';
     final shouldDeferRouteSync =
         initialSceneKey != null &&
         selectedSceneId != initialSceneId &&
@@ -1282,6 +1282,69 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                         ),
                       );
                     },
+              onShiftSelected: !_selectionMode || _selectedMessageIds.isEmpty
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final offsetSeconds =
+                          await _showShiftSelectedMessagesDialog(
+                            context,
+                            selectedCount: _selectedMessageIds.length,
+                          );
+                      if (!context.mounted || offsetSeconds == null) {
+                        return;
+                      }
+                      if (offsetSeconds == 0) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Enter a non-zero time shift before applying.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      final result = await ref
+                          .read(projectsControllerProvider.notifier)
+                          .shiftMessagesByIds(
+                            projectId: widget.projectId,
+                            sceneId: widget.sceneId,
+                            messageIds: _selectedMessageIds,
+                            offsetSeconds: offsetSeconds,
+                          );
+                      if (!mounted) {
+                        return;
+                      }
+                      if (result.wouldGoNegative) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Selected messages cannot shift before 0s.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      if (!result.isSuccess) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'No selected message times were changed.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Shifted ${result.shiftedCount} selected ${result.shiftedCount == 1 ? 'message' : 'messages'} ${_formatShiftOffset(offsetSeconds)}.',
+                          ),
+                        ),
+                      );
+                    },
             ),
             const SizedBox(height: 12),
             if (widget.sceneMessages.isEmpty) ...[
@@ -1445,6 +1508,61 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
     );
     return result ?? false;
   }
+
+  Future<int?> _showShiftSelectedMessagesDialog(
+    BuildContext context, {
+    required int selectedCount,
+  }) async {
+    var rawOffset = '';
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return ResponsiveAlertDialog(
+          title: const Text('Shift Selected Message Times'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Move $selectedCount selected ${selectedCount == 1 ? 'message' : 'messages'} earlier or later by a shared second offset.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                key: const Key('shiftSelectedMessagesOffsetField'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  signed: true,
+                ),
+                onChanged: (value) => rawOffset = value,
+                decoration: const InputDecoration(
+                  labelText: 'Shift offset (seconds)',
+                  hintText: 'Example: -2 or 3',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Use negative values to move earlier and positive values to move later.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              key: const Key('confirmShiftSelectedMessagesButton'),
+              onPressed: () => Navigator.of(
+                context,
+              ).pop(int.tryParse(rawOffset.trim())),
+              child: const Text('Apply Shift'),
+            ),
+          ],
+        );
+      },
+    );
+    return result;
+  }
 }
 
 class _MessageTimelineHeader extends StatelessWidget {
@@ -1456,6 +1574,7 @@ class _MessageTimelineHeader extends StatelessWidget {
     required this.onToggleSelectionMode,
     required this.onClearMessages,
     required this.onDeleteSelected,
+    required this.onShiftSelected,
   });
 
   final bool isCompactLayout;
@@ -1465,6 +1584,7 @@ class _MessageTimelineHeader extends StatelessWidget {
   final VoidCallback onToggleSelectionMode;
   final Future<void> Function()? onClearMessages;
   final Future<void> Function()? onDeleteSelected;
+  final Future<void> Function()? onShiftSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -1500,6 +1620,16 @@ class _MessageTimelineHeader extends StatelessWidget {
             : 'Delete Selected ($selectedCount)',
       ),
     );
+    final shiftButton = OutlinedButton.icon(
+      key: const Key('shiftSelectedMessagesButton'),
+      onPressed: onShiftSelected,
+      icon: const Icon(Icons.schedule_rounded),
+      label: Text(
+        isCompactLayout
+            ? 'Shift ($selectedCount)'
+            : 'Shift Time ($selectedCount)',
+      ),
+    );
 
     if (!isCompactLayout) {
       return Column(
@@ -1515,7 +1645,7 @@ class _MessageTimelineHeader extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [clearButton, deleteButton],
+            children: [clearButton, shiftButton, deleteButton],
           ),
         ],
       );
@@ -1531,18 +1661,31 @@ class _MessageTimelineHeader extends StatelessWidget {
         if (isUltraCompactLayout) ...[
           SizedBox(width: double.infinity, child: clearButton),
           const SizedBox(height: 8),
+          SizedBox(width: double.infinity, child: shiftButton),
+          const SizedBox(height: 8),
           SizedBox(width: double.infinity, child: deleteButton),
         ] else
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(child: clearButton),
-              const SizedBox(width: 8),
-              Expanded(child: deleteButton),
+              clearButton,
+              shiftButton,
+              deleteButton,
             ],
           ),
       ],
     );
   }
+}
+
+String _formatShiftOffset(int offsetSeconds) {
+  final absoluteOffset = offsetSeconds.abs();
+  final unit = absoluteOffset == 1 ? 'second' : 'seconds';
+  if (offsetSeconds < 0) {
+    return '$absoluteOffset $unit earlier';
+  }
+  return '$absoluteOffset $unit later';
 }
 
 class _MessageRow extends StatelessWidget {
