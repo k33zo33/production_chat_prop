@@ -2218,9 +2218,17 @@ class _PlaybackEmptyStateActions extends StatelessWidget {
         children: [
           Text(
             hasScene
-                ? 'Add at least one timed message in Chat Editor to enable playback and export, or load a starter template here.'
+                ? 'Add at least one timed message in Chat Editor to enable playback and export.'
                 : 'Select a scene in Chat Editor before playback can start.',
           ),
+          if (hasScene) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Need a fast starting point? Use the buttons below to load a starter template.',
+              key: const Key('playbackEmptyStateTemplateHint'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: 12),
           if (isCompactLayout)
             Column(

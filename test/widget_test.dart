@@ -7620,12 +7620,17 @@ void main() {
         findsNothing,
       );
 
+      final restartButtonFinder = find.byKey(const Key('restartButton'));
+      final playButtonFinder = find.byKey(const Key('playButton'));
+      await _ensureFinderVisibleInPrimaryListView(tester, restartButtonFinder);
+      await _ensureFinderVisibleInPrimaryListView(tester, playButtonFinder);
+
       final slider = tester.widget<Slider>(find.byType(Slider));
       final restartButton = tester.widget<OutlinedButton>(
-        find.byKey(const Key('restartButton')),
+        restartButtonFinder,
       );
       final playButton = tester.widget<FilledButton>(
-        find.byKey(const Key('playButton')),
+        playButtonFinder,
       );
 
       expect(slider.onChanged, isNull);

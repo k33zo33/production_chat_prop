@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
+import 'package:production_chat_prop/features/projects/domain/repositories/project_repository.dart';
+import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -31,6 +33,22 @@ void main() {
 
       expect(find.byKey(const Key('playbackEmptyStateHint')), findsOneWidget);
       expect(
+        find.text(
+          'Add at least one timed message in Chat Editor to enable playback and export.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('playbackEmptyStateTemplateHint')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Need a fast starting point? Use the buttons below to load a starter template.',
+        ),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const Key('playbackEmptyStateOpenEditorButton')),
         findsOneWidget,
       );
@@ -52,6 +70,31 @@ void main() {
       expect(
         find.text('Scene: ${harness.project.scenes.first.title}'),
         findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'playback empty state hides template hint when no scene is available',
+    (tester) async {
+      final harness = await _createNoSceneHarness();
+      addTearDown(harness.dispose);
+
+      final router = _buildRouter(
+        initialLocation: '/playback/${harness.project.id}',
+      );
+      addTearDown(router.dispose);
+
+      await _pumpRouter(tester, container: harness.container, router: router);
+
+      expect(find.byKey(const Key('playbackEmptyStateHint')), findsOneWidget);
+      expect(
+        find.text('Select a scene in Chat Editor before playback can start.'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('playbackEmptyStateTemplateHint')),
+        findsNothing,
       );
     },
   );
@@ -131,6 +174,50 @@ Future<_EmptySceneHarness> _createEmptySceneHarness() async {
     project: refreshedProject,
     sceneId: sceneId,
   );
+}
+
+Future<_EmptySceneHarness> _createNoSceneHarness() async {
+  final project = Project(
+    id: 'project-empty',
+    name: 'No Scene Yet',
+    type: ProjectType.other,
+    createdAt: DateTime.utc(2026, 6, 10, 10),
+    updatedAt: DateTime.utc(2026, 6, 10, 10),
+    scenes: const <Scene>[],
+  );
+
+  final container = ProviderContainer(
+    overrides: [
+      projectRepositoryProvider.overrideWithValue(
+        _InMemoryProjectRepository(projects: [project]),
+      ),
+    ],
+  );
+
+  await container.read(projectsControllerProvider.future);
+
+  return _EmptySceneHarness(
+    container: container,
+    project: project,
+    sceneId: '',
+  );
+}
+
+class _InMemoryProjectRepository implements ProjectRepository {
+  _InMemoryProjectRepository({required List<Project> projects})
+    : _projects = List<Project>.from(projects);
+
+  List<Project> _projects;
+
+  @override
+  Future<List<Project>> getAll() async {
+    return List<Project>.from(_projects);
+  }
+
+  @override
+  Future<void> saveAll(List<Project> projects) async {
+    _projects = List<Project>.from(projects);
+  }
 }
 
 GoRouter _buildRouter({required String initialLocation}) {
