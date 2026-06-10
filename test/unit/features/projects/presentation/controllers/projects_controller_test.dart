@@ -227,6 +227,43 @@ void main() {
     });
 
     test(
+      'updateCharacterAvatarPath trims and clears avatar references',
+      () async {
+        await container.read(projectsControllerProvider.future);
+
+        await container
+            .read(projectsControllerProvider.notifier)
+            .updateCharacterAvatarPath(
+              projectId: 'p1',
+              sceneId: 's1',
+              characterId: 'c1',
+              avatarPath: '  https://example.com/alex.png  ',
+            );
+
+        var projects = await container.read(projectsControllerProvider.future);
+        expect(
+          projects.first.scenes.first.characters.single.avatarPath,
+          'https://example.com/alex.png',
+        );
+
+        await container
+            .read(projectsControllerProvider.notifier)
+            .updateCharacterAvatarPath(
+              projectId: 'p1',
+              sceneId: 's1',
+              characterId: 'c1',
+              avatarPath: '   ',
+            );
+
+        projects = await container.read(projectsControllerProvider.future);
+        expect(
+          projects.first.scenes.first.characters.single.avatarPath,
+          isNull,
+        );
+      },
+    );
+
+    test(
       'updateCharacterBubbleColor normalizes the selected color only',
       () async {
         await container.read(projectsControllerProvider.future);

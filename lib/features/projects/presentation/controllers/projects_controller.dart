@@ -685,6 +685,71 @@ class ProjectsController extends AsyncNotifier<List<Project>> {
     await _persist(next);
   }
 
+  Future<void> updateCharacterAvatarPath({
+    required String projectId,
+    required String sceneId,
+    required String characterId,
+    required String? avatarPath,
+  }) async {
+    final normalizedAvatarPath = avatarPath?.trim();
+    final persistedAvatarPath =
+        normalizedAvatarPath == null || normalizedAvatarPath.isEmpty
+        ? null
+        : normalizedAvatarPath;
+
+    final current = await future;
+    final next = current
+        .map((project) {
+          if (project.id != projectId) {
+            return project;
+          }
+
+          final updatedScenes = project.scenes
+              .map((scene) {
+                if (scene.id != sceneId) {
+                  return scene;
+                }
+
+                final updatedCharacters = scene.characters
+                    .map((character) {
+                      if (character.id != characterId) {
+                        return character;
+                      }
+
+                      return Character(
+                        id: character.id,
+                        displayName: character.displayName,
+                        avatarPath: persistedAvatarPath,
+                        bubbleColor: character.bubbleColor,
+                      );
+                    })
+                    .toList(growable: false);
+
+                return Scene(
+                  id: scene.id,
+                  title: scene.title,
+                  characters: updatedCharacters,
+                  messages: scene.messages,
+                  styleId: scene.styleId,
+                  aspectRatio: scene.aspectRatio,
+                );
+              })
+              .toList(growable: false);
+
+          return Project(
+            id: project.id,
+            name: project.name,
+            type: project.type,
+            createdAt: project.createdAt,
+            updatedAt: DateTime.now(),
+            scenes: updatedScenes,
+          );
+        })
+        .toList(growable: false);
+
+    await _persist(next);
+  }
+
   Future<void> updateCharacterBubbleColor({
     required String projectId,
     required String sceneId,

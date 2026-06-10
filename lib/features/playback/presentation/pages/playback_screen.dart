@@ -11,6 +11,7 @@ import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
@@ -431,6 +432,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           selectedAspectRatio,
         );
     final speakerNameById = _buildSpeakerNameById(project);
+    final characterAvatarPathById = {
+      for (final character in scene?.characters ?? const <Character>[])
+        character.id: character.avatarPath,
+    };
     final characterBubbleColorById = {
       for (final character in scene?.characters ?? const <Character>[])
         character.id: character.bubbleColor,
@@ -547,6 +552,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
         return KeyEventResult.ignored;
       },
       child: ListView(
+        key: const Key('playbackPageScrollView'),
         padding: const EdgeInsets.all(16),
         children: [
           Card(
@@ -955,6 +961,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
             maxSecond: maxSecond,
             messages: sortedMessages,
             speakerNameById: speakerNameById,
+            characterAvatarPathById: characterAvatarPathById,
             characterBubbleColorById: characterBubbleColorById,
             resolveSpeakerName: _resolveSpeakerName,
             showTypingIndicator: showsTypingIndicatorAtSecond,
@@ -1289,6 +1296,7 @@ class _PlaybackPreviewCard extends StatefulWidget {
     required this.maxSecond,
     required this.messages,
     required this.speakerNameById,
+    required this.characterAvatarPathById,
     required this.characterBubbleColorById,
     required this.resolveSpeakerName,
     required this.showTypingIndicator,
@@ -1305,6 +1313,7 @@ class _PlaybackPreviewCard extends StatefulWidget {
   final int maxSecond;
   final List<Message> messages;
   final Map<String, String> speakerNameById;
+  final Map<String, String?> characterAvatarPathById;
   final Map<String, String> characterBubbleColorById;
   final String Function({
     required String characterId,
@@ -1595,6 +1604,15 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
                                                         speakerNameById: widget
                                                             .speakerNameById,
                                                       ),
+                                                  characterAvatarPath:
+                                                      widget
+                                                          .characterAvatarPathById[message
+                                                          .characterId],
+                                                  characterBubbleColor:
+                                                      widget
+                                                          .characterBubbleColorById[message
+                                                          .characterId] ??
+                                                      kDefaultCharacterBubbleColorHex,
                                                   palette: widget.palette,
                                                   isActiveCue:
                                                       activeCueId ==
@@ -1618,6 +1636,10 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
                                                       speakerNameById: widget
                                                           .speakerNameById,
                                                     ),
+                                                characterAvatarPath:
+                                                    widget
+                                                        .characterAvatarPathById[message
+                                                        .characterId],
                                                 characterBubbleColor:
                                                     widget
                                                         .characterBubbleColorById[message
@@ -1761,6 +1783,10 @@ class _PlaybackFocusPreviewScreenState
               scene?.styleId ?? 'studio_default',
             );
             final speakerNameById = _buildSpeakerNameById(project);
+            final characterAvatarPathById = {
+              for (final character in scene?.characters ?? const <Character>[])
+                character.id: character.avatarPath,
+            };
             final characterBubbleColorById = {
               for (final character in scene?.characters ?? const <Character>[])
                 character.id: character.bubbleColor,
@@ -1846,6 +1872,8 @@ class _PlaybackFocusPreviewScreenState
                                 maxSecond: maxSecond,
                                 messages: sortedMessages,
                                 speakerNameById: speakerNameById,
+                                characterAvatarPathById:
+                                    characterAvatarPathById,
                                 characterBubbleColorById:
                                     characterBubbleColorById,
                                 resolveSpeakerName: _resolveSpeakerName,
@@ -2616,11 +2644,15 @@ class _PlaybackTransportControls extends StatelessWidget {
 class _TypingIndicatorItem extends StatelessWidget {
   const _TypingIndicatorItem({
     required this.speakerName,
+    required this.characterAvatarPath,
+    required this.characterBubbleColor,
     required this.palette,
     this.isActiveCue = false,
   });
 
   final String speakerName;
+  final String? characterAvatarPath;
+  final String characterBubbleColor;
   final ChatStylePalette palette;
   final bool isActiveCue;
 
@@ -2647,7 +2679,11 @@ class _TypingIndicatorItem extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.more_horiz_rounded, size: 18, color: palette.textColor),
+          CharacterAvatar(
+            displayName: speakerName,
+            avatarPath: characterAvatarPath,
+            bubbleColor: characterBubbleColor,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -2668,6 +2704,7 @@ class _TimelineItem extends StatelessWidget {
     required this.message,
     required this.palette,
     required this.speakerName,
+    required this.characterAvatarPath,
     required this.characterBubbleColor,
     required this.isVisibleAtCurrentTime,
     this.cleanPreview = false,
@@ -2677,6 +2714,7 @@ class _TimelineItem extends StatelessWidget {
   final Message message;
   final ChatStylePalette palette;
   final String speakerName;
+  final String? characterAvatarPath;
   final String characterBubbleColor;
   final bool isVisibleAtCurrentTime;
   final bool cleanPreview;
@@ -2732,9 +2770,22 @@ class _TimelineItem extends StatelessWidget {
             final messageContent = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  speakerName,
-                  style: TextStyle(color: palette.textColor),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CharacterAvatar(
+                      displayName: speakerName,
+                      avatarPath: characterAvatarPath,
+                      bubbleColor: characterBubbleColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        speakerName,
+                        style: TextStyle(color: palette.textColor),
+                      ),
+                    ),
+                  ],
                 ),
                 if (!cleanPreview) ...[
                   const SizedBox(height: 4),

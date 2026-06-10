@@ -9,6 +9,7 @@ import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
@@ -1223,6 +1224,9 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
   Widget build(BuildContext context) {
     final palette = resolveChatStylePalette(widget.sceneStyleId);
     final speakerNameById = _buildSpeakerNameById(widget.sceneProject);
+    final characterAvatarPathById = _buildCharacterAvatarPathById(
+      widget.sceneProject,
+    );
     final characterBubbleColorById = {
       for (final character in widget.sceneCharacters)
         character.id: character.bubbleColor,
@@ -1470,6 +1474,10 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                     characterId: widget.sceneMessages[i].characterId,
                     speakerNameById: speakerNameById,
                   ),
+                  characterAvatarPath:
+                      characterAvatarPathById[widget
+                          .sceneMessages[i]
+                          .characterId],
                   characterBubbleColor:
                       characterBubbleColorById[widget
                           .sceneMessages[i]
@@ -1511,6 +1519,16 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
     for (final scene in sceneProject.scenes) {
       for (final character in scene.characters) {
         map[character.id] = character.displayName;
+      }
+    }
+    return map;
+  }
+
+  Map<String, String?> _buildCharacterAvatarPathById(Project sceneProject) {
+    final map = <String, String?>{};
+    for (final scene in sceneProject.scenes) {
+      for (final character in scene.characters) {
+        map[character.id] = character.avatarPath;
       }
     }
     return map;
@@ -1848,6 +1866,7 @@ class _MessageRow extends StatelessWidget {
     required this.palette,
     required this.characters,
     required this.speakerName,
+    required this.characterAvatarPath,
     required this.characterBubbleColor,
     required this.canMoveEarlier,
     required this.canMoveLater,
@@ -1863,6 +1882,7 @@ class _MessageRow extends StatelessWidget {
   final ChatStylePalette palette;
   final List<Character> characters;
   final String speakerName;
+  final String? characterAvatarPath;
   final String characterBubbleColor;
   final bool canMoveEarlier;
   final bool canMoveLater;
@@ -1897,11 +1917,23 @@ class _MessageRow extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelMedium?.copyWith(color: palette.textColor),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CharacterAvatar(
+                      displayName: speakerName,
+                      avatarPath: characterAvatarPath,
+                      bubbleColor: characterBubbleColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(color: palette.textColor),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -1933,7 +1965,14 @@ class _MessageRow extends StatelessWidget {
             )
           else
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                CharacterAvatar(
+                  displayName: speakerName,
+                  avatarPath: characterAvatarPath,
+                  bubbleColor: characterBubbleColor,
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
@@ -2771,6 +2810,23 @@ class _CharacterManagerCard extends ConsumerWidget {
       );
     }
 
+    Future<void> updateAvatar(Character character) async {
+      final nextAvatarPath = await _showCharacterAvatarDialog(
+        context,
+        character: character,
+      );
+      if (nextAvatarPath == null) {
+        return;
+      }
+
+      await controller.updateCharacterAvatarPath(
+        projectId: projectId,
+        sceneId: sceneId,
+        characterId: character.id,
+        avatarPath: nextAvatarPath,
+      );
+    }
+
     Future<void> updateBubbleColor(Character character) async {
       final nextColor = await _showCharacterBubbleColorDialog(
         context,
@@ -2932,11 +2988,25 @@ class _CharacterManagerCard extends ConsumerWidget {
                                     alignment: Alignment.centerLeft,
                                     child: Chip(
                                       key: Key('characterChip_${character.id}'),
-                                      avatar: _CharacterBubbleAvatar(
+                                      avatar: CharacterAvatar(
+                                        displayName: character.displayName,
+                                        avatarPath: character.avatarPath,
                                         bubbleColor: character.bubbleColor,
                                       ),
                                       label: Text(character.displayName),
                                     ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    character.avatarPath == null ||
+                                            character.avatarPath!.trim().isEmpty
+                                        ? 'Avatar: not set'
+                                        : 'Avatar: ${character.avatarPath}',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -2960,6 +3030,9 @@ class _CharacterManagerCard extends ConsumerWidget {
                                   case _CompactCharacterAction.rename:
                                     await renameCharacter(character);
                                     return;
+                                  case _CompactCharacterAction.editAvatar:
+                                    await updateAvatar(character);
+                                    return;
                                   case _CompactCharacterAction.editColor:
                                     await updateBubbleColor(character);
                                     return;
@@ -2974,6 +3047,10 @@ class _CharacterManagerCard extends ConsumerWidget {
                                   child: Text(
                                     'Rename ${character.displayName}',
                                   ),
+                                ),
+                                const PopupMenuItem(
+                                  value: _CompactCharacterAction.editAvatar,
+                                  child: Text('Edit Avatar'),
                                 ),
                                 PopupMenuItem(
                                   value: _CompactCharacterAction.editColor,
@@ -3004,7 +3081,9 @@ class _CharacterManagerCard extends ConsumerWidget {
                   for (final character in characters)
                     Chip(
                       key: Key('characterChip_${character.id}'),
-                      avatar: _CharacterBubbleAvatar(
+                      avatar: CharacterAvatar(
+                        displayName: character.displayName,
+                        avatarPath: character.avatarPath,
                         bubbleColor: character.bubbleColor,
                       ),
                       label: Text(character.displayName),
@@ -3033,6 +3112,22 @@ class _CharacterManagerCard extends ConsumerWidget {
                           onPressed: () => renameCharacter(character),
                           icon: const Icon(Icons.edit_rounded),
                           label: Text('Rename ${character.displayName}'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          key: Key('editCharacterAvatar_${character.id}'),
+                          onPressed: () => updateAvatar(character),
+                          icon: CharacterAvatar(
+                            displayName: character.displayName,
+                            avatarPath: character.avatarPath,
+                            bubbleColor: character.bubbleColor,
+                          ),
+                          label: Text(
+                            character.avatarPath == null ||
+                                    character.avatarPath!.trim().isEmpty
+                                ? 'Add Avatar'
+                                : 'Edit Avatar',
+                          ),
                         ),
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
@@ -3070,6 +3165,44 @@ class _CharacterManagerCard extends ConsumerWidget {
       initialValue: initialValue,
       emptyErrorText: 'Character name cannot be empty.',
     );
+  }
+
+  Future<String?> _showCharacterAvatarDialog(
+    BuildContext context, {
+    required Character character,
+  }) async {
+    final controller = TextEditingController(text: character.avatarPath ?? '');
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return ResponsiveAlertDialog(
+          title: Text('Avatar for ${character.displayName}'),
+          content: TextField(
+            key: Key('characterAvatarField_${character.id}'),
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Avatar URL or path',
+              helperText:
+                  'Optional. Remote URLs and data URIs preview in-app; other paths are stored for handoff.',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result;
   }
 
   Future<bool> _showDeleteCharacterDialog(
@@ -3178,7 +3311,7 @@ class _CharacterManagerCard extends ConsumerWidget {
   }
 }
 
-enum _CompactCharacterAction { rename, editColor, delete }
+enum _CompactCharacterAction { rename, editAvatar, editColor, delete }
 
 class _CharacterBubbleAvatar extends StatelessWidget {
   const _CharacterBubbleAvatar({required this.bubbleColor});

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/app/app.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
+import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
 import 'package:production_chat_prop/features/playback/data/services/screenshot_export_service.dart';
@@ -3247,6 +3248,31 @@ void main() {
       );
       await tester.tap(renamedAlexMenuButton);
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit Avatar'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Avatar URL or path'),
+        _testAvatarDataUri,
+      );
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      final avatarUpdatedSnapshot = container
+          .read(sceneSnapshotProvider(projectId))
+          .value!
+          .scene!;
+      final avatarUpdatedAlex = avatarUpdatedSnapshot.characters.firstWhere(
+        (character) => character.id == alex.id,
+      );
+      expect(avatarUpdatedAlex.avatarPath, _testAvatarDataUri);
+      expect(
+        find.textContaining('Avatar: data:image/png;base64,'),
+        findsOneWidget,
+      );
+
+      await tester.tap(renamedAlexMenuButton);
+      await tester.pumpAndSettle();
       await tester.tap(find.textContaining('Bubble Color:'));
       await tester.pumpAndSettle();
       final roseColorOption = find.byKey(
@@ -3266,6 +3292,7 @@ void main() {
         (character) => character.id == alex.id,
       );
       expect(updatedAlex.displayName, 'Alex Prime');
+      expect(updatedAlex.avatarPath, _testAvatarDataUri);
       expect(updatedAlex.bubbleColor, '#F0447C');
 
       final blairMenuButton = find.byKey(
@@ -3367,6 +3394,27 @@ void main() {
       find.textContaining('t=1s / 9 s', skipOffstage: false),
       findsOneWidget,
     );
+  });
+
+  testWidgets('character avatar renders embedded image data safely', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CharacterAvatar(
+              displayName: '🤖 Robot',
+              bubbleColor: '#2E90FA',
+              avatarPath: _testAvatarDataUri,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(CharacterAvatar), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(
@@ -3797,9 +3845,15 @@ void main() {
 
       final openEditorButton = find.byKey(
         const Key('playbackOpenEditorButton'),
+        skipOffstage: false,
       );
-      await _ensureFinderVisibleInPrimaryListView(tester, openEditorButton);
-      await tester.tap(openEditorButton);
+      await tester.dragUntilVisible(
+        openEditorButton,
+        find.byKey(const Key('playbackPageScrollView')),
+        const Offset(0, -240),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(openEditorButton.last);
       await tester.pumpAndSettle();
 
       expect(find.text('Chat Editor'), findsOneWidget);
@@ -7819,6 +7873,9 @@ Future<void> _ensureOnProjectList(WidgetTester tester) async {
     await tester.pumpAndSettle();
   }
 }
+
+const _testAvatarDataUri =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9sotZ1sAAAAASUVORK5CYII=';
 
 Future<void> _pumpNarrowScreenWithContainer(
   WidgetTester tester, {
