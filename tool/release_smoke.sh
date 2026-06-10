@@ -10,12 +10,17 @@ source "$ROOT_DIR/tool/smoke_common.sh"
 smoke_print_flutter_banner "release-smoke" "$FLUTTER_BIN"
 smoke_run_analyze "release-smoke" "$FLUTTER_BIN"
 
-WIDGET_TEST_FILE="test/widget_test.dart"
+declare -a WIDGET_TEST_FILES=(
+  "test/widget_test.dart"
+  "test/widget/playback_export_feedback_test.dart"
+)
 
-if [[ ! -f "$WIDGET_TEST_FILE" ]]; then
-  echo "[release-smoke] missing expected test file: $WIDGET_TEST_FILE" >&2
-  exit 1
-fi
+for widget_test_file in "${WIDGET_TEST_FILES[@]}"; do
+  if [[ ! -f "$widget_test_file" ]]; then
+    echo "[release-smoke] missing expected test file: $widget_test_file" >&2
+    exit 1
+  fi
+done
 
 declare -a TEST_NAMES=(
   "playback preview expands on wide layouts and clarifies export scaling"
@@ -44,7 +49,7 @@ declare -a UNIT_TEST_FILES=(
 )
 
 for test_name in "${TEST_NAMES[@]}"; do
-  if ! grep -Fq "$test_name" "$WIDGET_TEST_FILE"; then
+  if ! grep -Fq "$test_name" "${WIDGET_TEST_FILES[@]}"; then
     echo "[release-smoke] missing expected widget test: $test_name" >&2
     exit 1
   fi
@@ -60,7 +65,7 @@ done
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 
 echo "[release-smoke] widget tests: ${#TEST_NAMES[@]} targeted export/reliability cases"
-"$FLUTTER_BIN" test "$WIDGET_TEST_FILE" --name "^(${TEST_PATTERN})$"
+"$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo
 
