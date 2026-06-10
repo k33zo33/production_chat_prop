@@ -7129,6 +7129,70 @@ void main() {
   });
 
   testWidgets(
+    'compact playback aspect ratio switch keeps active timeline state and preview toggles',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      await tester.tap(find.byKey(const Key('playbackDeviceFrameSwitch')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('playbackCleanPreviewSwitch')));
+      await tester.pumpAndSettle();
+
+      final seekForwardFiveButton = find.byKey(const Key('seekForward5Button'));
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        seekForwardFiveButton,
+      );
+      await tester.tap(seekForwardFiveButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('t=5s / 9 s', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Preview: frameless • clean', skipOffstage: false),
+        findsOneWidget,
+      );
+
+      final aspectRatioLandscapeChip = find.byKey(
+        const Key('aspectRatioLandscapeChip'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        aspectRatioLandscapeChip,
+      );
+      await tester.tap(aspectRatioLandscapeChip);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.textContaining('Scene ratio: 16:9', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('t=5s / 9 s', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Preview: frameless • clean', skipOffstage: false),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'playback preview expands on wide layouts and clarifies export scaling',
     (
       tester,
