@@ -25,6 +25,7 @@ Preporučeni viewport:
 - [ ] Ako projekt ima dugo ime, potvrdi da header ostaje čitljiv (max 2 reda, bez overflow exceptiona)
 - [ ] Potvrdi da je scene selector upotrebljiv na uskoj širini
 - [ ] Ako otvaraš editor preko deep-linka sa `?sceneId=...`, ručno makni query i potvrdi da compact editor vrati trenutno odabranu scenu bez zaglavljenog statea
+  - Napomena: `./tool/release_smoke.sh` već pokriva compact-safe route-sync/stale-link regresije; ovdje potvrđuješ stvarni phone-width browser flow.
 - [ ] Otvori scene overflow meni i provjeri `Duplicate Scene` i `Edit Scene Settings`
 - [ ] U `Edit Scene Settings` promijeni preset i aspect ratio pa spremi
 - [ ] Dodaj ili izmijeni barem jednu poruku
@@ -41,6 +42,7 @@ Preporučeni viewport:
 - [ ] Skrolaj do dna playback ekrana i potvrdi da `Open Chat Editor` otvara editor, a `Back to Projects` vraća na listu projekata
 - [ ] Promijeni scenu i potvrdi da se progress resetira na novu scenu
 - [ ] Ako otvaraš playback preko deep-linka sa `?sceneId=...`, ručno makni query i potvrdi da compact playback vrati aktivnu scenu bez gubitka sinkronizacije
+  - Napomena: `./tool/release_smoke.sh` već pokriva compact-safe route-sync/stale-link regresije; ovdje potvrđuješ stvarni phone-width browser flow.
 - [ ] Ako je scena dugačka, scrubaj duboko u timeline pa prebaci na drugu scenu i potvrdi da preview ne ostane zaglavljen duboko skrolan
 - [ ] Promijeni ratio između `9:16` i `16:9` bez gubitka playback stanja
 
