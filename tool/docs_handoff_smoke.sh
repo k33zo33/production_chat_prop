@@ -150,14 +150,14 @@ repository_test = repository_test_path.read_text(encoding='utf-8')
 fixture_test = fixture_test_path.read_text(encoding='utf-8')
 
 expected_sequence = (
-    'web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> '
-    'release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> '
-    'built brand_neutrality_smoke'
+    'docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> '
+    'import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> '
+    'built web_shell_smoke -> built brand_neutrality_smoke'
 )
 
 checks = [
     (expected_sequence in readme,
-     'README quality gate sequence is missing navigation_smoke or is out of date'),
+     'README quality gate sequence is missing docs_handoff_smoke/navigation_smoke or is out of date'),
     ('./tool/import_smoke.sh' in readme,
      'README common commands should mention ./tool/import_smoke.sh'),
     ('./tool/brand_neutrality_smoke.sh' in readme,
@@ -167,13 +167,15 @@ checks = [
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
      'README should mention the separate desktop_smoke gate'),
     (expected_sequence in web_done,
-     'docs/05-web-done-checklist.md should describe the current beta handoff order'),
+     'docs/05-web-done-checklist.md should describe the current beta handoff order including docs_handoff_smoke'),
     ('./tool/desktop_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the desktop smoke gate'),
     ('./tool/brand_neutrality_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the brand-neutrality smoke gate'),
     ('navigation_smoke' in web_done and './tool/navigation_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the navigation smoke gate'),
+    ('DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"' in beta_handoff,
+     'tool/beta_handoff.sh must define the docs handoff smoke gate'),
     ('BRAND_NEUTRALITY_SMOKE_SCRIPT="./tool/brand_neutrality_smoke.sh"' in beta_handoff,
      'tool/beta_handoff.sh must define the brand-neutrality smoke gate'),
     ('IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"' in beta_handoff,
