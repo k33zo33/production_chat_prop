@@ -7,6 +7,7 @@ import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/app_breakpoints.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
+import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/core/widgets/character_avatar.dart';
@@ -19,6 +20,13 @@ import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
+
+const _kCharacterAvatarImageAccept =
+    'image/png,image/jpeg,image/webp,image/gif';
+
+final characterAvatarFilePickerProvider = Provider<DataUriFilePicker>((ref) {
+  return pickFileAsDataUri;
+});
 
 class ChatEditorScreen extends ConsumerStatefulWidget {
   const ChatEditorScreen({
@@ -2813,6 +2821,7 @@ class _CharacterManagerCard extends ConsumerWidget {
     Future<void> updateAvatar(Character character) async {
       final nextAvatarPath = await _showCharacterAvatarDialog(
         context,
+        ref,
         character: character,
       );
       if (nextAvatarPath == null) {
@@ -3168,36 +3177,123 @@ class _CharacterManagerCard extends ConsumerWidget {
   }
 
   Future<String?> _showCharacterAvatarDialog(
-    BuildContext context, {
+    BuildContext context,
+    WidgetRef ref, {
     required Character character,
   }) async {
     final controller = TextEditingController(text: character.avatarPath ?? '');
+    var isPickingFile = false;
 
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
-        return ResponsiveAlertDialog(
-          title: Text('Avatar for ${character.displayName}'),
-          content: TextField(
-            key: Key('characterAvatarField_${character.id}'),
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Avatar URL or path',
-              helperText:
-                  'Optional. Remote URLs and data URIs preview in-app; other paths are stored for handoff.',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Save'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (dialogContext, setState) {
+            return ResponsiveAlertDialog(
+              title: Text('Avatar for ${character.displayName}'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    key: Key('characterAvatarField_${character.id}'),
+                    controller: controller,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Avatar URL or path',
+                      helperText:
+                          'Optional. Pick an image file, paste a remote URL, or keep a handoff path reference.',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    key: Key('pickCharacterAvatarFileButton_${character.id}'),
+                    onPressed: isPickingFile
+                        ? null
+                        : () async {
+                            setState(() {
+                              isPickingFile = true;
+                            });
+
+                            try {
+                              final selectedAvatar =
+                                  await ref.read(
+                                    characterAvatarFilePickerProvider,
+                                  )(
+                                    accept: _kCharacterAvatarImageAccept,
+                                  );
+
+                              if (!dialogContext.mounted) {
+                                return;
+                              }
+
+                              setState(() {
+                                isPickingFile = false;
+                              });
+
+                              if (selectedAvatar == null) {
+                                return;
+                              }
+
+                              controller.text = selectedAvatar;
+                            } on FilePickerSizeException catch (error) {
+                              if (!dialogContext.mounted) {
+                                return;
+                              }
+
+                              setState(() {
+                                isPickingFile = false;
+                              });
+
+                              final maxSizeMb = error.maxBytes / (1024 * 1024);
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Selected image is too large. Keep embedded avatars under ${maxSizeMb.toStringAsFixed(maxSizeMb.truncateToDouble() == maxSizeMb ? 0 : 1)} MB.',
+                                  ),
+                                ),
+                              );
+                            } on Object {
+                              if (!dialogContext.mounted) {
+                                return;
+                              }
+
+                              setState(() {
+                                isPickingFile = false;
+                              });
+
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Could not load the selected avatar image.',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                    icon: Icon(
+                      isPickingFile
+                          ? Icons.hourglass_top_rounded
+                          : Icons.upload_file_rounded,
+                    ),
+                    label: Text(
+                      isPickingFile ? 'Picking image…' : 'Choose Image File',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(controller.text),
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

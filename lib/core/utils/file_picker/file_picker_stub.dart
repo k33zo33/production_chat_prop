@@ -3,3 +3,9 @@ Future<String?> pickTextFile({
 }) async {
   return null;
 }
+
+Future<String?> pickFileAsDataUri({
+  required String accept,
+}) async {
+  return null;
+}

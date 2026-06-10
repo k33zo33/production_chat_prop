@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/app/app.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
+import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
@@ -3329,6 +3330,133 @@ void main() {
       expect(find.text('Blair'), findsNothing);
       expect(find.text('I am covering the mobile pass.'), findsNothing);
       expect(find.text('And I have one more line to clear.'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('character avatar dialog can pick an image file', (tester) async {
+    Future<String?> picker({
+      String accept = 'image/png,image/jpeg,image/webp,image/gif',
+    }) async {
+      return _testAvatarDataUri;
+    }
+
+    final container = ProviderContainer(
+      overrides: [
+        characterAvatarFilePickerProvider.overrideWithValue(picker),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final projectId = await _createStarterProjectInContainer(container);
+    final scene = container
+        .read(sceneSnapshotProvider(projectId))
+        .value!
+        .scene!;
+    final alex = scene.characters.first;
+
+    await _pumpNarrowScreenWithContainer(
+      tester,
+      container: container,
+      size: const Size(1200, 900),
+      child: ChatEditorScreen(projectId: projectId),
+    );
+
+    final editAvatarButton = find.byKey(Key('editCharacterAvatar_${alex.id}'));
+    await _ensureFinderVisibleInPrimaryListView(tester, editAvatarButton);
+    await tester.tap(editAvatarButton);
+    await tester.pumpAndSettle();
+
+    final pickButton = find.byKey(
+      Key('pickCharacterAvatarFileButton_${alex.id}'),
+    );
+    expect(pickButton, findsOneWidget);
+
+    await tester.tap(pickButton);
+    await tester.pumpAndSettle();
+
+    final avatarField = tester.widget<TextField>(
+      find.byKey(Key('characterAvatarField_${alex.id}')),
+    );
+    expect(avatarField.controller!.text, _testAvatarDataUri);
+
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final updatedSnapshot = container
+        .read(sceneSnapshotProvider(projectId))
+        .value!
+        .scene!;
+    final updatedAlex = updatedSnapshot.characters.firstWhere(
+      (character) => character.id == alex.id,
+    );
+
+    expect(updatedAlex.avatarPath, _testAvatarDataUri);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'character avatar dialog shows feedback for oversized image files',
+    (
+      tester,
+    ) async {
+      Future<String?> picker({
+        String accept = 'image/png,image/jpeg,image/webp,image/gif',
+      }) async {
+        throw const FilePickerSizeException(
+          maxBytes: kEmbeddedImageFileSizeLimitBytes,
+          actualBytes: kEmbeddedImageFileSizeLimitBytes + 1,
+        );
+      }
+
+      final container = ProviderContainer(
+        overrides: [
+          characterAvatarFilePickerProvider.overrideWithValue(picker),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final projectId = await _createStarterProjectInContainer(container);
+      final scene = container
+          .read(sceneSnapshotProvider(projectId))
+          .value!
+          .scene!;
+      final alex = scene.characters.first;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(1200, 900),
+        child: ChatEditorScreen(projectId: projectId),
+      );
+
+      final editAvatarButton = find.byKey(
+        Key('editCharacterAvatar_${alex.id}'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, editAvatarButton);
+      await tester.tap(editAvatarButton);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(Key('pickCharacterAvatarFileButton_${alex.id}')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Selected image is too large. Keep embedded avatars under 2 MB.',
+        ),
+        findsOneWidget,
+      );
+
+      final avatarField = tester.widget<TextField>(
+        find.byKey(Key('characterAvatarField_${alex.id}')),
+      );
+      expect(avatarField.controller!.text, isEmpty);
+      expect(
+        find.widgetWithText(OutlinedButton, 'Choose Image File'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
