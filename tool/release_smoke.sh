@@ -53,6 +53,8 @@ declare -a TEST_NAMES=(
   "playback preview expands on wide layouts and clarifies export scaling"
   "playback focus preview opens with transport controls and closes cleanly"
   "focus preview transport controls scrub and jump between cues"
+  "focus preview swipe gestures seek in 5 second steps"
+  "focus preview edge double taps jump between cues"
   "focus preview preserves playback position and preview mode when opened from the main timeline"
   "focus preview responds to keyboard play pause and restart shortcuts"
   "playback preview auto-follows deep cues in long scenes"

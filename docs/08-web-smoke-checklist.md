@@ -35,7 +35,7 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 - [ ] Ako koristiš scene deep-link (`?sceneId=...`), probaj browser back/forward i potvrdi da playback prebaci scenu bez zaglavljenog starog odabira
   - Napomena: `./tool/release_smoke.sh` već pokriva playback route-sync/stale-link regresije; ovdje potvrđuješ stvarni browser history behavior.
 - [ ] Ručno makni `?sceneId=...` iz playback URL-a i potvrdi da app vrati trenutno aktivnu scenu u query bez gubitka sinkronizacije
-- [ ] Klikni `Open Focus Preview` i potvrdi da možeš pustiti/pauzirati preview, koristiti cue/seek gumbe i scrub slider te ga zatvoriti bez rušenja stanja
+- [ ] Klikni `Open Focus Preview` i potvrdi da možeš pustiti/pauzirati preview, koristiti cue/seek gumbe i scrub slider, swipe left/right za ±5s i edge double-tap za previous/next cue te ga zatvoriti bez rušenja stanja
 - [ ] Na uskom viewportu potvrdi da nema očitog overlap/overflow loma u export i transport kontrolama
 - [ ] Provjeri da `Space`, `←`, `→`, `R` rade ako je fokus na appu
 - [ ] Potvrdi da se timecode i visible message summary mijenjaju tijekom playbacka

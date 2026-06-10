@@ -7471,7 +7471,10 @@ void main() {
       );
       expect(focusStatus.data, contains('playing'));
 
-      await tester.tap(find.byKey(const Key('focusPreviewTapSurface')));
+      final previewSurface = tester.widget<GestureDetector>(
+        find.byKey(const Key('focusPreviewTapSurface')),
+      );
+      previewSurface.onTap?.call();
       await tester.pump();
 
       focusStatus = tester.widget<Text>(
@@ -7555,6 +7558,113 @@ void main() {
       expect(focusStatus.data, contains('00:00 / 00:09'));
     },
   );
+
+  testWidgets('focus preview swipe gestures seek in 5 second steps', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester);
+
+    final focusPreviewButton = find.byKey(
+      const Key('openPlaybackFocusPreviewButton'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+    await tester.tap(focusPreviewButton);
+    await tester.pumpAndSettle();
+
+    final surface = find.byKey(const Key('focusPreviewTapSurface'));
+    final surfaceWidget = tester.widget<GestureDetector>(surface);
+    surfaceWidget.onHorizontalDragEnd?.call(
+      DragEndDetails(
+        primaryVelocity: 640,
+        velocity: const Velocity(pixelsPerSecond: Offset(640, 0)),
+      ),
+    );
+    await tester.pump();
+
+    var focusStatus = tester.widget<Text>(
+      find.byKey(const Key('focusPreviewStatusLabel')),
+    );
+    expect(focusStatus.data, contains('00:05 / 00:09'));
+    expect(find.textContaining('Swipe left/right for ±5s'), findsOneWidget);
+
+    surfaceWidget.onHorizontalDragEnd?.call(
+      DragEndDetails(
+        primaryVelocity: -640,
+        velocity: const Velocity(pixelsPerSecond: Offset(-640, 0)),
+      ),
+    );
+    await tester.pump();
+
+    focusStatus = tester.widget<Text>(
+      find.byKey(const Key('focusPreviewStatusLabel')),
+    );
+    expect(focusStatus.data, contains('00:00 / 00:09'));
+  });
+
+  testWidgets('focus preview edge double taps jump between cues', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byKey(const Key('newProjectFab')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester);
+
+    final focusPreviewButton = find.byKey(
+      const Key('openPlaybackFocusPreviewButton'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+    await tester.tap(focusPreviewButton);
+    await tester.pumpAndSettle();
+
+    final slider = tester.widget<Slider>(
+      find.byKey(const Key('focusPreviewProgressSlider')),
+    );
+    slider.onChanged?.call(1);
+    await tester.pumpAndSettle();
+
+    final surface = find.byKey(const Key('focusPreviewTapSurface'));
+    final surfaceRect = tester.getRect(surface);
+    final surfaceWidget = tester.widget<GestureDetector>(surface);
+
+    surfaceWidget.onDoubleTapDown?.call(
+      TapDownDetails(
+        localPosition: Offset(surfaceRect.width - 24, surfaceRect.height / 2),
+      ),
+    );
+    surfaceWidget.onDoubleTap?.call();
+    await tester.pump();
+
+    var focusStatus = tester.widget<Text>(
+      find.byKey(const Key('focusPreviewStatusLabel')),
+    );
+    expect(focusStatus.data, contains('00:04 / 00:09'));
+
+    surfaceWidget.onDoubleTapDown?.call(
+      TapDownDetails(localPosition: Offset(24, surfaceRect.height / 2)),
+    );
+    surfaceWidget.onDoubleTap?.call();
+    await tester.pump();
+
+    focusStatus = tester.widget<Text>(
+      find.byKey(const Key('focusPreviewStatusLabel')),
+    );
+    expect(focusStatus.data, contains('00:00 / 00:09'));
+  });
 
   testWidgets(
     'focus preview preserves playback position and preview mode when opened from the main timeline',
@@ -7737,7 +7847,7 @@ void main() {
     expect(find.byKey(const Key('playbackFocusPreviewScreen')), findsOneWidget);
     expect(
       find.text(
-        'Tap the preview to play or pause. Use the slider or cue buttons to fine-tune timing. Press Esc on desktop or long press anywhere to exit.',
+        'Tap to play or pause. Swipe left/right for ±5s. Double-tap the left/right edge for previous/next cue. Press Esc on desktop or long press anywhere to exit.',
       ),
       findsOneWidget,
     );

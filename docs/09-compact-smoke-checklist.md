@@ -38,7 +38,7 @@ Preporučeni viewport:
 - [ ] Potvrdi da export kontrole rade u compact layoutu
 - [ ] Potvrdi da transport kontrole rade bez overlap/overflow loma
 - [ ] Na ~320 px širine provjeri ultra-compact varijantu `Play/Pause`, `Restart`, seek i cue gumba
-- [ ] Klikni `Open Focus Preview` i potvrdi da fullscreen/focus view ostaje čitljiv, da `Play/Pause`, cue/seek gumbi i scrub slider ostaju klikabilni te da se može zatvoriti bez layout loma
+- [ ] Klikni `Open Focus Preview` i potvrdi da fullscreen/focus view ostaje čitljiv, da `Play/Pause`, cue/seek gumbi i scrub slider ostaju klikabilni, da swipe left/right radi ±5s, da edge double-tap radi previous/next cue te da se može zatvoriti bez layout loma
 - [ ] Skrolaj do dna playback ekrana i potvrdi da `Open Chat Editor` otvara editor, a `Back to Projects` vraća na listu projekata
 - [ ] Promijeni scenu i potvrdi da se progress resetira na novu scenu
 - [ ] Ako otvaraš playback preko deep-linka sa `?sceneId=...`, ručno makni query i potvrdi da compact playback vrati aktivnu scenu bez gubitka sinkronizacije

@@ -42,6 +42,9 @@ final videoExportFallbackServiceProvider = Provider<VideoExportFallbackService>(
 const _kPlaybackDesktopContentMaxWidth = 1440.0;
 const _kPlaybackPortraitPreviewMaxWidth = 560.0;
 const _kPlaybackLandscapePreviewMaxWidth = 1040.0;
+const _kFocusPreviewGestureSeekSeconds = 5;
+const _kFocusPreviewEdgeTapRatio = 0.32;
+const _kFocusPreviewFlingVelocityThreshold = 320.0;
 
 class PlaybackScreen extends ConsumerStatefulWidget {
   const PlaybackScreen({
@@ -1704,6 +1707,112 @@ class _PlaybackFocusPreviewScreen extends ConsumerStatefulWidget {
 class _PlaybackFocusPreviewScreenState
     extends ConsumerState<_PlaybackFocusPreviewScreen> {
   final GlobalKey _previewBoundaryKey = GlobalKey();
+  Offset? _lastDoubleTapPosition;
+
+  void _togglePlayback({
+    required bool hasPlaybackMessages,
+    required int maxSecond,
+    required PlaybackState playbackState,
+    required PlaybackController playbackController,
+  }) {
+    if (!hasPlaybackMessages) {
+      return;
+    }
+
+    unawaited(Feedback.forTap(context));
+    if (playbackState.isPlaying) {
+      playbackController.pause();
+    } else {
+      playbackController.play(maxSecond: maxSecond);
+    }
+  }
+
+  void _seekPreviewBy({
+    required int delta,
+    required int maxSecond,
+    required PlaybackController playbackController,
+  }) {
+    if (maxSecond <= 0 || delta == 0) {
+      return;
+    }
+
+    unawaited(Feedback.forTap(context));
+    playbackController.seekBy(delta: delta, maxSecond: maxSecond);
+  }
+
+  void _jumpBetweenCuesFromDoubleTap({
+    required double surfaceWidth,
+    required int? previousCue,
+    required int? nextCue,
+    required bool hasPlaybackMessages,
+    required int maxSecond,
+    required PlaybackState playbackState,
+    required PlaybackController playbackController,
+  }) {
+    final tapPosition = _lastDoubleTapPosition;
+    if (tapPosition == null || surfaceWidth <= 0) {
+      _togglePlayback(
+        hasPlaybackMessages: hasPlaybackMessages,
+        maxSecond: maxSecond,
+        playbackState: playbackState,
+        playbackController: playbackController,
+      );
+      return;
+    }
+
+    final dxRatio = tapPosition.dx / surfaceWidth;
+    if (dxRatio <= _kFocusPreviewEdgeTapRatio) {
+      unawaited(Feedback.forTap(context));
+      if (previousCue != null) {
+        playbackController.scrubTo(second: previousCue, maxSecond: maxSecond);
+      } else {
+        playbackController.seekBy(
+          delta: -_kFocusPreviewGestureSeekSeconds,
+          maxSecond: maxSecond,
+        );
+      }
+      return;
+    }
+
+    if (dxRatio >= 1 - _kFocusPreviewEdgeTapRatio) {
+      unawaited(Feedback.forTap(context));
+      if (nextCue != null) {
+        playbackController.scrubTo(second: nextCue, maxSecond: maxSecond);
+      } else {
+        playbackController.seekBy(
+          delta: _kFocusPreviewGestureSeekSeconds,
+          maxSecond: maxSecond,
+        );
+      }
+      return;
+    }
+
+    _togglePlayback(
+      hasPlaybackMessages: hasPlaybackMessages,
+      maxSecond: maxSecond,
+      playbackState: playbackState,
+      playbackController: playbackController,
+    );
+  }
+
+  void _handleHorizontalGestureSeek({
+    required DragEndDetails details,
+    required int maxSecond,
+    required PlaybackController playbackController,
+  }) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity.abs() < _kFocusPreviewFlingVelocityThreshold) {
+      return;
+    }
+
+    _seekPreviewBy(
+      delta: velocity > 0
+          ? _kFocusPreviewGestureSeekSeconds
+          : -_kFocusPreviewGestureSeekSeconds,
+      maxSecond: maxSecond,
+      playbackController: playbackController,
+    );
+  }
 
   KeyEventResult _handlePlaybackKeyEvent(
     KeyEvent event, {
@@ -1823,18 +1932,6 @@ class _PlaybackFocusPreviewScreenState
                 ? maxSecond.toDouble()
                 : playbackState.currentSecond.toDouble();
 
-            void togglePlayback() {
-              if (!hasPlaybackMessages) {
-                return;
-              }
-
-              if (playbackState.isPlaying) {
-                playbackController.pause();
-              } else {
-                playbackController.play(maxSecond: maxSecond);
-              }
-            }
-
             return Focus(
               autofocus: true,
               onKeyEvent: (node, event) => _handlePlaybackKeyEvent(
@@ -1860,8 +1957,39 @@ class _PlaybackFocusPreviewScreenState
                         child: GestureDetector(
                           key: const Key('focusPreviewTapSurface'),
                           behavior: HitTestBehavior.opaque,
-                          onTap: hasPlaybackMessages ? togglePlayback : null,
-                          onLongPress: () => Navigator.of(context).pop(),
+                          onTap: hasPlaybackMessages
+                              ? () => _togglePlayback(
+                                  hasPlaybackMessages: hasPlaybackMessages,
+                                  maxSecond: maxSecond,
+                                  playbackState: playbackState,
+                                  playbackController: playbackController,
+                                )
+                              : null,
+                          onDoubleTapDown: (details) {
+                            _lastDoubleTapPosition = details.localPosition;
+                          },
+                          onDoubleTap: hasPlaybackMessages
+                              ? () => _jumpBetweenCuesFromDoubleTap(
+                                  surfaceWidth: constraints.maxWidth,
+                                  previousCue: previousCue,
+                                  nextCue: nextCue,
+                                  hasPlaybackMessages: hasPlaybackMessages,
+                                  maxSecond: maxSecond,
+                                  playbackState: playbackState,
+                                  playbackController: playbackController,
+                                )
+                              : null,
+                          onHorizontalDragEnd: hasPlaybackMessages
+                              ? (details) => _handleHorizontalGestureSeek(
+                                  details: details,
+                                  maxSecond: maxSecond,
+                                  playbackController: playbackController,
+                                )
+                              : null,
+                          onLongPress: () {
+                            unawaited(Feedback.forLongPress(context));
+                            Navigator.of(context).pop();
+                          },
                           child: Center(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(
@@ -1973,7 +2101,13 @@ class _PlaybackFocusPreviewScreenState
                                         maxSecond: maxSecond,
                                       ),
                                 onTogglePlayback: hasPlaybackMessages
-                                    ? togglePlayback
+                                    ? () => _togglePlayback(
+                                        hasPlaybackMessages:
+                                            hasPlaybackMessages,
+                                        maxSecond: maxSecond,
+                                        playbackState: playbackState,
+                                        playbackController: playbackController,
+                                      )
                                     : null,
                                 onSeekForward: maxSecond == 0
                                     ? null
@@ -1995,7 +2129,7 @@ class _PlaybackFocusPreviewScreenState
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Tap the preview to play or pause. Use the slider or cue buttons to fine-tune timing. Press Esc on desktop or long press anywhere to exit.',
+                                'Tap to play or pause. Swipe left/right for ±5s. Double-tap the left/right edge for previous/next cue. Press Esc on desktop or long press anywhere to exit.',
                                 key: const Key('focusPreviewHintLabel'),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodySmall
