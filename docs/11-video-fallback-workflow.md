@@ -40,6 +40,7 @@ Fallback paket sadrži ove glavne ključeve:
 - `selectedScene`
   - trenutno odabrana scena za render
   - `messages` su sortirane po `timestampSeconds`
+  - `characters` zadržavaju `avatarPath` reference ako scena koristi avatere
 - `renderHints`
   - `targetRatios`: `9:16`, `16:9`
   - `includeDeviceFrame`
@@ -57,6 +58,7 @@ Fallback paket sadrži ove glavne ključeve:
    - `selectedScene.messages` kao izvor cuejeva
    - `timestampSeconds` za tempo i raspored poruka
    - `selectedScene.aspectRatio` za osnovni layout
+   - `selectedScene.characters` / `project.scenes[*].characters` za imena, boje balona i eventualne avatar reference
    - `renderHints.includeDeviceFrame` i `renderHints.cleanPreview` za vizualnu varijantu
    - `project` ako treba puni kontekst scena ili dodatni metadata handoff
 6. Render napraviti izvan appa (npr. interni motion template, custom renderer ili ručni compositing workflow).
@@ -66,7 +68,7 @@ Fallback paket sadrži ove glavne ključeve:
 Downstream workflow bi trebao poštovati barem ovo:
 - poruke renderirati redom iz `selectedScene.messages`
 - koristiti `timestampSeconds` kao cue timeline
-- zadržati incoming/outgoing smjer, status i typing metadata
+- zadržati incoming/outgoing smjer, status, typing metadata i avatar reference gdje postoje
 - poštovati `selectedScene.aspectRatio`
 - po potrebi izvesti i `9:16` i `16:9` varijantu
 

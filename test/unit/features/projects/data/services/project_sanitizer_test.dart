@@ -210,6 +210,45 @@ void main() {
       expect(sanitized.scenes.first.characters.last.bubbleColor, '#2E90FA');
     });
 
+    test('trims imported avatar paths and clears blank avatar references', () {
+      final sanitized = sanitizer.sanitizeProject(
+        Project(
+          id: 'project-avatars',
+          name: 'Imported',
+          type: ProjectType.other,
+          createdAt: DateTime.utc(2026),
+          updatedAt: DateTime.utc(2026),
+          scenes: const [
+            Scene(
+              id: 'scene-1',
+              title: 'Scene 1',
+              styleId: 'studio_default',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'c1',
+                  displayName: 'Alex',
+                  avatarPath: '  https://example.com/alex.png  ',
+                  bubbleColor: '#2E90FA',
+                ),
+                Character(
+                  id: 'c2',
+                  displayName: 'Mia',
+                  avatarPath: '   ',
+                  bubbleColor: '#12B76A',
+                ),
+              ],
+              messages: [],
+            ),
+          ],
+        ),
+      );
+
+      final characters = sanitized.scenes.first.characters;
+      expect(characters.first.avatarPath, 'https://example.com/alex.png');
+      expect(characters.last.avatarPath, isNull);
+    });
+
     test('maps legacy style ids to the current preset id', () {
       final sanitized = sanitizer.sanitizeProject(
         Project(

@@ -11,12 +11,12 @@ Usage:
   ./tool/ai_helper.sh ask <question>
 
 Modes:
-  review   Runs a read-only Claude CLI review and a read-only Gemini CLI review
-           against the current git diff (default diff target: --cached, or HEAD if
-           nothing is staged, or a custom git diff argument list you pass through).
-           In default HEAD mode, untracked files are included automatically.
+  review   Runs a read-only Gemini CLI review against the current git diff
+           (default diff target: --cached, or HEAD if nothing is staged, or a
+           custom git diff argument list you pass through). In default HEAD
+           mode, untracked files are included automatically.
 
-  ask      Sends the same read-only project question to Claude CLI and Gemini CLI.
+  ask      Sends the same read-only project question to Gemini CLI.
 
 Examples:
   ./tool/ai_helper.sh review
@@ -24,10 +24,9 @@ Examples:
   ./tool/ai_helper.sh ask "Review the playback export architecture and name the main risks."
 
 Notes:
-- Both helpers run in read-only mode.
-- Claude uses: claude -p --permission-mode plan --output-format text
+- Gemini runs in read-only mode.
 - Gemini uses: gemini -p '' --approval-mode plan --output-format text
-- Output is written to stdout in two clearly separated sections.
+- Output is written to stdout directly.
 EOF
 }
 
@@ -47,7 +46,7 @@ build_local_repo_context() {
 Local repo context:
 - Operate only inside: $ROOT_DIR
 - Source of truth docs: docs/01-product-spec-mvp.md, docs/02-technical-architecture-flutter.md, docs/03-roadmap-and-sprints.md
-- Workflow: keep diffs small, stay inside current MVP/sprint scope, verify changes locally, and run paired Claude/Gemini read-only review before commit/push.
+- Workflow: keep diffs small, stay inside current MVP/sprint scope, verify changes locally, and run the Gemini read-only review before commit/push.
 - Current heartbeat: keep pushing toward beta with mobile adaptation, QA confidence, polish, and release-gate work.
 - Note: some local workflow files (for example AGENTS.md and HEARTBEAT.md) may be git-ignored or unavailable to helper file tools, so rely on this inlined summary unless their contents are explicitly included in the prompt.
 EOF
@@ -173,23 +172,6 @@ $diff_text
 EOF
 }
 
-run_claude() {
-  local prompt="$1"
-  if ! require_bin claude; then
-    echo "Claude CLI unavailable; skipping Claude helper pass." >&2
-    return 2
-  fi
-
-  if ! printf '%s' "$prompt" | timeout "$HELPER_TIMEOUT_SECONDS" claude -p \
-    --permission-mode plan \
-    --output-format text \
-    --tools Read,Grep,Glob \
-    --add-dir "$ROOT_DIR"; then
-    echo "Claude helper failed or timed out after ${HELPER_TIMEOUT_SECONDS}s; continuing without Claude output." >&2
-    return 1
-  fi
-}
-
 run_gemini() {
   local prompt="$1"
   if ! require_bin gemini; then
@@ -217,30 +199,14 @@ shift || true
 case "$mode" in
   review)
     prompt="$(build_review_payload "$@")"
-    helper_successes=0
-    printf '===== CLAUDE CLI REVIEW =====\n'
-    if run_claude "$prompt"; then
-      helper_successes=$((helper_successes + 1))
-    else
-      claude_status=$?
-      if [[ "$claude_status" -eq 2 ]]; then
-        echo '[ai-helper] Claude helper unavailable.' >&2
-      else
-        echo '[ai-helper] Claude helper failed.' >&2
-      fi
-    fi
-    printf '\n===== GEMINI CLI REVIEW =====\n'
-    if run_gemini "$prompt"; then
-      helper_successes=$((helper_successes + 1))
-    else
+    printf '===== GEMINI CLI REVIEW =====\n'
+    if ! run_gemini "$prompt"; then
       gemini_status=$?
       if [[ "$gemini_status" -eq 2 ]]; then
         echo '[ai-helper] Gemini helper unavailable.' >&2
       else
         echo '[ai-helper] Gemini helper failed.' >&2
       fi
-    fi
-    if [[ "$helper_successes" -eq 0 ]]; then
       exit 1
     fi
     ;;
@@ -257,30 +223,14 @@ case "$mode" in
     prompt+=$'\n\nTask:\n'
     prompt+="$question"
     prompt+=$'\n\nRules:\n- Read-only analysis only.\n- Be concise and practical.\n- Prefer concrete recommendations over theory.\n- If something looks uncertain, say so plainly.\n- If the task mentions ignored local workflow files such as AGENTS.md or HEARTBEAT.md, use the inlined repo context above instead of trying to read those files from disk unless the prompt explicitly includes their contents.'
-    helper_successes=0
-    printf '===== CLAUDE CLI ANALYSIS =====\n'
-    if run_claude "$prompt"; then
-      helper_successes=$((helper_successes + 1))
-    else
-      claude_status=$?
-      if [[ "$claude_status" -eq 2 ]]; then
-        echo '[ai-helper] Claude helper unavailable.' >&2
-      else
-        echo '[ai-helper] Claude helper failed.' >&2
-      fi
-    fi
-    printf '\n===== GEMINI CLI ANALYSIS =====\n'
-    if run_gemini "$prompt"; then
-      helper_successes=$((helper_successes + 1))
-    else
+    printf '===== GEMINI CLI ANALYSIS =====\n'
+    if ! run_gemini "$prompt"; then
       gemini_status=$?
       if [[ "$gemini_status" -eq 2 ]]; then
         echo '[ai-helper] Gemini helper unavailable.' >&2
       else
         echo '[ai-helper] Gemini helper failed.' >&2
       fi
-    fi
-    if [[ "$helper_successes" -eq 0 ]]; then
       exit 1
     fi
     ;;

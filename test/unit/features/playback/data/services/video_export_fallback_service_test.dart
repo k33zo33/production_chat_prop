@@ -37,7 +37,7 @@ void main() {
           Character(
             id: 'c1',
             displayName: 'Lead',
-            avatarPath: null,
+            avatarPath: 'https://example.com/lead.png',
             bubbleColor: '#00AA88',
           ),
         ],
@@ -98,6 +98,9 @@ void main() {
       final projectPayload = payload['project'] as Map<String, dynamic>;
       final projectScenes = projectPayload['scenes'] as List<dynamic>;
       final exportedScene = projectScenes.single as Map<String, dynamic>;
+      final exportedCharacter =
+          (exportedScene['characters'] as List<dynamic>).single
+              as Map<String, dynamic>;
       final projectMessages = exportedScene['messages'] as List<dynamic>;
       expect(
         (projectMessages.first as Map<String, dynamic>)['timestampSeconds'],
@@ -107,6 +110,7 @@ void main() {
         (projectMessages.last as Map<String, dynamic>)['timestampSeconds'],
         4,
       );
+      expect(exportedCharacter['avatarPath'], 'https://example.com/lead.png');
 
       final renderHints = payload['renderHints'] as Map<String, dynamic>;
       expect(renderHints['includeDeviceFrame'], isFalse);
@@ -258,7 +262,7 @@ void main() {
             Character(
               id: 'c1',
               displayName: 'Lead',
-              avatarPath: null,
+              avatarPath: 'data:image/png;base64,Zm9jdXM=',
               bubbleColor: '#00AA88',
             ),
           ],
@@ -334,6 +338,11 @@ void main() {
 
         expect(selectedScenePayload['aspectRatio'], 'landscape16x9');
         expect(
+          ((selectedScenePayload['characters'] as List<dynamic>).single
+              as Map<String, dynamic>)['avatarPath'],
+          'data:image/png;base64,Zm9jdXM=',
+        );
+        expect(
           (selectedScenePayload['messages'] as List<dynamic>)
               .map((message) => (message as Map<String, dynamic>)['id'])
               .toList(),
@@ -344,6 +353,11 @@ void main() {
               .map((message) => (message as Map<String, dynamic>)['id'])
               .toList(),
           ['m-early', 'm-late'],
+        );
+        expect(
+          ((syncedScenePayload['characters'] as List<dynamic>).single
+              as Map<String, dynamic>)['avatarPath'],
+          'data:image/png;base64,Zm9jdXM=',
         );
         expect(
           (untouchedScenePayload['messages'] as List<dynamic>)

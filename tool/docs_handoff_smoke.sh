@@ -19,6 +19,7 @@ COMPACT_SMOKE_PATH="$ROOT_DIR/tool/compact_smoke.sh"
 NAVIGATION_SMOKE_PATH="$ROOT_DIR/tool/navigation_smoke.sh"
 IMPORT_SMOKE_PATH="$ROOT_DIR/tool/import_smoke.sh"
 WIDGET_TEST_PATH="$ROOT_DIR/test/widget_test.dart"
+PLAYBACK_EXPORT_FEEDBACK_TEST_PATH="$ROOT_DIR/test/widget/playback_export_feedback_test.dart"
 SCENE_ROUTE_SYNC_TEST_PATH="$ROOT_DIR/test/widget/scene_route_sync_test.dart"
 RECOVERY_TEST_PATH="$ROOT_DIR/test/widget/project_not_found_recovery_test.dart"
 CONTROLLER_TEST_PATH="$ROOT_DIR/test/unit/features/projects/presentation/controllers/projects_controller_test.dart"
@@ -42,6 +43,7 @@ for path in \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
+  "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
   "$RECOVERY_TEST_PATH" \
   "$CONTROLLER_TEST_PATH" \
@@ -70,6 +72,7 @@ python3 - \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
+  "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
   "$RECOVERY_TEST_PATH" \
   "$CONTROLLER_TEST_PATH" \
@@ -97,6 +100,7 @@ import sys
     navigation_smoke_raw,
     import_smoke_raw,
     widget_test_raw,
+    playback_export_feedback_test_raw,
     scene_route_sync_test_raw,
     recovery_test_raw,
     controller_test_raw,
@@ -120,6 +124,7 @@ compact_smoke_path = pathlib.Path(compact_smoke_raw)
 navigation_smoke_path = pathlib.Path(navigation_smoke_raw)
 import_smoke_path = pathlib.Path(import_smoke_raw)
 widget_test_path = pathlib.Path(widget_test_raw)
+playback_export_feedback_test_path = pathlib.Path(playback_export_feedback_test_raw)
 scene_route_sync_test_path = pathlib.Path(scene_route_sync_test_raw)
 recovery_test_path = pathlib.Path(recovery_test_raw)
 controller_test_path = pathlib.Path(controller_test_raw)
@@ -142,6 +147,7 @@ compact_smoke = compact_smoke_path.read_text(encoding='utf-8')
 navigation_smoke = navigation_smoke_path.read_text(encoding='utf-8')
 import_smoke = import_smoke_path.read_text(encoding='utf-8')
 widget_test = widget_test_path.read_text(encoding='utf-8')
+playback_export_feedback_test = playback_export_feedback_test_path.read_text(encoding='utf-8')
 scene_route_sync_test = scene_route_sync_test_path.read_text(encoding='utf-8')
 recovery_test = recovery_test_path.read_text(encoding='utf-8')
 controller_test = controller_test_path.read_text(encoding='utf-8')
@@ -286,15 +292,15 @@ assert_names_exist(
     script_label='tool/demo_smoke.sh',
     array_name='TEST_NAMES',
     script_text=demo_smoke,
-    target_label='test/widget_test.dart',
-    target_text=widget_test,
+    target_label='test/widget_test.dart + test/widget/playback_export_feedback_test.dart',
+    target_text=widget_test + '\n' + playback_export_feedback_test,
 )
 assert_names_exist(
     script_label='tool/release_smoke.sh',
     array_name='TEST_NAMES',
     script_text=release_smoke,
-    target_label='test/widget_test.dart',
-    target_text=widget_test,
+    target_label='test/widget_test.dart + test/widget/playback_export_feedback_test.dart',
+    target_text=widget_test + '\n' + playback_export_feedback_test,
 )
 assert_names_exist(
     script_label='tool/compact_smoke.sh',

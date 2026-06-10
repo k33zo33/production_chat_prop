@@ -70,7 +70,7 @@ class ProjectSanitizer {
             character.displayName,
             fallbackIndex: i + 1,
           ),
-          avatarPath: character.avatarPath,
+          avatarPath: _normalizeAvatarPath(character.avatarPath),
           bubbleColor: _normalizeBubbleColor(character.bubbleColor),
         ),
       );
@@ -150,6 +150,14 @@ class ProjectSanitizer {
 
   String _normalizeBubbleColor(String rawColor) {
     return normalizeCharacterBubbleColorHex(rawColor);
+  }
+
+  String? _normalizeAvatarPath(String? rawAvatarPath) {
+    final trimmedAvatarPath = rawAvatarPath?.trim();
+    if (trimmedAvatarPath == null || trimmedAvatarPath.isEmpty) {
+      return null;
+    }
+    return trimmedAvatarPath;
   }
 
   String _normalizeId(String rawId) {

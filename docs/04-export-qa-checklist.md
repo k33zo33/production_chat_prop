@@ -23,6 +23,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
   - [ ] na webu se pokreće download `.png` datoteke
   - [ ] naziv datoteke sadrži projekt + scenu + timestamp
   - [ ] sadržaj odgovara trenutnom previewu, uključujući frame/clean toggle stanje (timeline, status chipovi, typing)
+  - [ ] ako scena koristi avatar slike, exported PNG zadržava iste avatere kao preview
 
 ## 3) Video fallback export (`.json`)
 Referenca za expected downstream handoff: `docs/11-video-fallback-workflow.md`
@@ -34,6 +35,7 @@ Referenca za expected downstream handoff: `docs/11-video-fallback-workflow.md`
   - [ ] na webu se pokreće download `.json` datoteke ili, ako download nije dostupan, app jasno javlja da je fallback JSON kopiran u clipboard
   - [ ] payload sadrži `project`, `selectedScene`, `renderHints`, `workflow`
   - [ ] `renderHints.includeDeviceFrame` i `cleanPreview` prate trenutno stanje toggleova
+  - [ ] `selectedScene.characters[].avatarPath` i isti likovi u `project.scenes` ostaju sačuvani ako scena koristi avatere
   - [ ] poruke u `selectedScene.messages` su sortirane po `timestampSeconds`
   - [ ] odgovarajuća scena u `project.scenes` ne proturječi `selectedScene.messages` redoslijedu
 

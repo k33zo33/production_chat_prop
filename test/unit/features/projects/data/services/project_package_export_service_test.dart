@@ -106,9 +106,35 @@ void main() {
       );
     },
   );
+
+  test('project package export preserves character avatar references', () {
+    final service = ProjectPackageExportService();
+
+    final decoded =
+        jsonDecode(
+              service.buildProjectPackageJson(
+                project: _sampleProject(
+                  avatarPath: 'https://example.com/taylor.png',
+                ),
+              ),
+            )
+            as Map<String, dynamic>;
+    final project = decoded['project'] as Map<String, dynamic>;
+    final scenes = project['scenes'] as List<dynamic>;
+    final characters =
+        (scenes.single as Map<String, dynamic>)['characters'] as List<dynamic>;
+
+    expect(
+      (characters.single as Map<String, dynamic>)['avatarPath'],
+      'https://example.com/taylor.png',
+    );
+  });
 }
 
-Project _sampleProject({String name = 'Export Project'}) {
+Project _sampleProject({
+  String name = 'Export Project',
+  String? avatarPath,
+}) {
   final now = DateTime.utc(2026, 3, 30);
 
   return Project(
@@ -117,7 +143,7 @@ Project _sampleProject({String name = 'Export Project'}) {
     type: ProjectType.series,
     createdAt: now,
     updatedAt: now,
-    scenes: const [
+    scenes: [
       Scene(
         id: 'scene-export-1',
         title: 'Scene Export',
@@ -127,12 +153,12 @@ Project _sampleProject({String name = 'Export Project'}) {
           Character(
             id: 'char-export-1',
             displayName: 'Taylor',
-            avatarPath: null,
+            avatarPath: avatarPath,
             bubbleColor: '#2E90FA',
           ),
         ],
         messages: [
-          Message(
+          const Message(
             id: 'msg-export-1',
             characterId: 'char-export-1',
             text: 'Export-ready line',

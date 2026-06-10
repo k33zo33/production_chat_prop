@@ -37,11 +37,21 @@ void main() {
         jsonDecode(utf8.decode(capturedBytes!)) as Map<String, dynamic>;
     final meta = decoded['meta'] as Map<String, dynamic>;
     final projects = decoded['projects'] as List<dynamic>;
+    final firstProject = projects.first as Map<String, dynamic>;
+    final firstScene =
+        (firstProject['scenes'] as List<dynamic>).single as Map<String, dynamic>;
+    final firstCharacter =
+        (firstScene['characters'] as List<dynamic>).single
+            as Map<String, dynamic>;
 
     expect(meta['format'], 'project_portfolio');
     expect(projects, hasLength(2));
-    expect((projects.first as Map<String, dynamic>)['name'], 'Project One');
+    expect(firstProject['name'], 'Project One');
     expect((projects.last as Map<String, dynamic>)['name'], 'Project Two');
+    expect(
+      firstCharacter['avatarPath'],
+      'data:image/png;base64,ZmFrZS1hdmF0YXI=',
+    );
   });
 
   test('exportPortfolio fails fast when project list is empty', () async {
@@ -99,6 +109,9 @@ void main() {
 
 Project _sampleProject(String suffix) {
   final now = DateTime.utc(2026, 3, 31);
+  final avatarPath = suffix == 'One'
+      ? 'data:image/png;base64,ZmFrZS1hdmF0YXI='
+      : 'https://example.com/avatar-two.png';
 
   return Project(
     id: 'project-$suffix',
@@ -106,7 +119,7 @@ Project _sampleProject(String suffix) {
     type: ProjectType.other,
     createdAt: now,
     updatedAt: now,
-    scenes: const [
+    scenes: [
       Scene(
         id: 'scene-1',
         title: 'Scene 1',
@@ -116,12 +129,12 @@ Project _sampleProject(String suffix) {
           Character(
             id: 'char-1',
             displayName: 'Alex',
-            avatarPath: null,
+            avatarPath: avatarPath,
             bubbleColor: '#2E90FA',
           ),
         ],
         messages: [
-          Message(
+          const Message(
             id: 'msg-1',
             characterId: 'char-1',
             text: 'Portfolio sample',
