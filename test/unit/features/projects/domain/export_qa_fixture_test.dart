@@ -36,6 +36,10 @@ void main() {
 
       expect(portraitScene.aspectRatio, SceneAspectRatio.portrait9x16);
       expect(portraitScene.messages, hasLength(4));
+      expect(
+        portraitScene.characters.first.avatarPath,
+        startsWith('data:image/png;base64,'),
+      );
       expect(landscapeScene.aspectRatio, SceneAspectRatio.landscape16x9);
       expect(landscapeScene.messages, hasLength(3));
       expect(emptyScene.messages, isEmpty);
@@ -100,6 +104,16 @@ void main() {
               as List<dynamic>,
           isEmpty,
         );
+        final portraitCharacters =
+            (scenes.singleWhere(
+                      (scene) => scene['id'] == 'qa-scene-hero-portrait',
+                    )['characters']
+                    as List<dynamic>)
+                .cast<Map<String, dynamic>>();
+        expect(
+          portraitCharacters.first['avatarPath'],
+          startsWith('data:image/png;base64,'),
+        );
       },
     );
 
@@ -128,12 +142,22 @@ void main() {
       final synchronizedProjectScene = projectScenes.singleWhere(
         (scene) => scene['id'] == selectedScene.id,
       );
+      final portraitProjectScene = projectScenes.singleWhere(
+        (scene) => scene['id'] == 'qa-scene-hero-portrait',
+      );
       final synchronizedMessages =
           (synchronizedProjectScene['messages'] as List<dynamic>)
+              .cast<Map<String, dynamic>>();
+      final portraitCharacters =
+          (portraitProjectScene['characters'] as List<dynamic>)
               .cast<Map<String, dynamic>>();
 
       expect(exportedScene['id'], selectedScene.id);
       expect(exportedScene['aspectRatio'], 'landscape16x9');
+      expect(
+        portraitCharacters.first['avatarPath'],
+        startsWith('data:image/png;base64,'),
+      );
       expect(
         exportedMessages.map((message) => message['timestampSeconds']),
         orderedEquals([0, 5, 11]),

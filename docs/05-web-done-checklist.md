@@ -76,6 +76,7 @@ Finish the three manual checklists (`08-web-smoke-checklist.md`, `09-compact-smo
 - `./tool/beta_handoff.sh` passed end-to-end (`docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`)
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
 - video fallback export now has a dedicated handoff explainer so beta users know that `Export Video` currently emits a documented `.json` render package rather than a final encoded movie file
+- the tracked export QA fixture now includes an embedded avatar sample in the hero portrait scene, so manual browser export QA can confirm avatar retention in both PNG preview/export and fallback JSON payloads
 - `bash tool/demo_smoke.sh` now covers the core beta walkthrough path plus portfolio-readiness CTA navigation and import/export handoff regressions before the heavier release gates
 - `bash tool/import_smoke.sh` now catches JSON import, sanitizer, and persisted-project recovery regressions before export/mobile passes
 - `./tool/compact_smoke.sh` passed for targeted compact/export regressions, including narrow delete confirmations, long project-name/header clamping, project-list search/filter/sort controls, portfolio-readiness CTA flows, and stale-link recovery paths

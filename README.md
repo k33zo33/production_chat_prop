@@ -119,7 +119,7 @@ Napomene:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`
   - `docs/11-video-fallback-workflow.md`
-- Standardni ručni import/export QA sample je `docs/fixtures/export-qa-project.json`.
+- Standardni ručni import/export QA sample je `docs/fixtures/export-qa-project.json`; hero portrait scena u fixtureu sada nosi embedded avatar sample za browser export provjeru.
 - Trenutni `Export Video` workflow isporučuje dokumentirani `.json` handoff paket za downstream render, ne gotovi video file iz samog appa.
 
 ## Demo Flow
