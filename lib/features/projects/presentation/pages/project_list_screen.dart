@@ -79,7 +79,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         .where((project) {
           final matchesQuery =
               normalizedQuery.isEmpty ||
-              project.name.toLowerCase().contains(normalizedQuery);
+              _projectMatchesSearch(project, normalizedQuery);
           final matchesType =
               _selectedTypeFilter == null ||
               project.type == _selectedTypeFilter;
@@ -87,6 +87,26 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         })
         .toList(growable: false)
       ..sort(_projectSortComparator(_selectedSortMode));
+  }
+
+  bool _projectMatchesSearch(Project project, String normalizedQuery) {
+    if (project.name.toLowerCase().contains(normalizedQuery)) {
+      return true;
+    }
+
+    for (final scene in project.scenes) {
+      if (scene.title.toLowerCase().contains(normalizedQuery)) {
+        return true;
+      }
+
+      for (final character in scene.characters) {
+        if (character.displayName.toLowerCase().contains(normalizedQuery)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   void _pruneSelectionToProjects(List<Project> projects) {
@@ -999,6 +1019,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     controller: _searchController,
                     decoration: const InputDecoration(
                       labelText: 'Search Projects',
+                      hintText: 'Project, scene, or character',
                       prefixIcon: Icon(Icons.search_rounded),
                     ),
                     onChanged: (value) {

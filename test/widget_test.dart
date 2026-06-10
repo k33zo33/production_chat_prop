@@ -1591,6 +1591,46 @@ void main() {
     expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
   });
 
+  testWidgets(
+    'project list search also matches scene titles and character names',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      await container.read(projectsControllerProvider.notifier).createProject();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'prep chat',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
+      expect(find.text('No projects match current filters.'), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'alex',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
+      expect(find.text('No projects match current filters.'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('project list type chips filter result set', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -2077,6 +2117,24 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'prep chat',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
+      expect(find.text('No projects match current filters.'), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'alex',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
+      expect(find.text('No projects match current filters.'), findsNothing);
 
       await tester.enterText(
         find.byKey(const Key('projectSearchField')),
