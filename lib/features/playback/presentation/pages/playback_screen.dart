@@ -1634,6 +1634,11 @@ class _PlaybackFocusPreviewScreenState
       return KeyEventResult.ignored;
     }
 
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      Navigator.of(context).pop();
+      return KeyEventResult.handled;
+    }
+
     if (event.logicalKey == LogicalKeyboardKey.space) {
       if (maxSecond == 0) {
         return KeyEventResult.handled;
@@ -1902,7 +1907,7 @@ class _PlaybackFocusPreviewScreenState
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Tap the preview to play or pause. Use the slider or cue buttons to fine-tune timing. Long press anywhere to exit.',
+                                'Tap the preview to play or pause. Use the slider or cue buttons to fine-tune timing. Press Esc on desktop or long press anywhere to exit.',
                                 key: const Key('focusPreviewHintLabel'),
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodySmall

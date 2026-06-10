@@ -7398,6 +7398,70 @@ void main() {
     },
   );
 
+  testWidgets('focus preview escape shortcut closes the overlay', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester, projectName: 'Demo Project 1');
+
+    final focusPreviewButton = find.byKey(
+      const Key('openPlaybackFocusPreviewButton'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+    await tester.tap(focusPreviewButton);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('playbackFocusPreviewScreen')), findsOneWidget);
+    expect(
+      find.text(
+        'Tap the preview to play or pause. Use the slider or cue buttons to fine-tune timing. Press Esc on desktop or long press anywhere to exit.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('playbackFocusPreviewScreen')), findsNothing);
+    expect(find.text('Playback'), findsOneWidget);
+  });
+
+  testWidgets('focus preview long press exits cleanly', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+    await _ensureOnProjectList(tester);
+
+    await tester.tap(find.byTooltip('Add Demo Project'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await _openPlaybackFromProjectList(tester, projectName: 'Demo Project 1');
+
+    final focusPreviewButton = find.byKey(
+      const Key('openPlaybackFocusPreviewButton'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+    await tester.tap(focusPreviewButton);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('playbackFocusPreviewScreen')), findsOneWidget);
+
+    await tester.longPress(find.byKey(const Key('focusPreviewTapSurface')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('playbackFocusPreviewScreen')), findsNothing);
+    expect(find.text('Playback'), findsOneWidget);
+  });
+
   testWidgets('compact playback focus preview stays usable on narrow screens', (
     tester,
   ) async {
