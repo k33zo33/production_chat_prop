@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:production_chat_prop/core/utils/app_breakpoints.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
@@ -900,7 +901,8 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final selectedCount = selectedIds.length;
     final showSelectionMode = _isSelectionMode && filteredProjects.isNotEmpty;
     final isCompactAppBar =
-        widget.forceCompactAppBar ?? MediaQuery.sizeOf(context).width < 720;
+        widget.forceCompactAppBar ??
+        AppBreakpoints.isCompactLayoutWidth(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
       appBar: AppBar(
@@ -1009,7 +1011,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: MediaQuery.sizeOf(context).width < 560
+                  child:
+                      AppBreakpoints.isCompactFilterWidth(
+                        MediaQuery.sizeOf(context).width,
+                      )
                       ? KeyedSubtree(
                           key: const Key('projectTypeFilterDropdown'),
                           child: DropdownButtonFormField<ProjectType?>(
@@ -1092,7 +1097,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final isCompactControls = constraints.maxWidth < 480;
+                      final isCompactControls =
+                          AppBreakpoints.isCompactControlsWidth(
+                            constraints.maxWidth,
+                          );
                       final sortDropdown =
                           DropdownButtonFormField<_ProjectSortMode>(
                             key: const Key('projectSortDropdown'),
@@ -1215,7 +1223,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final isCompactActionStack =
-                                  constraints.maxWidth < 560;
+                                  AppBreakpoints.isCompactFilterWidth(
+                                    constraints.maxWidth,
+                                  );
                               final actionButtons = <Widget>[
                                 OutlinedButton.icon(
                                   key: const Key(
@@ -1339,7 +1349,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
               return LayoutBuilder(
                 builder: (context, constraints) {
-                  final useSingleScrollColumn = constraints.maxWidth < 720;
+                  final useSingleScrollColumn =
+                      AppBreakpoints.isCompactLayoutWidth(
+                        constraints.maxWidth,
+                      );
 
                   if (useSingleScrollColumn) {
                     return CustomScrollView(
@@ -1503,7 +1516,9 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
     final isSelected = widget.isSelected;
     final onSelectionChanged = widget.onSelectionChanged;
     final controller = ref.read(projectsControllerProvider.notifier);
-    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
+      MediaQuery.sizeOf(context).width,
+    );
     final projectHealth = summarizeProjectHealth(project);
     final attentionState = _projectAttentionState(project);
 

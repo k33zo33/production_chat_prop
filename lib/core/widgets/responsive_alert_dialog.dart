@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:production_chat_prop/core/utils/app_breakpoints.dart';
 
 class ResponsiveAlertDialog extends StatelessWidget {
   const ResponsiveAlertDialog({
@@ -15,7 +16,7 @@ class ResponsiveAlertDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mediaSize = MediaQuery.sizeOf(context);
-    final isCompactWidth = mediaSize.width < 600;
+    final isCompactWidth = AppBreakpoints.isCompactDialogWidth(mediaSize.width);
     final horizontalInset = isCompactWidth ? 16.0 : 40.0;
     final availableWidth = (mediaSize.width - (horizontalInset * 2)).clamp(
       0.0,
@@ -29,7 +30,9 @@ class ResponsiveAlertDialog extends StatelessWidget {
     return AlertDialog(
       insetPadding: EdgeInsets.symmetric(
         horizontal: horizontalInset,
-        vertical: mediaSize.height < 720 ? 16 : 24,
+        vertical: AppBreakpoints.isShortViewportHeight(mediaSize.height)
+            ? 16
+            : 24,
       ),
       title: title,
       content: ConstrainedBox(

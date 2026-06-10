@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/app_breakpoints.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
@@ -154,7 +155,9 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isCompactAppBar = MediaQuery.sizeOf(context).width < 720;
+    final isCompactAppBar = AppBreakpoints.isCompactLayoutWidth(
+      MediaQuery.sizeOf(context).width,
+    );
 
     if (widget.projectId == null) {
       return Scaffold(
@@ -455,8 +458,10 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
               : 'Ready'
         : 'No messages in scene';
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    final isCompactLayout = viewportWidth < 720;
-    final isUltraCompactLayout = viewportWidth < 360;
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(viewportWidth);
+    final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
+      viewportWidth,
+    );
     final visibleMessagesCount = countVisibleMessagesAtSecond(
       sortedMessages: sortedMessages,
       currentSecond: playbackState.currentSecond,
@@ -1472,7 +1477,9 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
               )
               .toDouble();
           final previewHeight = previewWidth / previewAspectRatio;
-          final isShortPreview = previewHeight < 220;
+          final isShortPreview = AppBreakpoints.isShortPreviewHeight(
+            previewHeight,
+          );
 
           return Align(
             alignment: Alignment.topCenter,
@@ -1804,13 +1811,13 @@ class _PlaybackFocusPreviewScreenState
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final previewMaxHeight = math
-                      .max(
-                        220,
-                        constraints.maxHeight - 148.0,
-                      )
-                      .toDouble();
-                  final isCompactLayout = constraints.maxWidth < 560;
+                  final previewMaxHeight = math.max(
+                    AppBreakpoints.shortPreviewHeight,
+                    constraints.maxHeight - 148.0,
+                  );
+                  final isCompactLayout = AppBreakpoints.isCompactFilterWidth(
+                    constraints.maxWidth,
+                  );
 
                   return Stack(
                     children: [
@@ -2719,7 +2726,9 @@ class _TimelineItem extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final shouldStackMetadata = constraints.maxWidth < 220;
+            final shouldStackMetadata = AppBreakpoints.shouldStackMetadata(
+              constraints.maxWidth,
+            );
             final messageContent = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

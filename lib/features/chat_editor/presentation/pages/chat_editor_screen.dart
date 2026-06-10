@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
+import 'package:production_chat_prop/core/utils/app_breakpoints.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
@@ -17,8 +18,6 @@ import 'package:production_chat_prop/features/projects/domain/message.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
-
-const _kUltraCompactWidth = 360.0;
 
 class ChatEditorScreen extends ConsumerStatefulWidget {
   const ChatEditorScreen({
@@ -136,7 +135,8 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final isCompactAppBar =
-        widget.forceCompactLayout ?? MediaQuery.sizeOf(context).width < 720;
+        widget.forceCompactLayout ??
+        AppBreakpoints.isCompactLayoutWidth(MediaQuery.sizeOf(context).width);
 
     if (widget.projectId == null) {
       return Scaffold(
@@ -355,9 +355,11 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
         ? -1
         : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
     final isCompactLayout =
-        forceCompactLayout ?? MediaQuery.sizeOf(context).width < 720;
-    final isUltraCompactLayout =
-        MediaQuery.sizeOf(context).width < _kUltraCompactWidth;
+        forceCompactLayout ??
+        AppBreakpoints.isCompactLayoutWidth(MediaQuery.sizeOf(context).width);
+    final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
+      MediaQuery.sizeOf(context).width,
+    );
     final openPlaybackButton = FilledButton.icon(
       key: const Key('chatEditorOpenPlaybackButton'),
       onPressed: () => context.goNamed(
@@ -1225,7 +1227,9 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
       for (final character in widget.sceneCharacters)
         character.id: character.bubbleColor,
     };
-    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
+      MediaQuery.sizeOf(context).width,
+    );
 
     return Card(
       child: Padding(
@@ -1734,8 +1738,9 @@ class _MessageTimelineHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isUltraCompactLayout =
-        MediaQuery.sizeOf(context).width < _kUltraCompactWidth;
+    final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
+      MediaQuery.sizeOf(context).width,
+    );
     final title = Text(
       'Messages',
       style: Theme.of(context).textTheme.titleSmall,
@@ -1867,7 +1872,9 @@ class _MessageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
+      MediaQuery.sizeOf(context).width,
+    );
     final bubbleColor = resolveCharacterBubbleTint(
       rawColor: characterBubbleColor,
       baseColor: message.isIncoming
@@ -2033,8 +2040,10 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
   @override
   Widget build(BuildContext context) {
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    final isCompactLayout = viewportWidth < 720;
-    final isUltraCompactLayout = viewportWidth < _kUltraCompactWidth;
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(viewportWidth);
+    final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
+      viewportWidth,
+    );
 
     return Card(
       child: Padding(
@@ -2535,7 +2544,8 @@ class _MessageActions extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             final viewportWidth = MediaQuery.sizeOf(context).width;
-            final isUltraCompactLayout = viewportWidth < _kUltraCompactWidth;
+            final isUltraCompactLayout =
+                AppBreakpoints.isUltraCompactLayoutWidth(viewportWidth);
 
             return ResponsiveAlertDialog(
               title: const Text('Edit Message'),
@@ -2722,7 +2732,9 @@ class _CharacterManagerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isCompactLayout = MediaQuery.sizeOf(context).width < 720;
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
+      MediaQuery.sizeOf(context).width,
+    );
     final controller = ref.read(projectsControllerProvider.notifier);
 
     Future<void> addCharacter() async {
@@ -2852,7 +2864,9 @@ class _CharacterManagerCard extends ConsumerWidget {
             else
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final shouldStackHeader = constraints.maxWidth < 260;
+                  final shouldStackHeader = AppBreakpoints.shouldStackHeader(
+                    constraints.maxWidth,
+                  );
 
                   if (shouldStackHeader) {
                     return Column(
