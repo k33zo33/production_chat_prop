@@ -60,6 +60,7 @@ Primjeri:
 - Timeout se može podesiti preko `HELPER_TIMEOUT_SECONDS` varijable okoline
 - Prompt payload se helperima šalje preko stdin-a kako veliki diffovi ne bi padali na shell `ARG_MAX` limit
 - Claude u oba moda dobiva `--add-dir` pristup za read-only čitanje repoa, dok Gemini odgovara samo na temelju prompt payload-a
+- Wrapper sada helper promptu inline-a kratak repo/workflow sažetak (scope, source-of-truth docs, heartbeat prioritet) kako analiza ne bi ovisila o git-ignored lokalnim datotekama poput `AGENTS.md` ili `HEARTBEAT.md`
 - Za untracked fileove skripta generira patch-style pregled (`git diff --no-color --no-ext-diff --no-index`) tako da review ne preskoči nove datoteke
 - Za binarne untracked fileove skripta preskače raw patch i zadržava samo stat sažetak da review ostane čitljiv
 

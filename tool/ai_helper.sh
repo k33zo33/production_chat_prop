@@ -40,6 +40,19 @@ require_bin() {
 
 HELPER_TIMEOUT_SECONDS="${HELPER_TIMEOUT_SECONDS:-120}"
 
+# Keep this summary aligned with the current project phase when heartbeat
+# priorities or source-of-truth docs change.
+build_local_repo_context() {
+  cat <<EOF
+Local repo context:
+- Operate only inside: $ROOT_DIR
+- Source of truth docs: docs/01-product-spec-mvp.md, docs/02-technical-architecture-flutter.md, docs/03-roadmap-and-sprints.md
+- Workflow: keep diffs small, stay inside current MVP/sprint scope, verify changes locally, and run paired Claude/Gemini read-only review before commit/push.
+- Current heartbeat: keep pushing toward beta with mobile adaptation, QA confidence, polish, and release-gate work.
+- Note: some local workflow files (for example AGENTS.md and HEARTBEAT.md) may be git-ignored or unavailable to helper file tools, so rely on this inlined summary unless their contents are explicitly included in the prompt.
+EOF
+}
+
 list_untracked_files() {
   git ls-files --others --exclude-standard
 }
@@ -150,6 +163,8 @@ Project context:
 - Stay within documented MVP/sprint scope.
 - Prefer practical, high-signal review comments.
 
+$(build_local_repo_context)
+
 Changed files:
 $changed_files
 
@@ -237,9 +252,11 @@ case "$mode" in
     question="$*"
     prompt=$'You are helping with a software project in read-only mode.\n\nRepository root:\n'
     prompt+="$ROOT_DIR"
+    prompt+=$'\n\n'
+    prompt+="$(build_local_repo_context)"
     prompt+=$'\n\nTask:\n'
     prompt+="$question"
-    prompt+=$'\n\nRules:\n- Read-only analysis only.\n- Be concise and practical.\n- Prefer concrete recommendations over theory.\n- If something looks uncertain, say so plainly.'
+    prompt+=$'\n\nRules:\n- Read-only analysis only.\n- Be concise and practical.\n- Prefer concrete recommendations over theory.\n- If something looks uncertain, say so plainly.\n- If the task mentions ignored local workflow files such as AGENTS.md or HEARTBEAT.md, use the inlined repo context above instead of trying to read those files from disk unless the prompt explicitly includes their contents.'
     helper_successes=0
     printf '===== CLAUDE CLI ANALYSIS =====\n'
     if run_claude "$prompt"; then
