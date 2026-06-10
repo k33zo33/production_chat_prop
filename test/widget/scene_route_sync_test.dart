@@ -137,6 +137,70 @@ void main() {
     },
   );
 
+  testWidgets(
+    'chat editor rewrites the route query when the selected trailing scene is deleted',
+    (tester) async {
+      final harness = await _createDemoProjectHarness();
+      addTearDown(harness.dispose);
+
+      final firstScene = harness.project.scenes.first;
+      final secondScene = harness.project.scenes[1];
+      final router = _buildRouter(
+        initialLocation:
+            '/editor/${harness.project.id}?sceneId=${secondScene.id}',
+        builder: (state) => ChatEditorScreen(
+          projectId: state.pathParameters['projectId'],
+          initialSceneId: state.uri.queryParameters['sceneId'],
+        ),
+      );
+      addTearDown(router.dispose);
+
+      await _pumpRouter(tester, container: harness.container, router: router);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+
+      await harness.container
+          .read(projectsControllerProvider.notifier)
+          .deleteScene(projectId: harness.project.id, sceneId: secondScene.id);
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, firstScene.id);
+      expect(find.text('Scene: ${firstScene.title}'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'chat editor rewrites the route query when the selected leading scene is deleted',
+    (tester) async {
+      final harness = await _createDemoProjectHarness();
+      addTearDown(harness.dispose);
+
+      final firstScene = harness.project.scenes.first;
+      final secondScene = harness.project.scenes[1];
+      final router = _buildRouter(
+        initialLocation:
+            '/editor/${harness.project.id}?sceneId=${firstScene.id}',
+        builder: (state) => ChatEditorScreen(
+          projectId: state.pathParameters['projectId'],
+          initialSceneId: state.uri.queryParameters['sceneId'],
+        ),
+      );
+      addTearDown(router.dispose);
+
+      await _pumpRouter(tester, container: harness.container, router: router);
+
+      await _pumpUntilRouteSceneId(tester, router, firstScene.id);
+
+      await harness.container
+          .read(projectsControllerProvider.notifier)
+          .deleteScene(projectId: harness.project.id, sceneId: firstScene.id);
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+      expect(find.text('Scene: ${secondScene.title}'), findsOneWidget);
+    },
+  );
+
   testWidgets('playback keeps selected scene in the route query', (
     tester,
   ) async {
@@ -256,6 +320,70 @@ void main() {
       expect(find.text('Scene: ${secondScene.title}'), findsOneWidget);
 
       router.go('/playback/${harness.project.id}');
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+      expect(find.text('Scene: ${secondScene.title}'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'playback rewrites the route query when the selected trailing scene is deleted',
+    (tester) async {
+      final harness = await _createDemoProjectHarness();
+      addTearDown(harness.dispose);
+
+      final firstScene = harness.project.scenes.first;
+      final secondScene = harness.project.scenes[1];
+      final router = _buildRouter(
+        initialLocation:
+            '/playback/${harness.project.id}?sceneId=${secondScene.id}',
+        builder: (state) => PlaybackScreen(
+          projectId: state.pathParameters['projectId'],
+          initialSceneId: state.uri.queryParameters['sceneId'],
+        ),
+      );
+      addTearDown(router.dispose);
+
+      await _pumpRouter(tester, container: harness.container, router: router);
+
+      await _pumpUntilRouteSceneId(tester, router, secondScene.id);
+
+      await harness.container
+          .read(projectsControllerProvider.notifier)
+          .deleteScene(projectId: harness.project.id, sceneId: secondScene.id);
+      await _pumpRouteSyncFrames(tester);
+
+      await _pumpUntilRouteSceneId(tester, router, firstScene.id);
+      expect(find.text('Scene: ${firstScene.title}'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'playback rewrites the route query when the selected leading scene is deleted',
+    (tester) async {
+      final harness = await _createDemoProjectHarness();
+      addTearDown(harness.dispose);
+
+      final firstScene = harness.project.scenes.first;
+      final secondScene = harness.project.scenes[1];
+      final router = _buildRouter(
+        initialLocation:
+            '/playback/${harness.project.id}?sceneId=${firstScene.id}',
+        builder: (state) => PlaybackScreen(
+          projectId: state.pathParameters['projectId'],
+          initialSceneId: state.uri.queryParameters['sceneId'],
+        ),
+      );
+      addTearDown(router.dispose);
+
+      await _pumpRouter(tester, container: harness.container, router: router);
+
+      await _pumpUntilRouteSceneId(tester, router, firstScene.id);
+
+      await harness.container
+          .read(projectsControllerProvider.notifier)
+          .deleteScene(projectId: harness.project.id, sceneId: firstScene.id);
       await _pumpRouteSyncFrames(tester);
 
       await _pumpUntilRouteSceneId(tester, router, secondScene.id);
