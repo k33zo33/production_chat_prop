@@ -364,6 +364,7 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
   bool _showDeviceFrame = true;
   bool _cleanPreview = false;
   bool _isExporting = false;
+  bool _isApplyingTemplate = false;
   _ExportState _lastExportState = _ExportState.idle;
   final GlobalKey _previewBoundaryKey = GlobalKey();
 
@@ -675,6 +676,27 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
+                  if (!hasPlaybackMessages) ...[
+                    const SizedBox(height: 12),
+                    _PlaybackEmptyStateActions(
+                      scene: scene,
+                      isCompactLayout: isCompactLayout,
+                      onOpenChatEditor: () => context.goNamed(
+                        'editorProject',
+                        pathParameters: {'projectId': project.id},
+                        queryParameters: _sceneRouteQueryParameters(scene?.id),
+                      ),
+                      onApplyTemplate: scene == null || _isApplyingTemplate
+                          ? null
+                          : (templateId, label) =>
+                                _applySceneTemplateFromPlayback(
+                                  projectId: project.id,
+                                  sceneId: scene.id,
+                                  templateId: templateId,
+                                  label: label,
+                                ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   if (scene != null) ...[
                     Text(
@@ -854,23 +876,6 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                         : null,
                   ),
                   const SizedBox(height: 8),
-                  if (!hasPlaybackMessages) ...[
-                    Container(
-                      key: const Key('playbackEmptyStateHint'),
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Add at least one timed message in Chat Editor to enable playback and export.',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
                   _PlaybackTransportControls(
                     isCompactLayout: isCompactLayout,
                     isUltraCompactLayout: isUltraCompactLayout,
@@ -1159,6 +1164,45 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
           styleId: scene.styleId,
           aspectRatio: aspectRatio,
         );
+  }
+
+  Future<void> _applySceneTemplateFromPlayback({
+    required String projectId,
+    required String sceneId,
+    required String templateId,
+    required String label,
+  }) async {
+    if (_isApplyingTemplate) {
+      return;
+    }
+
+    setState(() {
+      _isApplyingTemplate = true;
+    });
+
+    var applied = false;
+    try {
+      applied = await ref
+          .read(projectsControllerProvider.notifier)
+          .applySceneTemplate(
+            projectId: projectId,
+            sceneId: sceneId,
+            templateId: templateId,
+          );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isApplyingTemplate = false;
+        });
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+
+    _showSnackBar(
+      applied ? 'Applied template: $label' : 'Template could not be applied.',
+    );
   }
 
   Future<bool> _copyTextToClipboard(String text) async {
@@ -2116,6 +2160,86 @@ class _FocusPreviewTransportControls extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _PlaybackEmptyStateActions extends StatelessWidget {
+  const _PlaybackEmptyStateActions({
+    required this.scene,
+    required this.isCompactLayout,
+    required this.onOpenChatEditor,
+    required this.onApplyTemplate,
+  });
+
+  final Scene? scene;
+  final bool isCompactLayout;
+  final VoidCallback onOpenChatEditor;
+  final Future<void> Function(String templateId, String label)? onApplyTemplate;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasScene = scene != null;
+    final buttons = <Widget>[
+      FilledButton.icon(
+        key: const Key('playbackEmptyStateOpenEditorButton'),
+        onPressed: onOpenChatEditor,
+        icon: const Icon(Icons.edit_note_rounded),
+        label: const Text('Open Chat Editor'),
+      ),
+      OutlinedButton.icon(
+        key: const Key('playbackEmptyStateBriefingTemplateButton'),
+        onPressed: onApplyTemplate != null
+            ? () => onApplyTemplate!('briefing', 'Briefing')
+            : null,
+        icon: const Icon(Icons.auto_awesome_rounded),
+        label: const Text('Load Briefing Template'),
+      ),
+      OutlinedButton.icon(
+        key: const Key('playbackEmptyStateGroupAlertTemplateButton'),
+        onPressed: onApplyTemplate != null
+            ? () => onApplyTemplate!('group_alert', 'Group Alert')
+            : null,
+        icon: const Icon(Icons.groups_rounded),
+        label: const Text('Load Group Alert Template'),
+      ),
+    ];
+
+    return Container(
+      key: const Key('playbackEmptyStateHint'),
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            hasScene
+                ? 'Add at least one timed message in Chat Editor to enable playback and export, or load a starter template here.'
+                : 'Select a scene in Chat Editor before playback can start.',
+          ),
+          const SizedBox(height: 12),
+          if (isCompactLayout)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var index = 0; index < buttons.length; index += 1) ...[
+                  buttons[index],
+                  if (index != buttons.length - 1) const SizedBox(height: 8),
+                ],
+              ],
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: buttons,
+            ),
+        ],
+      ),
     );
   }
 }
