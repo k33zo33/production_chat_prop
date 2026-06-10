@@ -1,6 +1,8 @@
 import 'package:production_chat_prop/core/utils/file_download/file_downloader_stub.dart'
+    if (dart.library.io)
+      'package:production_chat_prop/core/utils/file_download/file_downloader_io.dart'
     if (dart.library.html)
-    'package:production_chat_prop/core/utils/file_download/file_downloader_web.dart'
+      'package:production_chat_prop/core/utils/file_download/file_downloader_web.dart'
     as impl;
 
 typedef BytesDownloader = Future<bool> Function({

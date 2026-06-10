@@ -1,5 +1,8 @@
 import 'package:production_chat_prop/core/utils/file_picker/file_picker_stub.dart'
-    if (dart.library.html) 'package:production_chat_prop/core/utils/file_picker/file_picker_web.dart'
+    if (dart.library.io)
+      'package:production_chat_prop/core/utils/file_picker/file_picker_io.dart'
+    if (dart.library.html)
+      'package:production_chat_prop/core/utils/file_picker/file_picker_web.dart'
     as impl;
 
 typedef TextFilePicker =
