@@ -7340,6 +7340,73 @@ void main() {
   );
 
   testWidgets(
+    'focus preview preserves playback position and preview mode when opened from the main timeline',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('newProjectFab')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await _openPlaybackFromProjectList(tester);
+
+      final cleanPreviewSwitch = find.byKey(
+        const Key('playbackCleanPreviewSwitch'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, cleanPreviewSwitch);
+      await tester.tap(cleanPreviewSwitch);
+      await tester.pumpAndSettle();
+
+      final plusFiveButton = find.byKey(const Key('seekForward5Button'));
+      await _ensureFinderVisibleInPrimaryListView(tester, plusFiveButton);
+      await tester.tap(plusFiveButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('t=5s / 9 s', skipOffstage: false),
+        findsOneWidget,
+      );
+
+      final focusPreviewButton = find.byKey(
+        const Key('openPlaybackFocusPreviewButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+      await tester.tap(focusPreviewButton);
+      await tester.pumpAndSettle();
+
+      var focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:05 / 00:09'));
+      expect(find.byKey(const Key('cleanPreviewHeader')), findsOneWidget);
+      expect(find.text('Playback Timeline (read-only)'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('focusPreviewSeekForwardButton')));
+      await tester.pumpAndSettle();
+
+      focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:06 / 00:09'));
+
+      await tester.tap(find.byKey(const Key('focusPreviewCloseButton')));
+      await tester.pumpAndSettle();
+
+      await _ensureFinderVisibleInPrimaryListView(
+        tester,
+        find.byKey(const Key('cleanPreviewHeader')),
+      );
+      final cleanPreviewHeader = tester.widget<Text>(
+        find.byKey(const Key('cleanPreviewHeader')),
+      );
+      expect(cleanPreviewHeader.data, contains('00:06 / 00:09'));
+    },
+  );
+
+  testWidgets(
     'focus preview responds to keyboard play pause and restart shortcuts',
     (
       tester,
