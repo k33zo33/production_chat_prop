@@ -4864,6 +4864,101 @@ void main() {
   );
 
   testWidgets(
+    'project card shows timeline QA summary without downgrading ready playback state',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byKey(const Key('importProjectJsonButton')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        _buildTimelineQaProjectImportPayload(),
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Ready for playback'), findsOneWidget);
+      expect(find.text('Open Playback'), findsAtLeastNWidgets(1));
+      expect(
+        find.textContaining(
+          'Timeline QA: 1 shared timestamp • 1 overlapping typing cue across 1 scene',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'timeline QA summary surfaces in editor and playback for stacked cues',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildTimelineQaProjectImportPayload());
+      final projects = await container.read(projectsControllerProvider.future);
+      final project = projects.single;
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const ProductionChatPropApp(),
+        ),
+      );
+      await _ensureOnProjectList(tester);
+
+      final openEditorCta = _projectCardDescendant(
+        projectName: 'Timeline QA Project',
+        matching: find.widgetWithText(FilledButton, 'Open Chat Editor'),
+      );
+      await tester.ensureVisible(openEditorCta);
+      await tester.pumpAndSettle();
+      await tester.tap(openEditorCta, warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('sceneTimingQaSummaryLine')), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Timeline QA: 1 shared timestamp • 1 overlapping typing cue',
+        ),
+        findsOneWidget,
+      );
+
+      final openPlaybackButton = find.byKey(
+        const Key('chatEditorOpenPlaybackButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, openPlaybackButton);
+      await tester.tap(openPlaybackButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(
+        find.byKey(const Key('playbackSceneTimingQaLabel')),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining(
+          'Timeline QA: 1 shared timestamp • 1 overlapping typing cue',
+          skipOffstage: false,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Scene: ${project.scenes.single.title}'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'mixed readiness project attention CTA opens editor focused on empty scene',
     (tester) async {
       await tester.pumpWidget(
@@ -8610,6 +8705,60 @@ String _buildMixedReadinessProjectImportPayload({
           },
         ],
         'messages': <Object>[],
+      },
+    ],
+  });
+}
+
+String _buildTimelineQaProjectImportPayload({
+  String projectName = 'Timeline QA Project',
+}) {
+  return jsonEncode({
+    'id': 'timeline-qa-source-id',
+    'name': projectName,
+    'type': 'ad',
+    'createdAt': DateTime.utc(2026, 5, 2, 9).toIso8601String(),
+    'updatedAt': DateTime.utc(2026, 5, 2, 9).toIso8601String(),
+    'scenes': [
+      {
+        'id': 'timeline-qa-scene-1',
+        'title': 'Stacked Cue Scene',
+        'styleId': 'studio_slate',
+        'aspectRatio': 'portrait9x16',
+        'characters': [
+          {
+            'id': 'timeline-qa-char-1',
+            'displayName': 'Taylor',
+            'avatarPath': null,
+            'bubbleColor': '#2E90FA',
+          },
+          {
+            'id': 'timeline-qa-char-2',
+            'displayName': 'Jordan',
+            'avatarPath': null,
+            'bubbleColor': '#12B76A',
+          },
+        ],
+        'messages': [
+          {
+            'id': 'timeline-qa-msg-1',
+            'characterId': 'timeline-qa-char-1',
+            'text': 'Taylor lands a stacked cue.',
+            'timestampSeconds': 4,
+            'status': 'sent',
+            'isIncoming': false,
+            'showTypingBefore': true,
+          },
+          {
+            'id': 'timeline-qa-msg-2',
+            'characterId': 'timeline-qa-char-2',
+            'text': 'Jordan replies on the same beat.',
+            'timestampSeconds': 4,
+            'status': 'delivered',
+            'isIncoming': true,
+            'showTypingBefore': true,
+          },
+        ],
       },
     ],
   });

@@ -515,6 +515,14 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
                       'Scene health: ${sceneHealth.statusLabel} • ${sceneHealth.detailLabel}',
                     ),
                   ],
+                  if (selectedSceneHealth case final sceneHealth?
+                      when sceneHealth.hasTimelineWarnings) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      key: const Key('sceneTimingQaSummaryLine'),
+                      'Timeline QA: ${sceneHealth.timelineStatusLabel} • ${sceneHealth.timelineDetailLabel}',
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   _SceneActionSection(
                     project: project,

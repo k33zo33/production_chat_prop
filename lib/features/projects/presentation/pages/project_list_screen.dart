@@ -1627,6 +1627,13 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                 'across ${projectHealth.scenesWithUnusedCharacters} scene${projectHealth.scenesWithUnusedCharacters == 1 ? '' : 's'}',
               ),
             ],
+            if (projectHealth.hasTimelineWarnings) ...[
+              const SizedBox(height: 4),
+              Text(
+                key: Key('projectTimingQaSummary_${project.id}'),
+                'Timeline QA: ${_projectTimelineQaSummaryLabel(projectHealth)}',
+              ),
+            ],
             const SizedBox(height: 8),
             Chip(
               key: Key('projectAttentionReason_${project.id}'),
@@ -2345,4 +2352,21 @@ String _portfolioHealthSummaryLabel(
 
   return 'Attention: ${summary.emptyScenes} empty scene${summary.emptyScenes == 1 ? '' : 's'} • '
       '${summary.unusedCharacterCount} character${summary.unusedCharacterCount == 1 ? '' : 's'} waiting for lines';
+}
+
+String _projectTimelineQaSummaryLabel(ProjectHealthSummary summary) {
+  final segments = <String>[];
+
+  if (summary.sharedTimestampCount > 0) {
+    segments.add(
+      '${summary.sharedTimestampCount} shared timestamp${summary.sharedTimestampCount == 1 ? '' : 's'}',
+    );
+  }
+  if (summary.overlappingTypingCueCount > 0) {
+    segments.add(
+      '${summary.overlappingTypingCueCount} overlapping typing cue${summary.overlappingTypingCueCount == 1 ? '' : 's'}',
+    );
+  }
+
+  return '${segments.join(' • ')} across ${summary.scenesWithTimelineWarnings} scene${summary.scenesWithTimelineWarnings == 1 ? '' : 's'}';
 }

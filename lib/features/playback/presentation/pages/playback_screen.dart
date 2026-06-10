@@ -687,6 +687,15 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
+                  if (sceneHealth != null &&
+                      sceneHealth.hasTimelineWarnings) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      key: const Key('playbackSceneTimingQaLabel'),
+                      'Timeline QA: ${sceneHealth.timelineStatusLabel} • ${sceneHealth.timelineDetailLabel}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                   if (!hasPlaybackMessages) ...[
                     const SizedBox(height: 12),
                     _PlaybackEmptyStateActions(
