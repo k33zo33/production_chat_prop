@@ -13,6 +13,7 @@ smoke_run_analyze "release-smoke" "$FLUTTER_BIN"
 declare -a WIDGET_TEST_FILES=(
   "test/widget_test.dart"
   "test/widget/playback_export_feedback_test.dart"
+  "test/widget/project_not_found_recovery_test.dart"
 )
 
 for widget_test_file in "${WIDGET_TEST_FILES[@]}"; do
@@ -23,6 +24,19 @@ for widget_test_file in "${WIDGET_TEST_FILES[@]}"; do
 done
 
 declare -a TEST_NAMES=(
+  "compact project list app bar uses overflow menu actions"
+  "compact chat editor app bar uses overflow navigation actions"
+  "compact chat editor keeps scene actions in overflow menu"
+  "compact chat editor scene selector shows current scene context on narrow screens"
+  "ultra-compact chat editor composer stays usable on phone-width screens"
+  "compact playback app bar uses overflow navigation actions"
+  "compact playback export and transport controls remain usable"
+  "ultra-compact playback actions stay usable on phone-width screens"
+  "compact playback scene selector switches demo scenes and resets progress"
+  "compact playback scene switch resets deep preview scroll in long scenes"
+  "compact playback focus preview stays usable on narrow screens"
+  "compact demo flow stays usable across project list, editor, and playback"
+  "compact missing-project recovery stacks actions on phone-width screens"
   "playback preview expands on wide layouts and clarifies export scaling"
   "playback focus preview opens with transport controls and closes cleanly"
   "focus preview transport controls scrub and jump between cues"
@@ -64,7 +78,7 @@ done
 
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 
-echo "[release-smoke] widget tests: ${#TEST_NAMES[@]} targeted export/reliability cases"
+echo "[release-smoke] widget tests: ${#TEST_NAMES[@]} targeted compact/export/reliability cases"
 "$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo
@@ -76,8 +90,9 @@ echo
 
 echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
+echo "- It now covers key compact-width, stale-link recovery, export, and focus-preview regressions automatically."
 echo "- Then do the browser pass from docs/08-web-smoke-checklist.md."
-echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md."
+echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md for visual/layout confirmation."
 echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
 echo "- Import docs/fixtures/export-qa-project.json for the standard portrait/landscape/empty/long-scene export pass."
 echo "- Keep docs/11-video-fallback-workflow.md with the handoff so downstream render users know Export Video emits a documented .json package."
