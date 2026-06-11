@@ -1690,7 +1690,7 @@ void main() {
     await _scrollProjectListToCards(tester);
 
     expect(find.text('Type: Other'), findsOneWidget);
-    expect(find.text('Ad (0)'), findsOneWidget);
+    expect(find.text('Ad (0)', skipOffstage: false), findsOneWidget);
 
     await _openProjectMenuForProject(tester, 'New Project 1');
     await tester.pumpAndSettle();
@@ -1699,8 +1699,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Type: Ad'), findsOneWidget);
-    expect(find.text('Ad (1)'), findsOneWidget);
-    expect(find.text('Other (0)'), findsOneWidget);
+    expect(find.text('Ad (1)', skipOffstage: false), findsOneWidget);
+    expect(find.text('Other (0)', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('project sort dropdown changes card ordering by name', (
@@ -1755,7 +1755,10 @@ void main() {
 
     await _scrollProjectListToCards(tester);
 
-    final sortDropdown = find.byKey(const Key('projectSortDropdown'));
+    final sortDropdown = find.byKey(
+      const Key('projectSortDropdown'),
+      skipOffstage: false,
+    );
     await tester.ensureVisible(sortDropdown);
     await tester.pumpAndSettle();
     await tester.tap(sortDropdown);
@@ -2202,9 +2205,14 @@ void main() {
       await tester.tap(find.byKey(const Key('projectResetFiltersButton')));
       await tester.pumpAndSettle();
 
-      final searchField = tester.widget<TextField>(
-        find.byKey(const Key('projectSearchField')),
+      final searchFieldFinder = find.byKey(
+        const Key('projectSearchField'),
+        skipOffstage: false,
       );
+      await tester.ensureVisible(searchFieldFinder);
+      await tester.pumpAndSettle();
+
+      final searchField = tester.widget<TextField>(searchFieldFinder);
       expect(searchField.controller!.text, isEmpty);
       expect(find.text('All (2)'), findsOneWidget);
       expect(find.text('Updated (Newest)'), findsOneWidget);
@@ -2318,6 +2326,9 @@ void main() {
       await container
           .read(projectsControllerProvider.notifier)
           .importProjectFromJson(_buildAttentionProjectImportPayload());
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildTimelineQaProjectImportPayload());
 
       await _pumpNarrowScreenWithContainer(
         tester,
@@ -2334,23 +2345,31 @@ void main() {
       final reviewButton = find.byKey(
         const Key('portfolioReviewAttentionButton'),
       );
+      final timelineQaButton = find.byKey(
+        const Key('portfolioReviewTimelineQaButton'),
+      );
 
-      await tester.ensureVisible(reviewButton);
+      await tester.ensureVisible(timelineQaButton);
       await tester.pumpAndSettle();
 
       final continuePosition = tester.getTopLeft(continueButton);
       final previewPosition = tester.getTopLeft(previewButton);
       final reviewPosition = tester.getTopLeft(reviewButton);
+      final timelineQaPosition = tester.getTopLeft(timelineQaButton);
       final continueSize = tester.getSize(continueButton);
       final previewSize = tester.getSize(previewButton);
       final reviewSize = tester.getSize(reviewButton);
+      final timelineQaSize = tester.getSize(timelineQaButton);
 
       expect(previewPosition.dy, greaterThan(continuePosition.dy));
       expect(reviewPosition.dy, greaterThan(previewPosition.dy));
+      expect(timelineQaPosition.dy, greaterThan(reviewPosition.dy));
       expect(previewPosition.dx, closeTo(continuePosition.dx, 1));
       expect(reviewPosition.dx, closeTo(previewPosition.dx, 1));
+      expect(timelineQaPosition.dx, closeTo(reviewPosition.dx, 1));
       expect(previewSize.width, closeTo(continueSize.width, 1));
       expect(reviewSize.width, closeTo(previewSize.width, 1));
+      expect(timelineQaSize.width, closeTo(reviewSize.width, 1));
       expect(tester.takeException(), isNull);
     },
   );
@@ -4510,6 +4529,48 @@ void main() {
     },
   );
 
+  testWidgets(
+    'portfolio review timeline QA CTA opens playback from summary card', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const ProviderScope(child: ProductionChatPropApp()),
+      );
+      await _ensureOnProjectList(tester);
+
+      await tester.tap(find.byTooltip('Import Project JSON'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('importProjectJsonField')),
+        _buildTimelineQaProjectImportPayload(),
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byKey(const Key('confirmImportFromJsonButton')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        find.byKey(const Key('projectPortfolioTimelineQaChip')),
+        findsOneWidget,
+      );
+      expect(find.text('1 timeline QA project'), findsOneWidget);
+
+      final reviewTimelineQaButton = find.byKey(
+        const Key('portfolioReviewTimelineQaButton'),
+      );
+      await tester.ensureVisible(reviewTimelineQaButton);
+      await tester.pumpAndSettle();
+      await tester.tap(reviewTimelineQaButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Playback'), findsOneWidget);
+      expect(find.text('Timeline QA Project'), findsOneWidget);
+      expect(find.textContaining('Scene: Stacked Cue Scene'), findsOneWidget);
+    },
+  );
+
   testWidgets('portfolio continue editing CTA opens editor from summary card', (
     tester,
   ) async {
@@ -4953,11 +5014,23 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Ready for playback'), findsOneWidget);
-      expect(find.text('Open Playback'), findsAtLeastNWidgets(1));
+      await _ensureProjectVisibleByName(tester, 'Timeline QA Project');
+      final projectId = _projectIdForName(tester, 'Timeline QA Project');
+
       expect(
-        find.textContaining(
-          'Timeline QA: 1 shared timestamp • 1 overlapping typing cue across 1 scene',
+        _projectCardDescendant(
+          projectName: 'Timeline QA Project',
+          matching: find.text('Ready for playback'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(Key('projectOpenPlayback_$projectId')), findsOneWidget);
+      expect(
+        _projectCardDescendant(
+          projectName: 'Timeline QA Project',
+          matching: find.textContaining(
+            'Timeline QA: 1 shared timestamp • 1 overlapping typing cue across 1 scene',
+          ),
         ),
         findsOneWidget,
       );
@@ -4983,6 +5056,7 @@ void main() {
         ),
       );
       await _ensureOnProjectList(tester);
+      await _ensureProjectVisibleByName(tester, 'Timeline QA Project');
 
       final openEditorCta = _projectCardDescendant(
         projectName: 'Timeline QA Project',
@@ -8536,7 +8610,12 @@ Future<void> _pumpNarrowScreenWithContainer(
 }
 
 Future<void> _scrollProjectListToCards(WidgetTester tester) async {
-  final scrollable = find.byType(ListView).first;
+  final scrollable =
+      find.byKey(const Key('projectCardsListView')).evaluate().isNotEmpty
+      ? find.byKey(const Key('projectCardsListView'))
+      : find.byKey(const Key('projectListScrollView')).evaluate().isNotEmpty
+      ? find.byKey(const Key('projectListScrollView'))
+      : find.byType(Scrollable).first;
   await tester.drag(scrollable, const Offset(0, -220));
   await tester.pumpAndSettle();
 }
@@ -8637,6 +8716,35 @@ Future<Finder> _openMessageActionsForText(
   await tester.ensureVisible(messageMenuButton);
   await tester.pumpAndSettle();
   return messageMenuButton;
+}
+
+Future<void> _ensureProjectVisibleByName(
+  WidgetTester tester,
+  String projectName,
+) async {
+  final projectNameFinder = find.text(projectName, skipOffstage: false);
+  if (projectNameFinder.evaluate().isNotEmpty) {
+    await tester.ensureVisible(projectNameFinder.first);
+    await tester.pumpAndSettle();
+    return;
+  }
+
+  final scrollable =
+      find.byKey(const Key('projectCardsListView')).evaluate().isNotEmpty
+      ? find.byKey(const Key('projectCardsListView'))
+      : find.byKey(const Key('projectListScrollView')).evaluate().isNotEmpty
+      ? find.byKey(const Key('projectListScrollView'))
+      : find.byType(Scrollable).first;
+
+  for (var i = 0; i < 12; i++) {
+    if (projectNameFinder.evaluate().isNotEmpty) {
+      await tester.ensureVisible(projectNameFinder.first);
+      await tester.pumpAndSettle();
+      return;
+    }
+    await tester.drag(scrollable, const Offset(0, -260));
+    await tester.pumpAndSettle();
+  }
 }
 
 Finder _projectCardDescendant({

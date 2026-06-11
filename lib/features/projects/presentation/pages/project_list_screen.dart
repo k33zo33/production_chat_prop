@@ -1285,6 +1285,15 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                               icon: const Icon(Icons.rule_folder_outlined),
                               label: const Text('Review Attention Project'),
                             ),
+                            if (timelineQaProject != null)
+                              OutlinedButton.icon(
+                                key: const Key('portfolioReviewTimelineQaButton'),
+                                onPressed: () => _openProjectTimelineQa(
+                                  timelineQaProject,
+                                ),
+                                icon: const Icon(Icons.schedule_send_outlined),
+                                label: const Text('Review Timeline QA'),
+                              ),
                           ];
 
                           return Column(
@@ -1396,6 +1405,19 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                       '${readinessSummary.needsAttentionProjectCount} need attention',
                                     ),
                                   ),
+                                  if (readinessSummary.hasTimelineWarnings)
+                                    Chip(
+                                      key: const Key(
+                                        'projectPortfolioTimelineQaChip',
+                                      ),
+                                      avatar: const Icon(
+                                        Icons.schedule_send_outlined,
+                                        size: 18,
+                                      ),
+                                      label: Text(
+                                        '${readinessSummary.timelineWarningProjectCount} timeline QA project${readinessSummary.timelineWarningProjectCount == 1 ? '' : 's'}',
+                                      ),
+                                    ),
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -1478,6 +1500,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   final useSingleScrollColumn =
                       AppBreakpoints.isCompactLayoutWidth(
                         constraints.maxWidth,
+                      ) ||
+                      AppBreakpoints.isShortViewportHeight(
+                        constraints.maxHeight,
                       );
 
                   if (useSingleScrollColumn) {
