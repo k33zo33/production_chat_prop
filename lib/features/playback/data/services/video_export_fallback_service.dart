@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:production_chat_prop/core/utils/export_file_name.dart';
+import 'package:production_chat_prop/core/utils/export_qa_payload.dart';
 import 'package:production_chat_prop/core/utils/file_download/file_downloader.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
@@ -127,6 +128,11 @@ class VideoExportFallbackService {
         'targetRatios': const ['9:16', '16:9'],
         'includeDeviceFrame': includeDeviceFrame,
         'cleanPreview': cleanPreview,
+      },
+      'qa': {
+        'project': buildProjectQaPayload(project),
+        'selectedScene': buildSceneQaPayload(scene),
+        'scenes': buildSceneQaPayloadList(project.scenes),
       },
       'workflow': {
         'steps': const [

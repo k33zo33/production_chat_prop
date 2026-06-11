@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:production_chat_prop/core/utils/export_file_name.dart';
+import 'package:production_chat_prop/core/utils/export_qa_payload.dart';
 import 'package:production_chat_prop/core/utils/file_download/file_downloader.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 
@@ -85,6 +86,10 @@ class ProjectPackageExportService {
         'exportedAt': DateTime.now().toIso8601String(),
       },
       'project': project.toJson(),
+      'qa': {
+        'project': buildProjectQaPayload(project),
+        'scenes': buildSceneQaPayloadList(project.scenes),
+      },
     };
   }
 

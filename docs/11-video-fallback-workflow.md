@@ -45,6 +45,10 @@ Fallback paket sadrži ove glavne ključeve:
   - `targetRatios`: `9:16`, `16:9`
   - `includeDeviceFrame`
   - `cleanPreview`
+- `qa`
+  - `project`: sažetak readiness/timeline stanja cijelog projekta
+  - `selectedScene`: sažetak readiness/timeline stanja trenutno izvožene scene
+  - `scenes`: per-scene QA sažeci za brzi pregled bez ponovnog otvaranja appa
 - `workflow`
   - ugrađeni tekstualni podsjetnik za downstream render korake
 
@@ -60,6 +64,8 @@ Fallback paket sadrži ove glavne ključeve:
    - `selectedScene.aspectRatio` za osnovni layout
    - `selectedScene.characters` / `project.scenes[*].characters` za imena, boje balona i eventualne avatar reference
    - `renderHints.includeDeviceFrame` i `renderHints.cleanPreview` za vizualnu varijantu
+   - `qa.selectedScene` za brzi sanity check prije rendera (empty scene, unused characters, shared timestamp / typing collisions)
+   - `qa.project` / `qa.scenes` ako treba puni kontekst readinessa i timeline upozorenja prije handoffa
    - `project` ako treba puni kontekst scena ili dodatni metadata handoff
 6. Render napraviti izvan appa (npr. interni motion template, custom renderer ili ručni compositing workflow).
 

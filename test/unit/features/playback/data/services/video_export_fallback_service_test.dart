@@ -115,6 +115,22 @@ void main() {
       final renderHints = payload['renderHints'] as Map<String, dynamic>;
       expect(renderHints['includeDeviceFrame'], isFalse);
       expect(renderHints['cleanPreview'], isTrue);
+
+      final qa = payload['qa'] as Map<String, dynamic>;
+      final projectQa = qa['project'] as Map<String, dynamic>;
+      final selectedSceneQa = qa['selectedScene'] as Map<String, dynamic>;
+      final sceneQaList = qa['scenes'] as List<dynamic>;
+      expect(projectQa['totalScenes'], 1);
+      expect(projectQa['readyScenes'], 1);
+      expect(projectQa['needsAttention'], isFalse);
+      expect(selectedSceneQa['messageCount'], 2);
+      expect(selectedSceneQa['hasTimelineWarnings'], isFalse);
+      expect(selectedSceneQa['unusedCharacterNames'], isEmpty);
+      expect(sceneQaList, hasLength(1));
+      expect(
+        (sceneQaList.single as Map<String, dynamic>)['id'],
+        scene.id,
+      );
     });
 
     test('returns failure when downloader is unavailable', () async {
@@ -314,15 +330,16 @@ void main() {
           scenes: const [untouchedScene, selectedScene],
         );
 
-        final payload = jsonDecode(
-              service.buildFallbackPackageJson(
-                project: project,
-                scene: selectedScene,
-                includeDeviceFrame: true,
-                cleanPreview: false,
-              ),
-            )
-            as Map<String, dynamic>;
+        final payload =
+            jsonDecode(
+                  service.buildFallbackPackageJson(
+                    project: project,
+                    scene: selectedScene,
+                    includeDeviceFrame: true,
+                    cleanPreview: false,
+                  ),
+                )
+                as Map<String, dynamic>;
 
         final selectedScenePayload =
             payload['selectedScene'] as Map<String, dynamic>;
@@ -369,8 +386,108 @@ void main() {
           (payload['renderHints'] as Map<String, dynamic>)['targetRatios'],
           ['9:16', '16:9'],
         );
+
+        final qa = payload['qa'] as Map<String, dynamic>;
+        final projectQa = qa['project'] as Map<String, dynamic>;
+        final selectedSceneQa = qa['selectedScene'] as Map<String, dynamic>;
+        final sceneQaList = qa['scenes'] as List<dynamic>;
+        expect(projectQa['scenesWithTimelineWarnings'], 0);
+        expect(projectQa['firstAttentionSceneId'], isNull);
+        expect(selectedSceneQa['id'], selectedScene.id);
+        expect(selectedSceneQa['timelineWarningMessageIds'], isEmpty);
+        expect(sceneQaList, hasLength(2));
       },
     );
+
+    test('buildFallbackPackageJson includes export QA summaries', () {
+      final service = VideoExportFallbackService();
+      const scene = Scene(
+        id: 'scene-qa',
+        title: 'QA Scene',
+        styleId: 'studio_default',
+        aspectRatio: SceneAspectRatio.portrait9x16,
+        characters: [
+          Character(
+            id: 'c1',
+            displayName: 'Lead',
+            avatarPath: null,
+            bubbleColor: '#00AA88',
+          ),
+          Character(
+            id: 'c2',
+            displayName: 'Support',
+            avatarPath: null,
+            bubbleColor: '#FFAA00',
+          ),
+        ],
+        messages: [
+          Message(
+            id: 'm2',
+            characterId: 'c1',
+            text: 'Shared timestamp follow-up',
+            timestampSeconds: 2,
+            status: MessageStatus.delivered,
+            isIncoming: true,
+            showTypingBefore: true,
+          ),
+          Message(
+            id: 'm1',
+            characterId: 'c1',
+            text: 'Shared timestamp opener',
+            timestampSeconds: 2,
+            status: MessageStatus.sent,
+            isIncoming: false,
+            showTypingBefore: true,
+          ),
+        ],
+      );
+      final project = Project(
+        id: 'project-qa',
+        name: 'QA Project',
+        type: ProjectType.ad,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        scenes: const [scene],
+      );
+
+      final payload =
+          jsonDecode(
+                service.buildFallbackPackageJson(
+                  project: project,
+                  scene: scene,
+                  includeDeviceFrame: true,
+                  cleanPreview: false,
+                ),
+              )
+              as Map<String, dynamic>;
+
+      final qa = payload['qa'] as Map<String, dynamic>;
+      final projectQa = qa['project'] as Map<String, dynamic>;
+      final selectedSceneQa = qa['selectedScene'] as Map<String, dynamic>;
+      final exportedSceneQa =
+          (qa['scenes'] as List<dynamic>).single as Map<String, dynamic>;
+
+      expect(projectQa['needsAttention'], isTrue);
+      expect(projectQa['unusedCharacterCount'], 1);
+      expect(projectQa['sharedTimestampCount'], 1);
+      expect(projectQa['scenesWithTimelineWarnings'], 1);
+      expect(projectQa['firstAttentionSceneId'], scene.id);
+      expect(projectQa['firstSceneWithTimelineWarningsId'], scene.id);
+
+      expect(selectedSceneQa['unusedCharacterNames'], ['Support']);
+      expect(selectedSceneQa['sharedTimestampCount'], 1);
+      expect(selectedSceneQa['sharedTimestampMessageCount'], 2);
+      expect(selectedSceneQa['sharedTimestampMessageIds'], ['m1', 'm2']);
+      expect(selectedSceneQa['overlappingTypingCueCount'], 1);
+      expect(selectedSceneQa['overlappingTypingCueMessageIds'], ['m1', 'm2']);
+      expect(selectedSceneQa['timelineWarningMessageIds'], ['m1', 'm2']);
+      expect(selectedSceneQa['statusLabel'], '1 character waiting for lines');
+      expect(
+        selectedSceneQa['timelineDetailLabel'],
+        contains('2 messages land on the same second'),
+      );
+      expect(exportedSceneQa, selectedSceneQa);
+    });
 
     test('exports package with 500+ scene messages intact', () async {
       List<int>? capturedBytes;

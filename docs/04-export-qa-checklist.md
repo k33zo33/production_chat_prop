@@ -34,8 +34,9 @@ Referenca za expected downstream handoff: `docs/11-video-fallback-workflow.md`
 - [ ] Po potrebi kliknuti `Copy Handoff JSON` za brzi pregled/copy fallback payloada bez downloada datoteke
 - [ ] Provjeriti:
   - [ ] na webu se pokreće download `.json` datoteke ili, ako download nije dostupan, app jasno javlja da je fallback JSON kopiran u clipboard
-  - [ ] payload sadrži `project`, `selectedScene`, `renderHints`, `workflow`
+  - [ ] payload sadrži `project`, `selectedScene`, `renderHints`, `qa`, `workflow`
   - [ ] `renderHints.includeDeviceFrame` i `cleanPreview` prate trenutno stanje toggleova
+  - [ ] `qa.project` i `qa.selectedScene` smisleno odražavaju ready/attention stanje scene (npr. empty scene, unused characters, shared timestamp warnings)
   - [ ] `selectedScene.characters[].avatarPath` i isti likovi u `project.scenes` čuvaju embedded avatar iz hero portrait scene
   - [ ] poruke u `selectedScene.messages` su sortirane po `timestampSeconds`
   - [ ] odgovarajuća scena u `project.scenes` ne proturječi `selectedScene.messages` redoslijedu

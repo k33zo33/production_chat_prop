@@ -37,11 +37,19 @@ void main() {
     final decoded = jsonDecode(result.jsonText) as Map<String, dynamic>;
     final meta = decoded['meta'] as Map<String, dynamic>;
     final project = decoded['project'] as Map<String, dynamic>;
+    final qa = decoded['qa'] as Map<String, dynamic>;
+    final projectQa = qa['project'] as Map<String, dynamic>;
+    final scenesQa = qa['scenes'] as List<dynamic>;
 
     expect(meta['format'], 'project_package');
     expect(meta['tool'], 'Production Chat Prop');
     expect(project['name'], 'Export Project');
     expect(project['type'], 'series');
+    expect(projectQa['totalScenes'], 1);
+    expect(projectQa['readyScenes'], 1);
+    expect(projectQa['hasTimelineWarnings'], isFalse);
+    expect(scenesQa, hasLength(1));
+    expect((scenesQa.single as Map<String, dynamic>)['id'], 'scene-export-1');
   });
 
   test(
@@ -104,8 +112,43 @@ void main() {
         ((decoded['project'] as Map<String, dynamic>)['scenes'] as List).length,
         1,
       );
+      expect(decoded['qa'], isA<Map<String, dynamic>>());
     },
   );
+
+  test('project package export includes scene QA summaries', () {
+    final service = ProjectPackageExportService();
+
+    final decoded =
+        jsonDecode(
+              service.buildProjectPackageJson(
+                project: _sampleProject(
+                  unusedCharacterName: 'Morgan',
+                  includeSharedTimestamp: true,
+                ),
+              ),
+            )
+            as Map<String, dynamic>;
+    final qa = decoded['qa'] as Map<String, dynamic>;
+    final projectQa = qa['project'] as Map<String, dynamic>;
+    final sceneQa =
+        (qa['scenes'] as List<dynamic>).single as Map<String, dynamic>;
+
+    expect(projectQa['needsAttention'], isTrue);
+    expect(projectQa['unusedCharacterCount'], 1);
+    expect(projectQa['sharedTimestampCount'], 1);
+    expect(projectQa['firstAttentionSceneId'], 'scene-export-1');
+    expect(sceneQa['unusedCharacterNames'], ['Morgan']);
+    expect(sceneQa['sharedTimestampMessageIds'], [
+      'msg-export-1',
+      'msg-export-2',
+    ]);
+    expect(sceneQa['timelineWarningMessageIds'], [
+      'msg-export-1',
+      'msg-export-2',
+    ]);
+    expect(sceneQa['timelineStatusLabel'], contains('1 shared timestamp'));
+  });
 
   test('project package export preserves character avatar references', () {
     final service = ProjectPackageExportService();
@@ -134,6 +177,8 @@ void main() {
 Project _sampleProject({
   String name = 'Export Project',
   String? avatarPath,
+  String? unusedCharacterName,
+  bool includeSharedTimestamp = false,
 }) {
   final now = DateTime.utc(2026, 3, 30);
 
@@ -156,6 +201,13 @@ Project _sampleProject({
             avatarPath: avatarPath,
             bubbleColor: '#2E90FA',
           ),
+          if (unusedCharacterName != null)
+            Character(
+              id: 'char-export-2',
+              displayName: unusedCharacterName,
+              avatarPath: null,
+              bubbleColor: '#F97316',
+            ),
         ],
         messages: [
           const Message(
@@ -167,6 +219,16 @@ Project _sampleProject({
             isIncoming: false,
             showTypingBefore: false,
           ),
+          if (includeSharedTimestamp)
+            const Message(
+              id: 'msg-export-2',
+              characterId: 'char-export-1',
+              text: 'Shared timestamp line',
+              timestampSeconds: 0,
+              status: MessageStatus.delivered,
+              isIncoming: true,
+              showTypingBefore: false,
+            ),
         ],
       ),
     ],

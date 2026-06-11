@@ -21,6 +21,7 @@ Production Chat Prop je Flutter web-first MVP za kreiranje i reprodukciju simuli
 - Sprint 4 početni deliverables:
   - PNG screenshot export pipeline (web download + fallback poruka)
   - video fallback package export (`.json`) za post-produkcijski workflow
+  - export QA metadata u JSON handoff paketima (`qa.project`, `qa.selectedScene`, `qa.scenes`) za empty-scene / unused-character / timeline warning pregled bez ponovnog otvaranja appa
   - kontrola scene omjera 9:16 / 16:9 u Playbacku
 - Sprint 5 feature scope isporučen; završni release-gate QA/polish je i dalje aktivan:
   - demo seed akcija iz Project Lista (`Add Demo Project`) za brzi showcase flow
