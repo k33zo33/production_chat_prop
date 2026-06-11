@@ -77,6 +77,81 @@ void main() {
     expect(find.text('OUTGOING'), findsNothing);
   });
 
+  testWidgets('export pre-flight dialog reflects current playback export state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: ProductionChatPropApp()),
+    );
+
+    await _openPlaybackWithNewProject(tester);
+
+    await tester.tap(find.byKey(const Key('playbackDeviceFrameSwitch')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('playbackCleanPreviewSwitch')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('aspectRatioLandscapeChip')));
+    await tester.pumpAndSettle();
+
+    final preflightButton = find.byKey(const Key('exportPreflightButton'));
+    await tester.ensureVisible(preflightButton);
+    await tester.pumpAndSettle();
+    await tester.tap(preflightButton);
+    await tester.pumpAndSettle();
+
+    final preflightDialog = find.byKey(const Key('exportPreflightDialog'));
+    expect(preflightDialog, findsOneWidget);
+    expect(
+      find.descendant(
+        of: preflightDialog,
+        matching: find.text('Export pre-flight • Ready'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: preflightDialog,
+        matching: find.text('Scene ratio: 16:9'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: preflightDialog,
+        matching: find.text('Screenshot target: 1920×1080 PNG'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: preflightDialog,
+        matching: find.text('Device frame: Off'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: preflightDialog,
+        matching: find.text('Preview mode: Clean'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: preflightDialog,
+        matching: find.text(
+          'Export Video stays on the documented JSON handoff workflow during beta.',
+        ),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('exportPreflightCloseButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('exportPreflightDialog')), findsNothing);
+  });
+
   testWidgets('playback screenshot export shows failure feedback', (
     tester,
   ) async {

@@ -5244,14 +5244,29 @@ void main() {
     await _openPlaybackFromProjectList(tester);
 
     expect(find.text('Playback'), findsOneWidget);
-    expect(
-      find.textContaining('t=0s / 15 s', skipOffstage: false),
-      findsOneWidget,
+
+    final playbackStatusSummaryFinder = find.byKey(
+      const Key('playbackStatusSummary'),
     );
-    expect(
-      find.textContaining('Messages: 4', skipOffstage: false),
-      findsOneWidget,
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      playbackStatusSummaryFinder,
     );
+    final playbackStatusSummary = tester.widget<Text>(
+      playbackStatusSummaryFinder,
+    );
+    expect(playbackStatusSummary.data, contains('t=0s / 15 s'));
+    final playbackMessageCountFinder = find.byKey(
+      const Key('playbackMessageCountLabel'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      playbackMessageCountFinder,
+    );
+    final playbackMessageCount = tester.widget<Text>(
+      playbackMessageCountFinder,
+    );
+    expect(playbackMessageCount.data, contains('Messages: 4'));
   });
 
   testWidgets(
@@ -6856,9 +6871,9 @@ void main() {
 
     await _openPlaybackFromProjectList(tester);
 
-    expect(
-      find.textContaining('(00:00 / 00:09)', skipOffstage: false),
-      findsOneWidget,
+    await _expectPlaybackStatusSummaryContains(
+      tester,
+      '(00:00 / 00:09)',
     );
 
     final plusOneButton = find.widgetWithText(FilledButton, '+1s');
@@ -6870,12 +6885,9 @@ void main() {
     await tester.tap(plusOneButton);
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining(
-        't=3s / 9 s (00:03 / 00:09)',
-        skipOffstage: false,
-      ),
-      findsOneWidget,
+    await _expectPlaybackStatusSummaryContains(
+      tester,
+      't=3s / 9 s (00:03 / 00:09)',
     );
     expect(find.text('Mia is typing...', skipOffstage: false), findsOneWidget);
   });
@@ -6896,12 +6908,9 @@ void main() {
 
       await _openPlaybackFromProjectList(tester);
 
-      expect(
-        find.textContaining(
-          'Progress: 0% • Visible messages: 1/3',
-          skipOffstage: false,
-        ),
-        findsOneWidget,
+      await _expectPlaybackProgressSummaryContains(
+        tester,
+        'Progress: 0% • Visible messages: 1/3',
       );
 
       final plusFiveButton = find.byKey(const Key('seekForward5Button'));
@@ -6909,12 +6918,9 @@ void main() {
       await tester.tap(plusFiveButton);
       await tester.pumpAndSettle();
 
-      expect(
-        find.textContaining(
-          'Progress: 56% • Visible messages: 2/3',
-          skipOffstage: false,
-        ),
-        findsOneWidget,
+      await _expectPlaybackProgressSummaryContains(
+        tester,
+        'Progress: 56% • Visible messages: 2/3',
       );
     },
   );
@@ -6984,18 +6990,12 @@ void main() {
     await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('t=1s / 9 s', skipOffstage: false),
-      findsOneWidget,
-    );
+    await _expectPlaybackStatusSummaryContains(tester, 't=1s / 9 s');
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.keyR);
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('t=0s / 9 s', skipOffstage: false),
-      findsOneWidget,
-    );
+    await _expectPlaybackStatusSummaryContains(tester, 't=0s / 9 s');
   });
 
   testWidgets('playback space shortcut toggles play and pause', (tester) async {
@@ -7013,18 +7013,12 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pump(const Duration(milliseconds: 120));
 
-    expect(
-      find.textContaining('Status: playing', skipOffstage: false),
-      findsOneWidget,
-    );
+    await _expectPlaybackStatusSummaryContains(tester, 'Status: playing');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('Status: paused', skipOffstage: false),
-      findsOneWidget,
-    );
+    await _expectPlaybackStatusSummaryContains(tester, 'Status: paused');
   });
 
   testWidgets('playback timeline shows polished status and direction chips', (
@@ -8090,10 +8084,7 @@ void main() {
     expect(screenshotButton.onPressed, isNull);
     expect(videoButton.onPressed, isNull);
     expect(copyHandoffButton.onPressed, isNull);
-    expect(
-      find.textContaining('Export readiness: No messages in scene'),
-      findsOneWidget,
-    );
+    expect(find.text('Export pre-flight • No messages'), findsOneWidget);
   });
 
   testWidgets(
@@ -8239,7 +8230,7 @@ void main() {
     );
     expect(screenshotButton.onPressed, isNotNull);
     expect(videoButton.onPressed, isNotNull);
-    expect(find.textContaining('Export readiness: Ready'), findsOneWidget);
+    expect(find.text('Export pre-flight • Ready'), findsOneWidget);
 
     final nextCueButton = find.byKey(const Key('nextCueButton'));
     await _ensureFinderVisibleInPrimaryListView(tester, nextCueButton);
@@ -8337,16 +8328,30 @@ void main() {
       find.textContaining('Scene: Stress Scene', skipOffstage: false),
       findsOneWidget,
     );
-    expect(
-      find.textContaining('Messages: 520', skipOffstage: false),
-      findsOneWidget,
+    final playbackMessageCountFinder = find.byKey(
+      const Key('playbackMessageCountLabel'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      playbackMessageCountFinder,
+    );
+    final playbackMessageCount = tester.widget<Text>(
+      playbackMessageCountFinder,
+    );
+    expect(playbackMessageCount.data, contains('Messages: 520'));
+    final playbackProgressSummaryFinder = find.byKey(
+      const Key('playbackProgressSummary'),
+    );
+    await _ensureFinderVisibleInPrimaryListView(
+      tester,
+      playbackProgressSummaryFinder,
+    );
+    final playbackProgressSummary = tester.widget<Text>(
+      playbackProgressSummaryFinder,
     );
     expect(
-      find.textContaining(
-        'Progress: 0% • Visible messages: 1/520',
-        skipOffstage: false,
-      ),
-      findsOneWidget,
+      playbackProgressSummary.data,
+      contains('Progress: 0% • Visible messages: 1/520'),
     );
 
     final plusFiveButton = find.byKey(const Key('seekForward5Button'));
@@ -8659,6 +8664,26 @@ Future<void> _openChatEditorFromProjectList(
   await _prepareProjectActionTap(tester, openEditorButton);
   await tester.tap(openEditorButton.hitTestable().first, warnIfMissed: false);
   await tester.pumpAndSettle();
+}
+
+Future<void> _expectPlaybackStatusSummaryContains(
+  WidgetTester tester,
+  String snippet,
+) async {
+  final finder = find.byKey(const Key('playbackStatusSummary'));
+  await _ensureFinderVisibleInPrimaryListView(tester, finder);
+  final widget = tester.widget<Text>(finder);
+  expect(widget.data, contains(snippet));
+}
+
+Future<void> _expectPlaybackProgressSummaryContains(
+  WidgetTester tester,
+  String snippet,
+) async {
+  final finder = find.byKey(const Key('playbackProgressSummary'));
+  await _ensureFinderVisibleInPrimaryListView(tester, finder);
+  final widget = tester.widget<Text>(finder);
+  expect(widget.data, contains(snippet));
 }
 
 Future<void> _openPlaybackFromProjectList(

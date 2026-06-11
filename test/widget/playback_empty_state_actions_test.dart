@@ -114,7 +114,7 @@ void main() {
     await _pumpRouter(tester, container: harness.container, router: router);
 
     expect(find.text('Messages: 0'), findsOneWidget);
-    expect(find.text('Export readiness: No messages in scene'), findsOneWidget);
+    expect(find.text('Export pre-flight • No messages'), findsOneWidget);
 
     await tester.tap(
       find.byKey(const Key('playbackEmptyStateBriefingTemplateButton')),
@@ -123,7 +123,7 @@ void main() {
 
     expect(find.byKey(const Key('playbackEmptyStateHint')), findsNothing);
     expect(find.text('Messages: 3'), findsOneWidget);
-    expect(find.text('Export readiness: Ready'), findsOneWidget);
+    expect(find.text('Export pre-flight • Ready'), findsOneWidget);
     expect(find.text('Applied template: Briefing'), findsOneWidget);
   });
 }

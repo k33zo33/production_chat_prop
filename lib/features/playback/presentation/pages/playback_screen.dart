@@ -13,6 +13,7 @@ import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
 import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
+import 'package:production_chat_prop/core/widgets/export_preflight_badge.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/core/widgets/scene_status_badge.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
@@ -479,11 +480,6 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 
     final hasPlaybackMessages = sortedMessages.isNotEmpty;
     final sceneHealth = scene == null ? null : summarizeSceneHealth(scene);
-    final exportReadiness = hasPlaybackMessages
-        ? _isExporting
-              ? 'Export in progress'
-              : 'Ready'
-        : 'No messages in scene';
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(viewportWidth);
     final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
@@ -593,9 +589,15 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text('Scene: ${scene?.title ?? 'No scene'}'),
+                  Text(
+                    key: const Key('playbackSceneLabel'),
+                    'Scene: ${scene?.title ?? 'No scene'}',
+                  ),
                   const SizedBox(height: 4),
-                  Text('Messages: ${sortedMessages.length}'),
+                  Text(
+                    key: const Key('playbackMessageCountLabel'),
+                    'Messages: ${sortedMessages.length}',
+                  ),
                   if (project.scenes.length > 1) ...[
                     const SizedBox(height: 12),
                     if (isCompactLayout) ...[
@@ -696,11 +698,21 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
                   Text(
                     'Preview: ${_showDeviceFrame ? 'framed' : 'frameless'} • ${_cleanPreview ? 'clean' : 'full'} • Export: ${_exportStateLabel(_lastExportState)}',
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    key: const Key('exportReadinessLabel'),
-                    'Export readiness: $exportReadiness',
-                  ),
+                  const SizedBox(height: 8),
+                  if (scene != null && sceneHealth != null)
+                    ExportPreflightBadge(
+                      project: project,
+                      scene: scene,
+                      sceneHealth: sceneHealth,
+                      exportTargetPixelSize: exportTargetPixelSize,
+                      includeDeviceFrame: _showDeviceFrame,
+                      cleanPreview: _cleanPreview,
+                    )
+                  else
+                    const Text(
+                      key: Key('exportReadinessLabel'),
+                      'Export readiness: No scene selected',
+                    ),
                   if (sceneHealth != null && sceneHealth.needsAttention) ...[
                     const SizedBox(height: 4),
                     Text(
