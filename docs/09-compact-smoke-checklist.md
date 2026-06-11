@@ -22,6 +22,7 @@ Preporučeni viewport:
 ## 2. Chat editor
 - [ ] Otvori `Open Chat Editor`
 - [ ] Potvrdi da compact app bar koristi overflow meni za `Open Playback` i `Back to Projects`
+- [ ] Potvrdi da compact app bar zadržava scene status badge i da nema overlap/overflow loma uz njega
 - [ ] Ako projekt ima dugo ime, potvrdi da header ostaje čitljiv (max 2 reda, bez overflow exceptiona)
 - [ ] Potvrdi da je scene selector upotrebljiv na uskoj širini
 - [ ] Ako otvaraš editor preko deep-linka sa `?sceneId=...`, ručno makni query i potvrdi da compact editor vrati trenutno odabranu scenu bez zaglavljenog statea
@@ -34,6 +35,7 @@ Preporučeni viewport:
 ## 3. Playback
 - [ ] Otvori `Open Playback`
 - [ ] Potvrdi da compact app bar koristi overflow meni za `Open Chat Editor` i `Back to Projects`
+- [ ] Potvrdi da compact playback app bar zadržava scene status badge i da badge ostaje klikabilan/čitljiv bez layout loma
 - [ ] Ako projekt ima dugo ime, potvrdi da header ostaje čitljiv (max 2 reda, bez overflow exceptiona)
 - [ ] Potvrdi da export kontrole rade u compact layoutu
 - [ ] Potvrdi da transport kontrole rade bez overlap/overflow loma

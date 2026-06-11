@@ -22,6 +22,7 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 
 ## 3. Editor flow
 - [ ] Potvrdi da su scene, likovi i poruke vidljivi
+- [ ] Potvrdi da app bar prikazuje scene status badge (`No messages`, `Needs lines`, `Timeline QA` ili `Ready`) i da tooltip/hover tekst ima smisla
 - [ ] Na uskom viewportu potvrdi da su scene akcije dostupne kroz overflow meni
 - [ ] Ako koristiš scene deep-link (`?sceneId=...`), probaj browser back/forward i potvrdi da aktivna scena ostane sinkronizirana s URL-om
   - Napomena: `./tool/release_smoke.sh` već pokriva editor route-sync/stale-link regresije; ovdje potvrđuješ stvarni browser history behavior.
@@ -37,6 +38,7 @@ Svrha: ultra-kratki ljudski smoke pass za potvrdu da web MVP izgleda spremno za 
 - [ ] Ručno makni `?sceneId=...` iz playback URL-a i potvrdi da app vrati trenutno aktivnu scenu u query bez gubitka sinkronizacije
 - [ ] Klikni `Open Focus Preview` i potvrdi da možeš pustiti/pauzirati preview, koristiti cue/seek gumbe i scrub slider, swipe left/right za ±5s i edge double-tap za previous/next cue te ga zatvoriti bez rušenja stanja
 - [ ] Na uskom viewportu potvrdi da nema očitog overlap/overflow loma u export i transport kontrolama
+- [ ] Potvrdi da playback app bar prikazuje isti scene status badge kao editor za aktivnu scenu
 - [ ] Provjeri da `Space`, `←`, `→`, `R` rade ako je fokus na appu
 - [ ] Potvrdi da se timecode i visible message summary mijenjaju tijekom playbacka
 

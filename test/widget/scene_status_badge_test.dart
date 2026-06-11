@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:production_chat_prop/core/utils/scene_health.dart';
+import 'package:production_chat_prop/core/widgets/scene_status_badge.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
+import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,23 +15,16 @@ void main() {
   });
 
   testWidgets(
-    'chat editor shows inline timeline QA markers for stacked cue messages',
+    'compact chat editor app bar keeps scene status badge visible for empty scenes',
     (tester) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
       await container
           .read(projectsControllerProvider.notifier)
-          .importProjectFromJson(_buildTimelineQaProjectImportPayload());
+          .importProjectFromJson(_buildEmptySceneProjectImportPayload());
       final projects = await container.read(projectsControllerProvider.future);
-      final project = projects.single;
-      final scene = project.scenes.single;
-      final sceneHealth = summarizeSceneHealth(scene);
-      final nonWarningMessageId = scene.messages
-          .firstWhere(
-            (message) => !sceneHealth.hasTimelineWarningForMessage(message.id),
-          )
-          .id;
+      final projectId = projects.single.id;
 
       await tester.binding.setSurfaceSize(const Size(390, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -42,7 +36,7 @@ void main() {
             home: MediaQuery(
               data: const MediaQueryData(size: Size(390, 900)),
               child: ChatEditorScreen(
-                projectId: project.id,
+                projectId: projectId,
                 forceCompactLayout: true,
               ),
             ),
@@ -52,52 +46,93 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('sceneSummaryLine')), findsOneWidget);
-      expect(find.byKey(const Key('sceneTimingQaSummaryLine')), findsOneWidget);
-      expect(
-        find.textContaining(
-          'Timeline QA: 1 shared timestamp • 1 overlapping typing cue',
-        ),
-        findsOneWidget,
-      );
-      await tester.scrollUntilVisible(
-        find.text('Cue one'),
-        300,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
 
-      expect(sceneHealth.timelineWarningMessageIds, hasLength(2));
-      expect(
-        find.byKey(const Key('messageTimelineQaWarning_message-1')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('messageTimelineQaWarning_message-2')),
-        findsOneWidget,
-      );
-      expect(
-        find.text(
-          scene.messages
-              .firstWhere((message) => message.id == nonWarningMessageId)
-              .text,
-        ),
-        findsOneWidget,
-      );
+      expect(find.byType(SceneStatusBadge), findsOneWidget);
       expect(
         find.byTooltip(
-          'Timeline QA warning: shared timestamp • overlapping typing cue',
+          'No messages yet • Add at least one message before preview or export.',
         ),
-        findsNWidgets(2),
+        findsOneWidget,
+      );
+      expect(find.text('No messages'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'playback app bar shows timeline QA status badge on wide layouts',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildTimelineQaProjectImportPayload());
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await tester.binding.setSurfaceSize(const Size(1280, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(size: Size(1280, 900)),
+              child: PlaybackScreen(projectId: projectId),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('playbackSceneStatusBadge')), findsOneWidget);
+      expect(find.text('Timeline QA'), findsOneWidget);
+      expect(
+        find.byTooltip(
+          '1 shared timestamp • 1 overlapping typing cue • '
+          '2 messages land on the same second and can stack in playback or export. '
+          'Multiple typing indicators fire together and may feel crowded in compact previews.',
+        ),
+        findsOneWidget,
       );
     },
   );
 }
 
+String _buildEmptySceneProjectImportPayload() {
+  return jsonEncode({
+    'id': 'scene-status-empty-project',
+    'name': 'Scene Status Empty Project',
+    'type': 'other',
+    'createdAt': '2026-06-10T12:00:00.000Z',
+    'updatedAt': '2026-06-10T12:05:00.000Z',
+    'scenes': [
+      {
+        'id': 'empty-scene',
+        'title': 'Empty scene',
+        'styleId': 'studio_slate',
+        'aspectRatio': 'portrait9x16',
+        'characters': [
+          {
+            'id': 'character-1',
+            'displayName': 'Taylor',
+            'avatarPath': null,
+            'bubbleColor': '#2E90FA',
+          },
+        ],
+        'messages': <Object>[],
+      },
+    ],
+  });
+}
+
 String _buildTimelineQaProjectImportPayload() {
   return jsonEncode({
-    'id': 'timeline-qa-marker-project',
-    'name': 'Timeline QA Marker Project',
+    'id': 'scene-status-badge-project',
+    'name': 'Scene Status Badge Project',
     'type': 'other',
     'createdAt': '2026-06-10T12:00:00.000Z',
     'updatedAt': '2026-06-10T12:05:00.000Z',

@@ -47,6 +47,12 @@ void main() {
       expect(summary.unusedCharacterNames, ['Jordan']);
       expect(summary.statusLabel, '1 character waiting for lines');
       expect(summary.detailLabel, 'Jordan has no lines in this scene yet.');
+      expect(summary.badgeState, SceneHealthBadgeState.needsLines);
+      expect(summary.badgeLabel, 'Needs lines');
+      expect(
+        summary.badgeTooltip,
+        '1 character waiting for lines • Jordan has no lines in this scene yet.',
+      );
       expect(summary.hasTimelineWarnings, isFalse);
       expect(summary.sharedTimestampCount, 0);
       expect(summary.overlappingTypingCueCount, 0);
@@ -77,6 +83,12 @@ void main() {
         expect(summary.hasMessages, isFalse);
         expect(summary.unusedCharacterCount, 1);
         expect(summary.statusLabel, 'No messages yet');
+        expect(summary.badgeState, SceneHealthBadgeState.noMessages);
+        expect(summary.badgeLabel, 'No messages');
+        expect(
+          summary.badgeTooltip,
+          'No messages yet • Add at least one message before preview or export.',
+        );
         expect(
           summary.detailLabel,
           'Add at least one message before preview or export.',
@@ -165,8 +177,53 @@ void main() {
         '2 messages land on the same second and can stack in playback or export. '
         'Multiple typing indicators fire together and may feel crowded in compact previews.',
       );
+      expect(summary.badgeState, SceneHealthBadgeState.timelineQa);
+      expect(summary.badgeLabel, 'Timeline QA');
+      expect(
+        summary.badgeTooltip,
+        '1 shared timestamp • 1 overlapping typing cue • '
+        '2 messages land on the same second and can stack in playback or export. '
+        'Multiple typing indicators fire together and may feel crowded in compact previews.',
+      );
       expect(summary.needsAttention, isFalse);
     });
+
+    test(
+      'marks fully covered scenes as ready in the compact badge summary',
+      () {
+        const scene = Scene(
+          id: 'scene-ready',
+          title: 'Ready cue',
+          styleId: 'studio_slate',
+          aspectRatio: SceneAspectRatio.portrait9x16,
+          characters: [
+            Character(
+              id: 'character-1',
+              displayName: 'Taylor',
+              avatarPath: null,
+              bubbleColor: '#2E90FA',
+            ),
+          ],
+          messages: [
+            Message(
+              id: 'message-1',
+              characterId: 'character-1',
+              text: 'Ready to export.',
+              timestampSeconds: 2,
+              status: MessageStatus.seen,
+              isIncoming: false,
+              showTypingBefore: false,
+            ),
+          ],
+        );
+
+        final summary = summarizeSceneHealth(scene);
+
+        expect(summary.badgeState, SceneHealthBadgeState.ready);
+        expect(summary.badgeLabel, 'Ready');
+        expect(summary.badgeTooltip, 'Ready for playback and export.');
+      },
+    );
   });
 
   group('summarizeProjectHealth', () {
@@ -242,6 +299,12 @@ void main() {
       expect(summary.firstSceneWithUnusedCharactersId, 'scene-staged');
       expect(summary.firstAttentionSceneId, 'scene-empty');
       expect(summary.needsAttention, isTrue);
+
+      final attention = summarizeProjectAttention(project);
+      expect(attention.kind, ProjectAttentionKind.emptyScenes);
+      expect(attention.label, 'Has empty scenes');
+      expect(attention.ctaLabel, 'Finish Empty Scenes');
+      expect(attention.intent, ProjectAttentionIntent.openEditor);
     });
 
     test('marks fully covered projects as ready', () {
@@ -288,6 +351,12 @@ void main() {
       expect(summary.hasTimelineWarnings, isFalse);
       expect(summary.firstAttentionSceneId, isNull);
       expect(summary.needsAttention, isFalse);
+
+      final attention = summarizeProjectAttention(project);
+      expect(attention.kind, ProjectAttentionKind.ready);
+      expect(attention.label, 'Ready for playback');
+      expect(attention.ctaLabel, 'Open Playback');
+      expect(attention.intent, ProjectAttentionIntent.openPlayback);
     });
 
     test('aggregates timeline QA warnings without flipping readiness', () {
@@ -350,6 +419,129 @@ void main() {
       expect(summary.firstSceneWithTimelineWarningsId, 'scene-qa');
       expect(summary.needsAttention, isFalse);
       expect(summary.firstAttentionSceneId, isNull);
+
+      final attention = summarizeProjectAttention(project);
+      expect(attention.kind, ProjectAttentionKind.ready);
+      expect(attention.label, 'Ready for playback');
+      expect(attention.intent, ProjectAttentionIntent.openPlayback);
+    });
+
+    test(
+      'prioritizes empty scenes over staged characters for project attention',
+      () {
+        final project = Project(
+          id: 'project-empty-scenes',
+          name: 'Staging pass',
+          type: ProjectType.other,
+          createdAt: DateTime.utc(2026, 5, 4, 9),
+          updatedAt: DateTime.utc(2026, 5, 4, 10),
+          scenes: const [
+            Scene(
+              id: 'scene-empty',
+              title: 'Empty scene',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'character-1',
+                  displayName: 'Mia',
+                  avatarPath: null,
+                  bubbleColor: '#2E90FA',
+                ),
+              ],
+              messages: [],
+            ),
+            Scene(
+              id: 'scene-staged',
+              title: 'Staged scene',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'character-1',
+                  displayName: 'Mia',
+                  avatarPath: null,
+                  bubbleColor: '#2E90FA',
+                ),
+                Character(
+                  id: 'character-2',
+                  displayName: 'Jordan',
+                  avatarPath: null,
+                  bubbleColor: '#12B76A',
+                ),
+              ],
+              messages: [
+                Message(
+                  id: 'message-1',
+                  characterId: 'character-1',
+                  text: 'Waiting on response.',
+                  timestampSeconds: 3,
+                  status: MessageStatus.sent,
+                  isIncoming: false,
+                  showTypingBefore: false,
+                ),
+              ],
+            ),
+          ],
+        );
+
+        final attention = summarizeProjectAttention(project);
+
+        expect(attention.kind, ProjectAttentionKind.emptyScenes);
+        expect(attention.label, 'Has empty scenes');
+        expect(attention.ctaLabel, 'Finish Empty Scenes');
+        expect(attention.intent, ProjectAttentionIntent.openEditor);
+      },
+    );
+
+    test('surfaces staged characters when that is the main blocking issue', () {
+      final project = Project(
+        id: 'project-staged-characters',
+        name: 'Character pass',
+        type: ProjectType.other,
+        createdAt: DateTime.utc(2026, 5, 5, 9),
+        updatedAt: DateTime.utc(2026, 5, 5, 10),
+        scenes: const [
+          Scene(
+            id: 'scene-staged',
+            title: 'Reply cue',
+            styleId: 'studio_slate',
+            aspectRatio: SceneAspectRatio.portrait9x16,
+            characters: [
+              Character(
+                id: 'character-1',
+                displayName: 'Mia',
+                avatarPath: null,
+                bubbleColor: '#2E90FA',
+              ),
+              Character(
+                id: 'character-2',
+                displayName: 'Jordan',
+                avatarPath: null,
+                bubbleColor: '#12B76A',
+              ),
+            ],
+            messages: [
+              Message(
+                id: 'message-1',
+                characterId: 'character-1',
+                text: 'Holding for the reply.',
+                timestampSeconds: 6,
+                status: MessageStatus.delivered,
+                isIncoming: false,
+                showTypingBefore: false,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final attention = summarizeProjectAttention(project);
+
+      expect(attention.kind, ProjectAttentionKind.needsLines);
+      expect(attention.label, 'Characters need lines');
+      expect(attention.ctaLabel, 'Review Scene Setup');
+      expect(attention.intent, ProjectAttentionIntent.openEditor);
     });
   });
 }

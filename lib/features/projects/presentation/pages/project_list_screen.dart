@@ -1541,7 +1541,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
       MediaQuery.sizeOf(context).width,
     );
     final projectHealth = summarizeProjectHealth(project);
-    final attentionState = _projectAttentionState(project);
+    final attentionState = summarizeProjectAttention(project);
 
     return Card(
       key: Key('projectCard_${project.id}'),
@@ -1658,7 +1658,10 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
             const SizedBox(height: 8),
             Chip(
               key: Key('projectAttentionReason_${project.id}'),
-              avatar: Icon(attentionState.icon, size: 18),
+              avatar: Icon(
+                _projectAttentionIcon(attentionState.kind),
+                size: 18,
+              ),
               label: Text(attentionState.label),
             ),
             const SizedBox(height: 8),
@@ -1670,7 +1673,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                   onPressed: selectionMode
                       ? null
                       : () => _openProjectAttentionAction(context, project),
-                  icon: Icon(attentionState.ctaIcon),
+                  icon: Icon(_projectAttentionCtaIcon(attentionState.kind)),
                   label: Text(attentionState.ctaLabel),
                 ),
               )
@@ -1680,7 +1683,7 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
                 onPressed: selectionMode
                     ? null
                     : () => _openProjectAttentionAction(context, project),
-                icon: Icon(attentionState.ctaIcon),
+                icon: Icon(_projectAttentionCtaIcon(attentionState.kind)),
                 label: Text(attentionState.ctaLabel),
               ),
             const SizedBox(height: 16),
@@ -2211,9 +2214,9 @@ void _goToProjectPlayback(BuildContext context, Project project) {
 }
 
 void _openProjectAttentionAction(BuildContext context, Project project) {
-  final attentionState = _projectAttentionState(project);
+  final attentionState = summarizeProjectAttention(project);
   switch (attentionState.intent) {
-    case _ProjectAttentionIntent.openEditor:
+    case ProjectAttentionIntent.openEditor:
       final targetSceneId = _projectAttentionSceneId(project);
       context.goNamed(
         'editorProject',
@@ -2223,73 +2226,36 @@ void _openProjectAttentionAction(BuildContext context, Project project) {
             : {'sceneId': targetSceneId},
       );
       return;
-    case _ProjectAttentionIntent.openPlayback:
+    case ProjectAttentionIntent.openPlayback:
       _goToProjectPlayback(context, project);
       return;
   }
 }
 
-_ProjectAttentionState _projectAttentionState(Project project) {
-  final projectHealth = summarizeProjectHealth(project);
-
-  if (!projectHealth.hasMessages) {
-    return const _ProjectAttentionState(
-      label: 'No messages yet',
-      icon: Icons.chat_bubble_outline_rounded,
-      ctaLabel: 'Add First Message',
-      ctaIcon: Icons.edit_note_rounded,
-      intent: _ProjectAttentionIntent.openEditor,
-    );
+IconData _projectAttentionIcon(ProjectAttentionKind kind) {
+  switch (kind) {
+    case ProjectAttentionKind.noMessages:
+      return Icons.chat_bubble_outline_rounded;
+    case ProjectAttentionKind.emptyScenes:
+      return Icons.error_outline_rounded;
+    case ProjectAttentionKind.needsLines:
+      return Icons.record_voice_over_outlined;
+    case ProjectAttentionKind.ready:
+      return Icons.check_circle_outline_rounded;
   }
-
-  if (projectHealth.emptyScenes > 0) {
-    return const _ProjectAttentionState(
-      label: 'Has empty scenes',
-      icon: Icons.error_outline_rounded,
-      ctaLabel: 'Finish Empty Scenes',
-      ctaIcon: Icons.build_circle_outlined,
-      intent: _ProjectAttentionIntent.openEditor,
-    );
-  }
-
-  if (projectHealth.unusedCharacterCount > 0) {
-    return const _ProjectAttentionState(
-      label: 'Characters need lines',
-      icon: Icons.record_voice_over_outlined,
-      ctaLabel: 'Review Scene Setup',
-      ctaIcon: Icons.playlist_add_check_circle_outlined,
-      intent: _ProjectAttentionIntent.openEditor,
-    );
-  }
-
-  return const _ProjectAttentionState(
-    label: 'Ready for playback',
-    icon: Icons.check_circle_outline_rounded,
-    ctaLabel: 'Open Playback',
-    ctaIcon: Icons.play_circle_outline_rounded,
-    intent: _ProjectAttentionIntent.openPlayback,
-  );
 }
 
-class _ProjectAttentionState {
-  const _ProjectAttentionState({
-    required this.label,
-    required this.icon,
-    required this.ctaLabel,
-    required this.ctaIcon,
-    required this.intent,
-  });
-
-  final String label;
-  final IconData icon;
-  final String ctaLabel;
-  final IconData ctaIcon;
-  final _ProjectAttentionIntent intent;
-}
-
-enum _ProjectAttentionIntent {
-  openEditor,
-  openPlayback,
+IconData _projectAttentionCtaIcon(ProjectAttentionKind kind) {
+  switch (kind) {
+    case ProjectAttentionKind.noMessages:
+      return Icons.edit_note_rounded;
+    case ProjectAttentionKind.emptyScenes:
+      return Icons.build_circle_outlined;
+    case ProjectAttentionKind.needsLines:
+      return Icons.playlist_add_check_circle_outlined;
+    case ProjectAttentionKind.ready:
+      return Icons.play_circle_outline_rounded;
+  }
 }
 
 _ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(

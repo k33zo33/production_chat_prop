@@ -1,6 +1,39 @@
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/domain/scene.dart';
 
+enum SceneHealthBadgeState {
+  noMessages,
+  needsLines,
+  timelineQa,
+  ready,
+}
+
+enum ProjectAttentionKind {
+  noMessages,
+  emptyScenes,
+  needsLines,
+  ready,
+}
+
+enum ProjectAttentionIntent {
+  openEditor,
+  openPlayback,
+}
+
+class ProjectAttentionState {
+  const ProjectAttentionState({
+    required this.kind,
+    required this.label,
+    required this.ctaLabel,
+    required this.intent,
+  });
+
+  final ProjectAttentionKind kind;
+  final String label;
+  final String ctaLabel;
+  final ProjectAttentionIntent intent;
+}
+
 class SceneHealthSummary {
   const SceneHealthSummary({
     required this.messageCount,
@@ -30,6 +63,44 @@ class SceneHealthSummary {
     ...overlappingTypingCueMessageIds,
   };
   bool get needsAttention => !hasMessages || hasUnusedCharacters;
+
+  SceneHealthBadgeState get badgeState {
+    if (!hasMessages) {
+      return SceneHealthBadgeState.noMessages;
+    }
+    if (hasUnusedCharacters) {
+      return SceneHealthBadgeState.needsLines;
+    }
+    if (hasTimelineWarnings) {
+      return SceneHealthBadgeState.timelineQa;
+    }
+    return SceneHealthBadgeState.ready;
+  }
+
+  String get badgeLabel {
+    switch (badgeState) {
+      case SceneHealthBadgeState.noMessages:
+        return 'No messages';
+      case SceneHealthBadgeState.needsLines:
+        return 'Needs lines';
+      case SceneHealthBadgeState.timelineQa:
+        return 'Timeline QA';
+      case SceneHealthBadgeState.ready:
+        return 'Ready';
+    }
+  }
+
+  String get badgeTooltip {
+    switch (badgeState) {
+      case SceneHealthBadgeState.noMessages:
+      case SceneHealthBadgeState.needsLines:
+        return '$statusLabel • $detailLabel';
+      case SceneHealthBadgeState.timelineQa:
+        return '$timelineStatusLabel • $timelineDetailLabel';
+      case SceneHealthBadgeState.ready:
+        return 'Ready for playback and export.';
+    }
+  }
 
   bool hasTimelineWarningForMessage(String messageId) {
     return timelineWarningMessageIds.contains(messageId);
@@ -268,6 +339,44 @@ ProjectHealthSummary summarizeProjectHealth(Project project) {
     firstEmptySceneId: firstEmptySceneId,
     firstSceneWithUnusedCharactersId: firstSceneWithUnusedCharactersId,
     firstSceneWithTimelineWarningsId: firstSceneWithTimelineWarningsId,
+  );
+}
+
+ProjectAttentionState summarizeProjectAttention(Project project) {
+  final projectHealth = summarizeProjectHealth(project);
+
+  if (!projectHealth.hasMessages) {
+    return const ProjectAttentionState(
+      kind: ProjectAttentionKind.noMessages,
+      label: 'No messages yet',
+      ctaLabel: 'Add First Message',
+      intent: ProjectAttentionIntent.openEditor,
+    );
+  }
+
+  if (projectHealth.emptyScenes > 0) {
+    return const ProjectAttentionState(
+      kind: ProjectAttentionKind.emptyScenes,
+      label: 'Has empty scenes',
+      ctaLabel: 'Finish Empty Scenes',
+      intent: ProjectAttentionIntent.openEditor,
+    );
+  }
+
+  if (projectHealth.unusedCharacterCount > 0) {
+    return const ProjectAttentionState(
+      kind: ProjectAttentionKind.needsLines,
+      label: 'Characters need lines',
+      ctaLabel: 'Review Scene Setup',
+      intent: ProjectAttentionIntent.openEditor,
+    );
+  }
+
+  return const ProjectAttentionState(
+    kind: ProjectAttentionKind.ready,
+    label: 'Ready for playback',
+    ctaLabel: 'Open Playback',
+    intent: ProjectAttentionIntent.openPlayback,
   );
 }
 

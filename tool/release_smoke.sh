@@ -14,6 +14,7 @@ declare -a WIDGET_TEST_FILES=(
   "test/widget_test.dart"
   "test/widget/playback_export_feedback_test.dart"
   "test/widget/project_not_found_recovery_test.dart"
+  "test/widget/scene_status_badge_test.dart"
   "test/widget/scene_route_sync_test.dart"
   "test/widget/timeline_qa_markers_test.dart"
 )
@@ -21,6 +22,7 @@ declare -a WIDGET_TEST_FILES=(
 WIDGET_TEST_FILE="test/widget_test.dart"
 PLAYBACK_EXPORT_FEEDBACK_TEST_FILE="test/widget/playback_export_feedback_test.dart"
 RECOVERY_TEST_FILE="test/widget/project_not_found_recovery_test.dart"
+SCENE_STATUS_BADGE_TEST_FILE="test/widget/scene_status_badge_test.dart"
 SCENE_ROUTE_SYNC_TEST_FILE="test/widget/scene_route_sync_test.dart"
 TIMELINE_QA_MARKERS_TEST_FILE="test/widget/timeline_qa_markers_test.dart"
 
@@ -70,6 +72,11 @@ declare -a PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES=(
 
 declare -a RECOVERY_TEST_NAMES=(
   "compact missing-project recovery stacks actions on phone-width screens"
+)
+
+declare -a SCENE_STATUS_BADGE_TEST_NAMES=(
+  "compact chat editor app bar keeps scene status badge visible for empty scenes"
+  "playback app bar shows timeline QA status badge on wide layouts"
 )
 
 declare -a SCENE_ROUTE_SYNC_TEST_NAMES=(
@@ -122,6 +129,13 @@ for test_name in "${RECOVERY_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${SCENE_STATUS_BADGE_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$SCENE_STATUS_BADGE_TEST_FILE"; then
+    echo "[release-smoke] missing expected scene status badge test: $test_name" >&2
+    exit 1
+  fi
+done
+
 for test_name in "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$SCENE_ROUTE_SYNC_TEST_FILE"; then
     echo "[release-smoke] missing expected route-sync test: $test_name" >&2
@@ -146,11 +160,12 @@ done
 WIDGET_TEST_PATTERN="$(printf '%s\n' "${WIDGET_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+SCENE_STATUS_BADGE_TEST_PATTERN="$(printf '%s\n' "${SCENE_STATUS_BADGE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_ROUTE_SYNC_TEST_PATTERN="$(printf '%s\n' "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 TIMELINE_QA_MARKERS_TEST_PATTERN="$(printf '%s\n' "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-TEST_PATTERN="${WIDGET_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
+TEST_PATTERN="${WIDGET_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
 
-echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
+echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status badge + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
 "$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo

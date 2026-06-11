@@ -14,6 +14,7 @@ import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
 import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
+import 'package:production_chat_prop/core/widgets/scene_status_badge.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/projects/domain/character.dart';
 import 'package:production_chat_prop/features/projects/domain/message.dart';
@@ -180,6 +181,9 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
         snapshotState.asData?.value?.scene?.id ?? selectedSceneId;
     final canOpenPlayback = snapshotState.asData?.value != null;
     final resolvedScene = snapshotState.asData?.value?.scene;
+    final resolvedSceneHealth = resolvedScene == null
+        ? null
+        : summarizeSceneHealth(resolvedScene);
     final initialSceneId = widget.initialSceneId;
     final initialSceneKey = initialSceneId == null
         ? null
@@ -211,6 +215,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
           selectedSceneId: effectiveSceneId,
           isCompactAppBar: isCompactAppBar,
           canOpenPlayback: canOpenPlayback,
+          resolvedSceneHealth: resolvedSceneHealth,
         ),
       ),
       body: SafeArea(
@@ -265,9 +270,22 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
     required String? selectedSceneId,
     required bool isCompactAppBar,
     required bool canOpenPlayback,
+    required SceneHealthSummary? resolvedSceneHealth,
   }) {
+    final sceneStatusBadge = resolvedSceneHealth == null
+        ? null
+        : Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            child: SceneStatusBadge(
+              key: const Key('chatEditorSceneStatusBadge'),
+              summary: resolvedSceneHealth,
+              compact: isCompactAppBar,
+            ),
+          );
+
     if (!isCompactAppBar) {
       return [
+        ?sceneStatusBadge,
         IconButton(
           key: const Key('chatEditorAppBarOpenPlaybackButton'),
           tooltip: 'Open Playback',
@@ -291,6 +309,7 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
     }
 
     return [
+      ?sceneStatusBadge,
       PopupMenuButton<_ChatEditorAppBarAction>(
         key: const Key('chatEditorOverflowMenuButton'),
         tooltip: 'Chat editor actions',
