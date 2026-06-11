@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
+import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
 
 class SceneStatusBadge extends StatelessWidget {
   const SceneStatusBadge({
@@ -15,48 +16,133 @@ class SceneStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final presentation = _statusPresentation(colorScheme, summary.badgeState);
+    final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+      color: presentation.foregroundColor,
+      fontWeight: FontWeight.w600,
+    );
 
     return Tooltip(
       message: summary.badgeTooltip,
       waitDuration: const Duration(milliseconds: 300),
       child: Semantics(
         label: 'Scene status: ${summary.badgeLabel}. ${summary.badgeTooltip}',
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: compact ? 10 : 12,
-            vertical: 6,
-          ),
-          decoration: BoxDecoration(
-            color: presentation.backgroundColor,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: presentation.borderColor),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                presentation.icon,
-                size: 18,
-                color: presentation.foregroundColor,
+        hint: 'Opens detailed scene status.',
+        child: Material(
+          type: MaterialType.transparency,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: presentation.backgroundColor,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: presentation.borderColor),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: () => _showSceneStatusDetails(
+                context,
+                presentation: presentation,
               ),
-              if (!compact) ...[
-                const SizedBox(width: 6),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 124),
-                  child: Text(
-                    summary.badgeLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: presentation.foregroundColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 10 : 12,
+                  vertical: 6,
                 ),
-              ],
-            ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      presentation.icon,
+                      size: 18,
+                      color: presentation.foregroundColor,
+                    ),
+                    if (!compact) ...[
+                      const SizedBox(width: 6),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 124),
+                        child: Text(
+                          summary.badgeLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: labelStyle,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _showSceneStatusDetails(
+    BuildContext context, {
+    required _SceneStatusPresentation presentation,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return showDialog<void>(
+      context: context,
+      builder: (context) => ResponsiveAlertDialog(
+        key: const Key('sceneStatusDetailsDialog'),
+        title: Row(
+          children: [
+            Icon(
+              presentation.icon,
+              color: presentation.foregroundColor,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text('Scene status • ${summary.badgeLabel}'),
+            ),
+          ],
+        ),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Status',
+              style: textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(summary.statusLabel),
+            const SizedBox(height: 4),
+            Text(summary.detailLabel),
+            if (summary.hasTimelineWarnings) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Timeline QA',
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(summary.timelineStatusLabel),
+              const SizedBox(height: 4),
+              Text(summary.timelineDetailLabel),
+            ],
+            if (!summary.needsAttention && !summary.hasTimelineWarnings) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Ready for playback and export.',
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            key: const Key('sceneStatusDetailsCloseButton'),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

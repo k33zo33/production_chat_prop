@@ -3,9 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/scene_status_badge.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
 import 'package:production_chat_prop/features/playback/presentation/pages/playback_screen.dart';
+import 'package:production_chat_prop/features/projects/domain/character.dart';
+import 'package:production_chat_prop/features/projects/domain/message.dart';
+import 'package:production_chat_prop/features/projects/domain/scene.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -55,6 +59,124 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('No messages'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('chatEditorSceneStatusBadge')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('sceneStatusDetailsDialog')), findsOneWidget);
+      expect(find.text('Scene status • No messages'), findsOneWidget);
+      expect(find.text('No messages yet'), findsOneWidget);
+      expect(
+        find.text('Add at least one message before preview or export.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('sceneStatusDetailsCloseButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('sceneStatusDetailsDialog')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'scene status dialog covers needs-lines details without redundant sections',
+    (tester) async {
+      final summary = summarizeSceneHealth(
+        const Scene(
+          id: 'scene-needs-lines',
+          title: 'Needs lines',
+          styleId: 'studio_slate',
+          aspectRatio: SceneAspectRatio.portrait9x16,
+          characters: [
+            Character(
+              id: 'character-1',
+              displayName: 'Taylor',
+              avatarPath: null,
+              bubbleColor: '#2E90FA',
+            ),
+            Character(
+              id: 'character-2',
+              displayName: 'Jordan',
+              avatarPath: null,
+              bubbleColor: '#12B76A',
+            ),
+          ],
+          messages: [
+            Message(
+              id: 'message-1',
+              characterId: 'character-1',
+              text: 'Locked.',
+              timestampSeconds: 1,
+              status: MessageStatus.sent,
+              isIncoming: false,
+              showTypingBefore: false,
+            ),
+          ],
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildBadgeHarness(summary: summary, compact: false),
+      );
+
+      await tester.tap(find.byType(SceneStatusBadge));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene status • Needs lines'), findsOneWidget);
+      expect(find.text('1 character waiting for lines'), findsOneWidget);
+      expect(
+        find.text('Jordan has no lines in this scene yet.'),
+        findsOneWidget,
+      );
+      expect(find.text('Waiting characters'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'scene status dialog covers ready details',
+    (tester) async {
+      final summary = summarizeSceneHealth(
+        const Scene(
+          id: 'scene-ready',
+          title: 'Ready',
+          styleId: 'studio_slate',
+          aspectRatio: SceneAspectRatio.portrait9x16,
+          characters: [
+            Character(
+              id: 'character-1',
+              displayName: 'Taylor',
+              avatarPath: null,
+              bubbleColor: '#2E90FA',
+            ),
+          ],
+          messages: [
+            Message(
+              id: 'message-1',
+              characterId: 'character-1',
+              text: 'Ready to roll.',
+              timestampSeconds: 2,
+              status: MessageStatus.seen,
+              isIncoming: false,
+              showTypingBefore: false,
+            ),
+          ],
+        ),
+      );
+
+      await tester.pumpWidget(
+        _buildBadgeHarness(summary: summary, compact: false),
+      );
+
+      await tester.tap(find.byType(SceneStatusBadge));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Scene status • Ready'), findsOneWidget);
+      expect(find.text('Ready for playback'), findsOneWidget);
+      expect(
+        find.text('All active characters appear in the timeline.'),
+        findsOneWidget,
+      );
+      expect(find.text('Ready for playback and export.'), findsOneWidget);
     },
   );
 
@@ -98,7 +220,37 @@ void main() {
         ),
         findsOneWidget,
       );
+
+      await tester.tap(find.byKey(const Key('playbackSceneStatusBadge')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('sceneStatusDetailsDialog')), findsOneWidget);
+      expect(find.text('Scene status • Timeline QA'), findsOneWidget);
+      expect(
+        find.text('1 shared timestamp • 1 overlapping typing cue'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          '2 messages land on the same second and can stack in playback or export. '
+          'Multiple typing indicators fire together and may feel crowded in compact previews.',
+        ),
+        findsOneWidget,
+      );
     },
+  );
+}
+
+Widget _buildBadgeHarness({
+  required SceneHealthSummary summary,
+  required bool compact,
+}) {
+  return MaterialApp(
+    home: Scaffold(
+      body: Center(
+        child: SceneStatusBadge(summary: summary, compact: compact),
+      ),
+    ),
   );
 }
 
