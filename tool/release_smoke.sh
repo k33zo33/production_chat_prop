@@ -17,6 +17,11 @@ declare -a WIDGET_TEST_FILES=(
   "test/widget/scene_route_sync_test.dart"
 )
 
+WIDGET_TEST_FILE="test/widget_test.dart"
+PLAYBACK_EXPORT_FEEDBACK_TEST_FILE="test/widget/playback_export_feedback_test.dart"
+RECOVERY_TEST_FILE="test/widget/project_not_found_recovery_test.dart"
+SCENE_ROUTE_SYNC_TEST_FILE="test/widget/scene_route_sync_test.dart"
+
 for widget_test_file in "${WIDGET_TEST_FILES[@]}"; do
   if [[ ! -f "$widget_test_file" ]]; then
     echo "[release-smoke] missing expected test file: $widget_test_file" >&2
@@ -24,7 +29,7 @@ for widget_test_file in "${WIDGET_TEST_FILES[@]}"; do
   fi
 done
 
-declare -a TEST_NAMES=(
+declare -a WIDGET_TEST_NAMES=(
   "compact project list app bar uses overflow menu actions"
   "compact chat editor app bar uses overflow navigation actions"
   "compact chat editor keeps scene actions in overflow menu"
@@ -37,7 +42,32 @@ declare -a TEST_NAMES=(
   "compact playback scene switch resets deep preview scroll in long scenes"
   "compact playback focus preview stays usable on narrow screens"
   "compact demo flow stays usable across project list, editor, and playback"
+  "playback preview expands on wide layouts and clarifies export scaling"
+  "playback focus preview opens with transport controls and closes cleanly"
+  "focus preview transport controls scrub and jump between cues"
+  "focus preview swipe gestures seek in 5 second steps"
+  "focus preview edge double taps jump between cues"
+  "focus preview preserves playback position and preview mode when opened from the main timeline"
+  "focus preview responds to keyboard play pause and restart shortcuts"
+  "playback preview auto-follows deep cues in long scenes"
+  "playback preview surface and export target follow aspect ratio"
+  "playback export buttons are disabled for empty scenes"
+  "empty playback scene shows recovery guidance and disables transport controls"
+  "changing aspect ratio keeps playback progress stable"
+  "long chat scene keeps playback controls and export available"
+  "playback stays responsive with imported 500+ messages"
+)
+
+declare -a PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES=(
+  "playback preview toggles affect screenshot export feedback"
+  "video export button copies fallback package to clipboard when download is unavailable"
+)
+
+declare -a RECOVERY_TEST_NAMES=(
   "compact missing-project recovery stacks actions on phone-width screens"
+)
+
+declare -a SCENE_ROUTE_SYNC_TEST_NAMES=(
   "chat editor keeps selected scene in the route query"
   "chat editor normalizes stale scene query ids after load"
   "chat editor follows external scene query changes after load"
@@ -50,22 +80,6 @@ declare -a TEST_NAMES=(
   "playback restores selected scene query when external route clears it"
   "playback rewrites the route query when the selected trailing scene is deleted"
   "playback rewrites the route query when the selected leading scene is deleted"
-  "playback preview expands on wide layouts and clarifies export scaling"
-  "playback focus preview opens with transport controls and closes cleanly"
-  "focus preview transport controls scrub and jump between cues"
-  "focus preview swipe gestures seek in 5 second steps"
-  "focus preview edge double taps jump between cues"
-  "focus preview preserves playback position and preview mode when opened from the main timeline"
-  "focus preview responds to keyboard play pause and restart shortcuts"
-  "playback preview auto-follows deep cues in long scenes"
-  "playback preview surface and export target follow aspect ratio"
-  "playback export buttons are disabled for empty scenes"
-  "empty playback scene shows recovery guidance and disables transport controls"
-  "playback preview toggles affect screenshot export feedback"
-  "video export button copies fallback package to clipboard when download is unavailable"
-  "changing aspect ratio keeps playback progress stable"
-  "long chat scene keeps playback controls and export available"
-  "playback stays responsive with imported 500+ messages"
 )
 
 declare -a UNIT_TEST_FILES=(
@@ -78,9 +92,30 @@ declare -a UNIT_TEST_FILES=(
   "test/unit/features/projects/domain/export_qa_fixture_test.dart"
 )
 
-for test_name in "${TEST_NAMES[@]}"; do
-  if ! grep -Fq "$test_name" "${WIDGET_TEST_FILES[@]}"; then
+for test_name in "${WIDGET_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$WIDGET_TEST_FILE"; then
     echo "[release-smoke] missing expected widget test: $test_name" >&2
+    exit 1
+  fi
+done
+
+for test_name in "${PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$PLAYBACK_EXPORT_FEEDBACK_TEST_FILE"; then
+    echo "[release-smoke] missing expected export feedback test: $test_name" >&2
+    exit 1
+  fi
+done
+
+for test_name in "${RECOVERY_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$RECOVERY_TEST_FILE"; then
+    echo "[release-smoke] missing expected recovery test: $test_name" >&2
+    exit 1
+  fi
+done
+
+for test_name in "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$SCENE_ROUTE_SYNC_TEST_FILE"; then
+    echo "[release-smoke] missing expected route-sync test: $test_name" >&2
     exit 1
   fi
 done
@@ -92,9 +127,13 @@ for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
   fi
 done
 
-TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+WIDGET_TEST_PATTERN="$(printf '%s\n' "${WIDGET_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+SCENE_ROUTE_SYNC_TEST_PATTERN="$(printf '%s\n' "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+TEST_PATTERN="${WIDGET_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}"
 
-echo "[release-smoke] widget tests: ${#TEST_NAMES[@]} targeted compact/export/reliability cases"
+echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync cases"
 "$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo

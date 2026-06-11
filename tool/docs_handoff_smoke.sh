@@ -297,10 +297,31 @@ assert_names_exist(
 )
 assert_names_exist(
     script_label='tool/release_smoke.sh',
-    array_name='TEST_NAMES',
+    array_name='WIDGET_TEST_NAMES',
     script_text=release_smoke,
-    target_label='test/widget_test.dart + test/widget/playback_export_feedback_test.dart',
-    target_text=widget_test + '\n' + playback_export_feedback_test,
+    target_label='test/widget_test.dart',
+    target_text=widget_test,
+)
+assert_names_exist(
+    script_label='tool/release_smoke.sh',
+    array_name='PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES',
+    script_text=release_smoke,
+    target_label='test/widget/playback_export_feedback_test.dart',
+    target_text=playback_export_feedback_test,
+)
+assert_names_exist(
+    script_label='tool/release_smoke.sh',
+    array_name='RECOVERY_TEST_NAMES',
+    script_text=release_smoke,
+    target_label='test/widget/project_not_found_recovery_test.dart',
+    target_text=recovery_test,
+)
+assert_names_exist(
+    script_label='tool/release_smoke.sh',
+    array_name='SCENE_ROUTE_SYNC_TEST_NAMES',
+    script_text=release_smoke,
+    target_label='test/widget/scene_route_sync_test.dart',
+    target_text=scene_route_sync_test,
 )
 assert_names_exist(
     script_label='tool/compact_smoke.sh',
