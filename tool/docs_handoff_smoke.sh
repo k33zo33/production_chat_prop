@@ -323,6 +323,16 @@ assert_names_exist(
     target_label='test/widget/scene_route_sync_test.dart',
     target_text=scene_route_sync_test,
 )
+assert_catalog_includes(
+    script_label='tool/release_smoke.sh',
+    array_name='WIDGET_TEST_NAMES',
+    script_text=release_smoke,
+    required_names=[
+        'focus preview escape shortcut closes the overlay',
+        'focus preview long press exits cleanly',
+        'playback preview re-follows earlier cues after backward scrub',
+    ],
+)
 assert_names_exist(
     script_label='tool/compact_smoke.sh',
     array_name='TEST_NAMES',
@@ -345,6 +355,7 @@ assert_catalog_includes(
         'compact project delete confirmation stays usable on narrow screens',
         'compact project delete confirmation keeps long project names readable on narrow screens',
         'compact editor and playback headers clamp long project names without exceptions',
+        'focus preview long press exits cleanly',
         'compact demo flow stays usable across project list, editor, and playback',
     ],
 )

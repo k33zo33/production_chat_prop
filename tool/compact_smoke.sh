@@ -37,6 +37,7 @@ declare -a TEST_NAMES=(
   "compact playback focus preview stays usable on narrow screens"
   "focus preview swipe gestures seek in 5 second steps"
   "focus preview edge double taps jump between cues"
+  "focus preview long press exits cleanly"
   "compact playback video fallback export reflects preview toggles and aspect ratio"
   "ultra-compact playback footer actions expose navigation actions on phone-width screens"
   "compact demo flow stays usable across project list, editor, and playback"
