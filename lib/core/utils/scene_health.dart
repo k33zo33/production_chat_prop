@@ -291,6 +291,53 @@ class ProjectHealthSummary {
       firstEmptySceneId ?? firstSceneWithUnusedCharactersId;
 }
 
+class PortfolioHealthSummary {
+  const PortfolioHealthSummary({
+    required this.totalProjects,
+    required this.totalScenes,
+    required this.readyScenes,
+    required this.emptyScenes,
+    required this.totalMessages,
+    required this.unusedCharacterCount,
+    required this.readyProjectCount,
+    required this.needsAttentionProjectCount,
+    required this.timelineWarningProjectCount,
+    required this.sharedTimestampCount,
+    required this.overlappingTypingCueCount,
+    required this.scenesWithTimelineWarnings,
+    required this.firstReadyProjectId,
+    required this.firstNeedsAttentionProjectId,
+    required this.firstTimelineWarningProjectId,
+  });
+
+  final int totalProjects;
+  final int totalScenes;
+  final int readyScenes;
+  final int emptyScenes;
+  final int totalMessages;
+  final int unusedCharacterCount;
+  final int readyProjectCount;
+  final int needsAttentionProjectCount;
+  final int timelineWarningProjectCount;
+  final int sharedTimestampCount;
+  final int overlappingTypingCueCount;
+  final int scenesWithTimelineWarnings;
+  final String? firstReadyProjectId;
+  final String? firstNeedsAttentionProjectId;
+  final String? firstTimelineWarningProjectId;
+
+  bool get hasProjects => totalProjects > 0;
+  bool get hasMessages => totalMessages > 0;
+  bool get needsAttention =>
+      !hasMessages || emptyScenes > 0 || unusedCharacterCount > 0;
+  bool get hasTimelineWarnings =>
+      sharedTimestampCount > 0 || overlappingTypingCueCount > 0;
+  String? get primaryProjectId =>
+      firstNeedsAttentionProjectId ??
+      firstTimelineWarningProjectId ??
+      firstReadyProjectId;
+}
+
 ProjectHealthSummary summarizeProjectHealth(Project project) {
   var readyScenes = 0;
   var emptyScenes = 0;
@@ -339,6 +386,68 @@ ProjectHealthSummary summarizeProjectHealth(Project project) {
     firstEmptySceneId: firstEmptySceneId,
     firstSceneWithUnusedCharactersId: firstSceneWithUnusedCharactersId,
     firstSceneWithTimelineWarningsId: firstSceneWithTimelineWarningsId,
+  );
+}
+
+PortfolioHealthSummary summarizePortfolioHealth(Iterable<Project> projects) {
+  var totalProjects = 0;
+  var totalScenes = 0;
+  var readyScenes = 0;
+  var emptyScenes = 0;
+  var totalMessages = 0;
+  var unusedCharacterCount = 0;
+  var readyProjectCount = 0;
+  var needsAttentionProjectCount = 0;
+  var timelineWarningProjectCount = 0;
+  var sharedTimestampCount = 0;
+  var overlappingTypingCueCount = 0;
+  var scenesWithTimelineWarnings = 0;
+  String? firstReadyProjectId;
+  String? firstNeedsAttentionProjectId;
+  String? firstTimelineWarningProjectId;
+
+  for (final project in projects) {
+    totalProjects += 1;
+    final projectHealth = summarizeProjectHealth(project);
+    totalScenes += projectHealth.totalScenes;
+    readyScenes += projectHealth.readyScenes;
+    emptyScenes += projectHealth.emptyScenes;
+    totalMessages += projectHealth.totalMessages;
+    unusedCharacterCount += projectHealth.unusedCharacterCount;
+    sharedTimestampCount += projectHealth.sharedTimestampCount;
+    overlappingTypingCueCount += projectHealth.overlappingTypingCueCount;
+    scenesWithTimelineWarnings += projectHealth.scenesWithTimelineWarnings;
+
+    if (projectHealth.needsAttention) {
+      needsAttentionProjectCount += 1;
+      firstNeedsAttentionProjectId ??= project.id;
+    } else {
+      readyProjectCount += 1;
+      firstReadyProjectId ??= project.id;
+    }
+
+    if (projectHealth.hasTimelineWarnings) {
+      timelineWarningProjectCount += 1;
+      firstTimelineWarningProjectId ??= project.id;
+    }
+  }
+
+  return PortfolioHealthSummary(
+    totalProjects: totalProjects,
+    totalScenes: totalScenes,
+    readyScenes: readyScenes,
+    emptyScenes: emptyScenes,
+    totalMessages: totalMessages,
+    unusedCharacterCount: unusedCharacterCount,
+    readyProjectCount: readyProjectCount,
+    needsAttentionProjectCount: needsAttentionProjectCount,
+    timelineWarningProjectCount: timelineWarningProjectCount,
+    sharedTimestampCount: sharedTimestampCount,
+    overlappingTypingCueCount: overlappingTypingCueCount,
+    scenesWithTimelineWarnings: scenesWithTimelineWarnings,
+    firstReadyProjectId: firstReadyProjectId,
+    firstNeedsAttentionProjectId: firstNeedsAttentionProjectId,
+    firstTimelineWarningProjectId: firstTimelineWarningProjectId,
   );
 }
 

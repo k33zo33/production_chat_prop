@@ -14,6 +14,7 @@ import 'package:production_chat_prop/features/projects/data/services/project_pac
 import 'package:production_chat_prop/features/projects/data/services/project_portfolio_export_service.dart';
 import 'package:production_chat_prop/features/projects/domain/project.dart';
 import 'package:production_chat_prop/features/projects/presentation/controllers/projects_controller.dart';
+import 'package:production_chat_prop/features/projects/presentation/widgets/portfolio_preflight_badge.dart';
 
 final projectJsonFilePickerProvider = Provider<TextFilePicker>((ref) {
   return pickTextFile;
@@ -330,8 +331,19 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     );
   }
 
-  void _openProjectPlayback(Project project) {
-    _goToProjectPlayback(context, project);
+  void _openProjectPlayback(Project project, {String? preferredSceneId}) {
+    _goToProjectPlayback(
+      context,
+      project,
+      preferredSceneId: preferredSceneId,
+    );
+  }
+
+  void _openProjectTimelineQa(Project project) {
+    _openProjectPlayback(
+      project,
+      preferredSceneId: _projectTimelineWarningSceneId(project),
+    );
   }
 
   Future<void> _onDeleteSelectedProjectsPressed(List<Project> projects) async {
@@ -985,7 +997,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               for (final project in projects) {
                 typeCounts[project.type] = (typeCounts[project.type] ?? 0) + 1;
               }
-              final readinessSummary = _buildProjectPortfolioReadinessSummary(
+              final readinessSummary = summarizePortfolioHealth(
                 filteredProjects,
               );
 
@@ -1009,6 +1021,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               );
               final attentionProject = findProjectById(
                 readinessSummary.firstNeedsAttentionProjectId,
+              );
+              final timelineQaProject = findProjectById(
+                readinessSummary.firstTimelineWarningProjectId,
               );
 
               final headerContent = <Widget>[
@@ -1191,110 +1206,201 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   child: Card(
                     child: Padding(
                       padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Portfolio Readiness',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            key: const Key('projectPortfolioReadinessSummary'),
-                            'Projects: ${filteredProjects.length} • '
-                            'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
-                            'Messages: ${readinessSummary.totalMessages}',
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            key: const Key('projectPortfolioHealthSummary'),
-                            _portfolioHealthSummaryLabel(readinessSummary),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Chip(
-                                key: const Key('projectPortfolioReadyChip'),
-                                avatar: const Icon(
-                                  Icons.check_circle_outline_rounded,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  '${readinessSummary.readyProjectCount} ready projects',
-                                ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isCompactPortfolioCard =
+                              AppBreakpoints.isCompactFilterWidth(
+                                constraints.maxWidth,
+                              );
+                          final showPortfolioPreflightBadge =
+                              !readinessSummary.hasProjects ||
+                              readinessSummary.hasTimelineWarnings ||
+                              filteredProjects.length > 1;
+                          final preflightBadge = PortfolioPreflightBadge(
+                            summary: readinessSummary,
+                            attentionProjectName: attentionProject?.name,
+                            readyProjectName: previewReadyProject?.name,
+                            timelineWarningProjectName: timelineQaProject?.name,
+                            onContinueEditing: primaryProject == null
+                                ? null
+                                : () => _openProjectEditor(
+                                    primaryProject,
+                                    preferAttentionScene:
+                                        primaryProject.id ==
+                                        readinessSummary
+                                            .firstNeedsAttentionProjectId,
+                                  ),
+                            onPreviewReady: previewReadyProject == null
+                                ? null
+                                : () => _openProjectPlayback(
+                                    previewReadyProject,
+                                  ),
+                            onReviewAttention: attentionProject == null
+                                ? null
+                                : () => _openProjectEditor(
+                                    attentionProject,
+                                    preferAttentionScene: true,
+                                  ),
+                            onReviewTimelineQa: timelineQaProject == null
+                                ? null
+                                : () => _openProjectTimelineQa(
+                                    timelineQaProject,
+                                  ),
+                          );
+                          final actionButtons = <Widget>[
+                            OutlinedButton.icon(
+                              key: const Key('portfolioContinueEditingButton'),
+                              onPressed: primaryProject == null
+                                  ? null
+                                  : () => _openProjectEditor(
+                                      primaryProject,
+                                      preferAttentionScene:
+                                          primaryProject.id ==
+                                          readinessSummary
+                                              .firstNeedsAttentionProjectId,
+                                    ),
+                              icon: const Icon(Icons.edit_note_rounded),
+                              label: const Text('Continue Editing'),
+                            ),
+                            OutlinedButton.icon(
+                              key: const Key('portfolioPreviewReadyButton'),
+                              onPressed: previewReadyProject == null
+                                  ? null
+                                  : () => _openProjectPlayback(
+                                      previewReadyProject,
+                                    ),
+                              icon: const Icon(
+                                Icons.play_circle_outline_rounded,
                               ),
-                              Chip(
-                                key: const Key(
-                                  'projectPortfolioNeedsAttentionChip',
-                                ),
-                                avatar: const Icon(
-                                  Icons.error_outline_rounded,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  '${readinessSummary.needsAttentionProjectCount} need attention',
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final isCompactActionStack =
-                                  AppBreakpoints.isCompactFilterWidth(
-                                    constraints.maxWidth,
-                                  );
-                              final actionButtons = <Widget>[
-                                OutlinedButton.icon(
-                                  key: const Key(
-                                    'portfolioContinueEditingButton',
-                                  ),
-                                  onPressed: primaryProject == null
-                                      ? null
-                                      : () => _openProjectEditor(
-                                          primaryProject,
-                                          preferAttentionScene:
-                                              primaryProject.id ==
-                                              readinessSummary
-                                                  .firstNeedsAttentionProjectId,
-                                        ),
-                                  icon: const Icon(Icons.edit_note_rounded),
-                                  label: const Text('Continue Editing'),
-                                ),
-                                OutlinedButton.icon(
-                                  key: const Key('portfolioPreviewReadyButton'),
-                                  onPressed: previewReadyProject == null
-                                      ? null
-                                      : () => _openProjectPlayback(
-                                          previewReadyProject,
-                                        ),
-                                  icon: const Icon(
-                                    Icons.play_circle_outline_rounded,
-                                  ),
-                                  label: const Text('Preview Ready Project'),
-                                ),
-                                OutlinedButton.icon(
-                                  key: const Key(
-                                    'portfolioReviewAttentionButton',
-                                  ),
-                                  onPressed: attentionProject == null
-                                      ? null
-                                      : () => _openProjectEditor(
-                                          attentionProject,
-                                          preferAttentionScene: true,
-                                        ),
-                                  icon: const Icon(
-                                    Icons.rule_folder_outlined,
-                                  ),
-                                  label: const Text('Review Attention Project'),
-                                ),
-                              ];
+                              label: const Text('Preview Ready Project'),
+                            ),
+                            OutlinedButton.icon(
+                              key: const Key('portfolioReviewAttentionButton'),
+                              onPressed: attentionProject == null
+                                  ? null
+                                  : () => _openProjectEditor(
+                                      attentionProject,
+                                      preferAttentionScene: true,
+                                    ),
+                              icon: const Icon(Icons.rule_folder_outlined),
+                              label: const Text('Review Attention Project'),
+                            ),
+                          ];
 
-                              if (isCompactActionStack) {
-                                return Column(
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (isCompactPortfolioCard) ...[
+                                Text(
+                                  'Portfolio Readiness',
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  key: const Key(
+                                    'projectPortfolioReadinessSummary',
+                                  ),
+                                  'Projects: ${filteredProjects.length} • '
+                                  'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
+                                  'Messages: ${readinessSummary.totalMessages}',
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  key: const Key(
+                                    'projectPortfolioHealthSummary',
+                                  ),
+                                  _portfolioHealthSummaryLabel(
+                                    readinessSummary,
+                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                if (showPortfolioPreflightBadge) ...[
+                                  const SizedBox(height: 8),
+                                  preflightBadge,
+                                ],
+                              ] else ...[
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Portfolio Readiness',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleSmall,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            key: const Key(
+                                              'projectPortfolioReadinessSummary',
+                                            ),
+                                            'Projects: ${filteredProjects.length} • '
+                                            'Ready scenes: ${readinessSummary.readyScenes}/${readinessSummary.totalScenes} • '
+                                            'Messages: ${readinessSummary.totalMessages}',
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            key: const Key(
+                                              'projectPortfolioHealthSummary',
+                                            ),
+                                            _portfolioHealthSummaryLabel(
+                                              readinessSummary,
+                                            ),
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (showPortfolioPreflightBadge) ...[
+                                      const SizedBox(width: 12),
+                                      ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 320,
+                                        ),
+                                        child: preflightBadge,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                              const SizedBox(height: 4),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  Chip(
+                                    key: const Key('projectPortfolioReadyChip'),
+                                    avatar: const Icon(
+                                      Icons.check_circle_outline_rounded,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      '${readinessSummary.readyProjectCount} ready projects',
+                                    ),
+                                  ),
+                                  Chip(
+                                    key: const Key(
+                                      'projectPortfolioNeedsAttentionChip',
+                                    ),
+                                    avatar: const Icon(
+                                      Icons.error_outline_rounded,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      '${readinessSummary.needsAttentionProjectCount} need attention',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              if (isCompactPortfolioCard)
+                                Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
@@ -1308,17 +1414,16 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                         const SizedBox(height: 8),
                                     ],
                                   ],
-                                );
-                              }
-
-                              return Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: actionButtons,
-                              );
-                            },
-                          ),
-                        ],
+                                )
+                              else
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: actionButtons,
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -2202,8 +2307,16 @@ String? _projectPlaybackSceneId(Project project) {
   return project.scenes.first.id;
 }
 
-void _goToProjectPlayback(BuildContext context, Project project) {
-  final targetSceneId = _projectPlaybackSceneId(project);
+String? _projectTimelineWarningSceneId(Project project) {
+  return summarizeProjectHealth(project).firstSceneWithTimelineWarningsId;
+}
+
+void _goToProjectPlayback(
+  BuildContext context,
+  Project project, {
+  String? preferredSceneId,
+}) {
+  final targetSceneId = preferredSceneId ?? _projectPlaybackSceneId(project);
   context.goNamed(
     'playbackProject',
     pathParameters: {'projectId': project.id},
@@ -2258,87 +2371,47 @@ IconData _projectAttentionCtaIcon(ProjectAttentionKind kind) {
   }
 }
 
-_ProjectPortfolioReadinessSummary _buildProjectPortfolioReadinessSummary(
-  List<Project> projects,
+String _portfolioHealthSummaryLabel(
+  PortfolioHealthSummary summary,
 ) {
-  var totalScenes = 0;
-  var readyScenes = 0;
-  var emptyScenes = 0;
-  var totalMessages = 0;
-  var readyProjectCount = 0;
-  var needsAttentionProjectCount = 0;
-  var unusedCharacterCount = 0;
-  String? firstReadyProjectId;
-  String? firstNeedsAttentionProjectId;
-
-  for (final project in projects) {
-    final projectHealth = summarizeProjectHealth(project);
-    totalScenes += projectHealth.totalScenes;
-    readyScenes += projectHealth.readyScenes;
-    emptyScenes += projectHealth.emptyScenes;
-    totalMessages += projectHealth.totalMessages;
-    unusedCharacterCount += projectHealth.unusedCharacterCount;
-
-    if (projectHealth.needsAttention) {
-      needsAttentionProjectCount++;
-      firstNeedsAttentionProjectId ??= project.id;
-    } else {
-      readyProjectCount++;
-      firstReadyProjectId ??= project.id;
-    }
+  if (!summary.hasProjects) {
+    return 'Start with a demo or imported project before the beta pass.';
   }
 
-  return _ProjectPortfolioReadinessSummary(
-    totalScenes: totalScenes,
-    readyScenes: readyScenes,
-    emptyScenes: emptyScenes,
-    totalMessages: totalMessages,
-    unusedCharacterCount: unusedCharacterCount,
-    readyProjectCount: readyProjectCount,
-    needsAttentionProjectCount: needsAttentionProjectCount,
-    primaryProjectId: firstNeedsAttentionProjectId ?? firstReadyProjectId,
-    firstReadyProjectId: firstReadyProjectId,
-    firstNeedsAttentionProjectId: firstNeedsAttentionProjectId,
-  );
-}
+  if (!summary.hasMessages) {
+    return 'Attention: add message content before preview, export, or handoff QA.';
+  }
 
-class _ProjectPortfolioReadinessSummary {
-  const _ProjectPortfolioReadinessSummary({
-    required this.totalScenes,
-    required this.readyScenes,
-    required this.emptyScenes,
-    required this.totalMessages,
-    required this.unusedCharacterCount,
-    required this.readyProjectCount,
-    required this.needsAttentionProjectCount,
-    required this.primaryProjectId,
-    required this.firstReadyProjectId,
-    required this.firstNeedsAttentionProjectId,
-  });
-
-  final int totalScenes;
-  final int readyScenes;
-  final int emptyScenes;
-  final int totalMessages;
-  final int unusedCharacterCount;
-  final int readyProjectCount;
-  final int needsAttentionProjectCount;
-  final String? primaryProjectId;
-  final String? firstReadyProjectId;
-  final String? firstNeedsAttentionProjectId;
-
-  bool get needsAttention => emptyScenes > 0 || unusedCharacterCount > 0;
-}
-
-String _portfolioHealthSummaryLabel(
-  _ProjectPortfolioReadinessSummary summary,
-) {
-  if (!summary.needsAttention) {
+  if (!summary.needsAttention && !summary.hasTimelineWarnings) {
     return 'Ready: no empty scenes • all active characters have lines';
   }
 
-  return 'Attention: ${summary.emptyScenes} empty scene${summary.emptyScenes == 1 ? '' : 's'} • '
-      '${summary.unusedCharacterCount} character${summary.unusedCharacterCount == 1 ? '' : 's'} waiting for lines';
+  final timelineWarningCount =
+      summary.sharedTimestampCount + summary.overlappingTypingCueCount;
+
+  if (!summary.needsAttention && summary.hasTimelineWarnings) {
+    return 'Timeline QA: '
+        '$timelineWarningCount warning${timelineWarningCount == 1 ? '' : 's'} across '
+        '${summary.scenesWithTimelineWarnings} scene${summary.scenesWithTimelineWarnings == 1 ? '' : 's'}';
+  }
+
+  final segments = <String>[];
+  if (summary.needsAttention) {
+    segments
+      ..add(
+        '${summary.emptyScenes} empty scene${summary.emptyScenes == 1 ? '' : 's'}',
+      )
+      ..add(
+        '${summary.unusedCharacterCount} character${summary.unusedCharacterCount == 1 ? '' : 's'} waiting for lines',
+      );
+  }
+  if (summary.hasTimelineWarnings) {
+    segments.add(
+      '$timelineWarningCount timeline QA warning${timelineWarningCount == 1 ? '' : 's'}',
+    );
+  }
+
+  return 'Attention: ${segments.join(' • ')}';
 }
 
 String _projectTimelineQaSummaryLabel(ProjectHealthSummary summary) {

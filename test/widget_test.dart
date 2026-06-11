@@ -1763,12 +1763,23 @@ void main() {
     await tester.tap(find.text('Updated (Oldest)').last);
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(ListView).first, const Offset(0, -120));
-    await tester.pumpAndSettle();
+    final orderedProjectTitles = find
+        .byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.data == 'New Project 1' ||
+                  widget.data == 'New Project 2'),
+          skipOffstage: false,
+        )
+        .evaluate()
+        .map((element) => (element.widget as Text).data)
+        .whereType<String>()
+        .toList();
 
-    final yNewProject1 = tester.getTopLeft(find.text('New Project 1')).dy;
-    final yNewProject2 = tester.getTopLeft(find.text('New Project 2')).dy;
-    expect(yNewProject1, lessThan(yNewProject2));
+    expect(
+      orderedProjectTitles,
+      containsAllInOrder(const ['New Project 1', 'New Project 2']),
+    );
   });
 
   testWidgets('compact project list app bar uses overflow menu actions', (

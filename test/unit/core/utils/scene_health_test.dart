@@ -544,4 +544,133 @@ void main() {
       expect(attention.intent, ProjectAttentionIntent.openEditor);
     });
   });
+
+  group('summarizePortfolioHealth', () {
+    test(
+      'aggregates readiness, attention, and timeline QA across projects',
+      () {
+        final attentionProject = Project(
+          id: 'project-attention',
+          name: 'Attention Project',
+          type: ProjectType.ad,
+          createdAt: DateTime.utc(2026, 5, 6, 9),
+          updatedAt: DateTime.utc(2026, 5, 6, 10),
+          scenes: const [
+            Scene(
+              id: 'scene-empty',
+              title: 'Empty Scene',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'character-1',
+                  displayName: 'Mia',
+                  avatarPath: null,
+                  bubbleColor: '#2E90FA',
+                ),
+              ],
+              messages: [],
+            ),
+          ],
+        );
+
+        final timelineProject = Project(
+          id: 'project-timeline',
+          name: 'Timeline Project',
+          type: ProjectType.series,
+          createdAt: DateTime.utc(2026, 5, 6, 11),
+          updatedAt: DateTime.utc(2026, 5, 6, 12),
+          scenes: const [
+            Scene(
+              id: 'scene-qa',
+              title: 'Stacked Cue',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'character-1',
+                  displayName: 'Taylor',
+                  avatarPath: null,
+                  bubbleColor: '#2E90FA',
+                ),
+                Character(
+                  id: 'character-2',
+                  displayName: 'Jordan',
+                  avatarPath: null,
+                  bubbleColor: '#12B76A',
+                ),
+              ],
+              messages: [
+                Message(
+                  id: 'message-1',
+                  characterId: 'character-1',
+                  text: 'Cue one',
+                  timestampSeconds: 4,
+                  status: MessageStatus.sent,
+                  isIncoming: false,
+                  showTypingBefore: true,
+                ),
+                Message(
+                  id: 'message-2',
+                  characterId: 'character-2',
+                  text: 'Cue two',
+                  timestampSeconds: 4,
+                  status: MessageStatus.delivered,
+                  isIncoming: true,
+                  showTypingBefore: true,
+                ),
+              ],
+            ),
+          ],
+        );
+
+        final summary = summarizePortfolioHealth([
+          attentionProject,
+          timelineProject,
+        ]);
+
+        expect(summary.totalProjects, 2);
+        expect(summary.totalScenes, 2);
+        expect(summary.readyScenes, 1);
+        expect(summary.emptyScenes, 1);
+        expect(summary.totalMessages, 2);
+        expect(summary.unusedCharacterCount, 0);
+        expect(summary.readyProjectCount, 1);
+        expect(summary.needsAttentionProjectCount, 1);
+        expect(summary.timelineWarningProjectCount, 1);
+        expect(summary.sharedTimestampCount, 1);
+        expect(summary.overlappingTypingCueCount, 1);
+        expect(summary.scenesWithTimelineWarnings, 1);
+        expect(summary.firstReadyProjectId, 'project-timeline');
+        expect(summary.firstNeedsAttentionProjectId, 'project-attention');
+        expect(summary.firstTimelineWarningProjectId, 'project-timeline');
+        expect(summary.primaryProjectId, 'project-attention');
+        expect(summary.hasProjects, isTrue);
+        expect(summary.hasMessages, isTrue);
+        expect(summary.needsAttention, isTrue);
+        expect(summary.hasTimelineWarnings, isTrue);
+      },
+    );
+
+    test('returns stable empty-state values for an empty portfolio', () {
+      final summary = summarizePortfolioHealth(const <Project>[]);
+
+      expect(summary.totalProjects, 0);
+      expect(summary.totalScenes, 0);
+      expect(summary.readyScenes, 0);
+      expect(summary.emptyScenes, 0);
+      expect(summary.totalMessages, 0);
+      expect(summary.readyProjectCount, 0);
+      expect(summary.needsAttentionProjectCount, 0);
+      expect(summary.timelineWarningProjectCount, 0);
+      expect(summary.firstReadyProjectId, isNull);
+      expect(summary.firstNeedsAttentionProjectId, isNull);
+      expect(summary.firstTimelineWarningProjectId, isNull);
+      expect(summary.primaryProjectId, isNull);
+      expect(summary.hasProjects, isFalse);
+      expect(summary.hasMessages, isFalse);
+      expect(summary.needsAttention, isTrue);
+      expect(summary.hasTimelineWarnings, isFalse);
+    });
+  });
 }
