@@ -35,6 +35,7 @@ declare -a TEST_NAMES=(
   "compact playback scene selector switches demo scenes and resets progress"
   "compact playback scene switch resets deep preview scroll in long scenes"
   "compact playback focus preview stays usable on narrow screens"
+  "ultra-compact focus preview transport keeps icon controls reachable"
   "focus preview swipe gestures seek in 5 second steps"
   "focus preview edge double taps jump between cues"
   "focus preview long press exits cleanly"

@@ -7945,6 +7945,106 @@ void main() {
     );
   });
 
+  testWidgets(
+    'ultra-compact focus preview transport keeps icon controls reachable',
+    (
+      tester,
+    ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(320, 700));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(320, 700),
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      final playButton = find.byKey(const Key('playButton'));
+      await _ensureFinderVisibleInPrimaryListView(tester, playButton);
+      expect(playButton, findsOneWidget);
+      expect(find.byKey(const Key('seekForward5Button')), findsOneWidget);
+      expect(find.byKey(const Key('restartButton')), findsOneWidget);
+
+      await tester.tap(playButton);
+      await tester.pump();
+      expect(find.byKey(const Key('pauseButton')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('seekForward5Button')));
+      await tester.pump();
+
+      final mainPlaybackState = container.read(
+        playbackControllerProvider(projectId),
+      );
+      expect(mainPlaybackState.currentSecond, 5);
+
+      final restartButton = find.byKey(const Key('restartButton'));
+      await _ensureFinderVisibleInPrimaryListView(tester, restartButton);
+      await tester.tap(restartButton);
+      await tester.pump();
+
+      final resetMainPlaybackState = container.read(
+        playbackControllerProvider(projectId),
+      );
+      expect(resetMainPlaybackState.currentSecond, 0);
+
+      final focusPreviewButton = find.byKey(
+        const Key('openPlaybackFocusPreviewButton'),
+      );
+      await _ensureFinderVisibleInPrimaryListView(tester, focusPreviewButton);
+      await tester.tap(focusPreviewButton);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('playbackFocusPreviewScreen')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('focusPreviewTogglePlaybackButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('focusPreviewRestartButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('focusPreviewNextCueButton')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('focusPreviewTogglePlaybackButton')),
+      );
+      await tester.pump();
+
+      await tester.tap(find.byKey(const Key('focusPreviewSeekForwardButton')));
+      await tester.pump();
+
+      final focusStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(focusStatus.data, contains('00:01'));
+
+      await tester.tap(find.byKey(const Key('focusPreviewRestartButton')));
+      await tester.pump();
+
+      final resetStatus = tester.widget<Text>(
+        find.byKey(const Key('focusPreviewStatusLabel')),
+      );
+      expect(resetStatus.data, contains('00:00'));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('playback export buttons are disabled for empty scenes', (
     tester,
   ) async {

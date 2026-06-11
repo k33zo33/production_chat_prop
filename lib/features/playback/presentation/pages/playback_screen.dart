@@ -1950,6 +1950,10 @@ class _PlaybackFocusPreviewScreenState
                   final isCompactLayout = AppBreakpoints.isCompactFilterWidth(
                     constraints.maxWidth,
                   );
+                  final isUltraCompactLayout =
+                      AppBreakpoints.isUltraCompactLayoutWidth(
+                        constraints.maxWidth,
+                      );
 
                   return Stack(
                     children: [
@@ -2074,6 +2078,7 @@ class _PlaybackFocusPreviewScreenState
                             children: [
                               _FocusPreviewTransportControls(
                                 isCompactLayout: isCompactLayout,
+                                isUltraCompactLayout: isUltraCompactLayout,
                                 hasPlaybackMessages: hasPlaybackMessages,
                                 isPlaying: playbackState.isPlaying,
                                 currentSecond: playbackState.currentSecond,
@@ -2198,6 +2203,7 @@ String _formatTimecode(int seconds) {
 class _FocusPreviewTransportControls extends StatelessWidget {
   const _FocusPreviewTransportControls({
     required this.isCompactLayout,
+    required this.isUltraCompactLayout,
     required this.hasPlaybackMessages,
     required this.isPlaying,
     required this.currentSecond,
@@ -2216,6 +2222,7 @@ class _FocusPreviewTransportControls extends StatelessWidget {
   });
 
   final bool isCompactLayout;
+  final bool isUltraCompactLayout;
   final bool hasPlaybackMessages;
   final bool isPlaying;
   final int currentSecond;
@@ -2254,6 +2261,63 @@ class _FocusPreviewTransportControls extends StatelessWidget {
     );
 
     final controls = [
+      _CompactTransportIconButton(
+        buttonKey: const Key('focusPreviewPrevCueButton'),
+        tooltip: previousCue == null ? 'No previous cue' : 'Previous cue',
+        onPressed: onPrevCue,
+        icon: const Icon(Icons.skip_previous_rounded),
+        variant: _CompactTransportIconButtonVariant.tonal,
+      ),
+      _CompactTransportIconButton(
+        buttonKey: const Key('focusPreviewSeekBackwardButton'),
+        tooltip: hasPlaybackMessages ? 'Back 1 second' : 'No playback messages',
+        onPressed: onSeekBackward,
+        icon: const Icon(Icons.replay_rounded),
+        badgeText: '1',
+        variant: _CompactTransportIconButtonVariant.tonal,
+      ),
+      _CompactTransportIconButton(
+        buttonKey: const Key('focusPreviewTogglePlaybackButton'),
+        tooltip: isPlaying ? 'Pause playback' : 'Play playback',
+        onPressed: onTogglePlayback,
+        icon: Icon(
+          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+        ),
+        variant: _CompactTransportIconButtonVariant.filled,
+      ),
+      _CompactTransportIconButton(
+        buttonKey: const Key('focusPreviewRestartButton'),
+        tooltip: 'Restart playback',
+        onPressed: onRestart,
+        icon: const Icon(Icons.restart_alt_rounded),
+      ),
+      _CompactTransportIconButton(
+        buttonKey: const Key('focusPreviewSeekForwardButton'),
+        tooltip: hasPlaybackMessages
+            ? 'Forward 1 second'
+            : 'No playback messages',
+        onPressed: onSeekForward,
+        icon: const Icon(Icons.forward_rounded),
+        badgeText: '1',
+        variant: _CompactTransportIconButtonVariant.tonal,
+      ),
+      _CompactTransportIconButton(
+        buttonKey: const Key('focusPreviewNextCueButton'),
+        tooltip: nextCue == null ? 'No next cue' : 'Next cue',
+        onPressed: onNextCue,
+        icon: const Icon(Icons.skip_next_rounded),
+        variant: _CompactTransportIconButtonVariant.tonal,
+      ),
+    ];
+
+    final compactControls = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.center,
+      children: controls,
+    );
+
+    final standardControls = [
       Tooltip(
         message: previousCue == null ? 'No previous cue' : 'Previous cue',
         child: IconButton.filledTonal(
@@ -2325,18 +2389,21 @@ class _FocusPreviewTransportControls extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.center,
-          children: [
-            for (final control in controls)
-              if (isCompactLayout)
-                SizedBox(height: 40, child: control)
-              else
-                control,
-          ],
-        ),
+        if (isUltraCompactLayout)
+          compactControls
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              for (final control in standardControls)
+                if (isCompactLayout)
+                  SizedBox(height: 40, child: control)
+                else
+                  control,
+            ],
+          ),
       ],
     );
   }
@@ -2612,7 +2679,7 @@ class _PlaybackTransportControls extends StatelessWidget {
           OutlinedButton.icon(
             key: const Key('jumpToEndButton'),
             onPressed: onJumpToEnd,
-            icon: const Icon(Icons.skip_next_rounded),
+            icon: const Icon(Icons.last_page_rounded),
             label: const Text('End'),
           ),
         ],
@@ -2620,78 +2687,79 @@ class _PlaybackTransportControls extends StatelessWidget {
     }
 
     if (isUltraCompactLayout) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.center,
         children: [
-          if (isPlaying)
-            OutlinedButton.icon(
-              key: const Key('pauseButton'),
-              onPressed: onPause,
-              icon: const Icon(Icons.pause_rounded),
-              label: const Text('Pause'),
-            )
-          else
-            FilledButton.icon(
-              key: const Key('playButton'),
-              onPressed: onPlay,
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Play'),
+          _CompactTransportIconButton(
+            buttonKey: const Key('prevCueButton'),
+            tooltip: previousCue == null ? 'No previous cue' : 'Previous cue',
+            onPressed: onPrevCue,
+            icon: const Icon(Icons.skip_previous_rounded),
+            variant: _CompactTransportIconButtonVariant.tonal,
+          ),
+          _CompactTransportIconButton(
+            buttonKey: const Key('seekBackward5Button'),
+            tooltip: 'Back 5 seconds',
+            onPressed: onSeekBackward5,
+            icon: const Icon(Icons.replay_rounded),
+            badgeText: '5',
+            variant: _CompactTransportIconButtonVariant.tonal,
+          ),
+          _CompactTransportIconButton(
+            buttonKey: const Key('seekBackward1Button'),
+            tooltip: 'Back 1 second',
+            onPressed: onSeekBackward1,
+            icon: const Icon(Icons.replay_rounded),
+            badgeText: '1',
+            variant: _CompactTransportIconButtonVariant.tonal,
+          ),
+          _CompactTransportIconButton(
+            buttonKey: isPlaying
+                ? const Key('pauseButton')
+                : const Key('playButton'),
+            tooltip: isPlaying ? 'Pause playback' : 'Play playback',
+            onPressed: isPlaying ? onPause : onPlay,
+            icon: Icon(
+              isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
             ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            key: const Key('restartButton'),
+            variant: _CompactTransportIconButtonVariant.filled,
+          ),
+          _CompactTransportIconButton(
+            buttonKey: const Key('restartButton'),
+            tooltip: 'Restart playback',
             onPressed: onRestart,
             icon: const Icon(Icons.restart_alt_rounded),
-            label: const Text('Restart'),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              OutlinedButton.icon(
-                key: const Key('prevCueButton'),
-                onPressed: onPrevCue,
-                icon: const Icon(Icons.skip_previous_rounded),
-                label: const Text('Prev'),
-              ),
-              OutlinedButton.icon(
-                key: const Key('nextCueButton'),
-                onPressed: onNextCue,
-                icon: const Icon(Icons.skip_next_rounded),
-                label: const Text('Next'),
-              ),
-              FilledButton.tonalIcon(
-                key: const Key('seekBackward5Button'),
-                onPressed: onSeekBackward5,
-                icon: const Icon(Icons.replay_rounded),
-                label: const Text('-5s'),
-              ),
-              FilledButton.tonalIcon(
-                key: const Key('seekBackward1Button'),
-                onPressed: onSeekBackward1,
-                icon: const Icon(Icons.replay_rounded),
-                label: const Text('-1s'),
-              ),
-              FilledButton.tonalIcon(
-                key: const Key('seekForward1Button'),
-                onPressed: onSeekForward1,
-                icon: const Icon(Icons.forward_rounded),
-                label: const Text('+1s'),
-              ),
-              FilledButton.tonalIcon(
-                key: const Key('seekForward5Button'),
-                onPressed: onSeekForward5,
-                icon: const Icon(Icons.forward_rounded),
-                label: const Text('+5s'),
-              ),
-              OutlinedButton.icon(
-                key: const Key('jumpToEndButton'),
-                onPressed: onJumpToEnd,
-                icon: const Icon(Icons.skip_next_rounded),
-                label: const Text('End'),
-              ),
-            ],
+          _CompactTransportIconButton(
+            buttonKey: const Key('seekForward1Button'),
+            tooltip: 'Forward 1 second',
+            onPressed: onSeekForward1,
+            icon: const Icon(Icons.forward_rounded),
+            badgeText: '1',
+            variant: _CompactTransportIconButtonVariant.tonal,
+          ),
+          _CompactTransportIconButton(
+            buttonKey: const Key('seekForward5Button'),
+            tooltip: 'Forward 5 seconds',
+            onPressed: onSeekForward5,
+            icon: const Icon(Icons.forward_rounded),
+            badgeText: '5',
+            variant: _CompactTransportIconButtonVariant.tonal,
+          ),
+          _CompactTransportIconButton(
+            buttonKey: const Key('nextCueButton'),
+            tooltip: nextCue == null ? 'No next cue' : 'Next cue',
+            onPressed: onNextCue,
+            icon: const Icon(Icons.skip_next_rounded),
+            variant: _CompactTransportIconButtonVariant.tonal,
+          ),
+          _CompactTransportIconButton(
+            buttonKey: const Key('jumpToEndButton'),
+            tooltip: 'Jump to end',
+            onPressed: onJumpToEnd,
+            icon: const Icon(Icons.last_page_rounded),
           ),
         ],
       );
@@ -2781,6 +2849,86 @@ class _PlaybackTransportControls extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+enum _CompactTransportIconButtonVariant { outlined, tonal, filled }
+
+class _CompactTransportIconButton extends StatelessWidget {
+  const _CompactTransportIconButton({
+    required this.buttonKey,
+    required this.tooltip,
+    required this.onPressed,
+    required this.icon,
+    this.badgeText,
+    this.variant = _CompactTransportIconButtonVariant.outlined,
+  });
+
+  final Key buttonKey;
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final String? badgeText;
+  final _CompactTransportIconButtonVariant variant;
+
+  @override
+  Widget build(BuildContext context) {
+    final button = switch (variant) {
+      _CompactTransportIconButtonVariant.outlined => IconButton.outlined(
+        key: buttonKey,
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: icon,
+      ),
+      _CompactTransportIconButtonVariant.tonal => IconButton.filledTonal(
+        key: buttonKey,
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: icon,
+      ),
+      _CompactTransportIconButtonVariant.filled => IconButton.filled(
+        key: buttonKey,
+        tooltip: tooltip,
+        onPressed: onPressed,
+        icon: icon,
+      ),
+    };
+
+    final decoratedButton = badgeText == null
+        ? button
+        : Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(child: button),
+              Positioned(
+                right: 2,
+                bottom: 2,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      child: Text(
+                        badgeText!,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+
+    return SizedBox.square(dimension: 48, child: decoratedButton);
   }
 }
 
