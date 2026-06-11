@@ -85,6 +85,21 @@ if apple_title != 'Production Chat Prop':
         f'{apple_title!r}'
     )
 
+viewport_content = require(
+    r'<meta\s+name="viewport"\s+content="([^"]+)"',
+    'viewport meta',
+).group(1).strip().lower()
+for required_viewport_fragment in (
+    'width=device-width',
+    'initial-scale=1.0',
+    'viewport-fit=cover',
+):
+    if required_viewport_fragment not in viewport_content:
+        raise SystemExit(
+            '[web-shell-smoke] viewport meta must include '
+            f'{required_viewport_fragment!r} (got {viewport_content!r})'
+        )
+
 meta_description = require(
     r'<meta\s+name="description"\s+content="([^"]+)"',
     'description meta',

@@ -63,15 +63,21 @@ class CompactSceneSelector extends StatelessWidget {
               border: Border.all(color: colorScheme.outline),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  key: dropdownKey,
-                  value: value,
-                  isExpanded: true,
-                  items: items,
-                  onChanged: onChanged,
+            child: ConstrainedBox(
+              key: const Key('compactSceneSelectorTouchTarget'),
+              constraints: const BoxConstraints(
+                minHeight: kMinInteractiveDimension,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    key: dropdownKey,
+                    value: value,
+                    isExpanded: true,
+                    items: items,
+                    onChanged: onChanged,
+                  ),
                 ),
               ),
             ),
