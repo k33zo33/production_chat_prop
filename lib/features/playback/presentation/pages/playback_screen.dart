@@ -161,8 +161,10 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactAppBar = AppBreakpoints.isCompactLayoutWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
 
     if (widget.projectId == null) {
@@ -481,9 +483,14 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
     final hasPlaybackMessages = sortedMessages.isNotEmpty;
     final sceneHealth = scene == null ? null : summarizeSceneHealth(scene);
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(viewportWidth);
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
+      viewportWidth,
+      textScaleFactor: textScaleFactor,
+    );
     final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
       viewportWidth,
+      textScaleFactor: textScaleFactor,
     );
     final visibleMessagesCount = countVisibleMessagesAtSecond(
       sortedMessages: sortedMessages,
@@ -1962,6 +1969,7 @@ class _PlaybackFocusPreviewScreenState
             final sliderValue = playbackState.currentSecond > maxSecond
                 ? maxSecond.toDouble()
                 : playbackState.currentSecond.toDouble();
+            final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
 
             return Focus(
               autofocus: true,
@@ -1980,10 +1988,12 @@ class _PlaybackFocusPreviewScreenState
                   );
                   final isCompactLayout = AppBreakpoints.isCompactFilterWidth(
                     constraints.maxWidth,
+                    textScaleFactor: textScaleFactor,
                   );
                   final isUltraCompactLayout =
                       AppBreakpoints.isUltraCompactLayoutWidth(
                         constraints.maxWidth,
+                        textScaleFactor: textScaleFactor,
                       );
 
                   return Stack(
@@ -3044,6 +3054,7 @@ class _TimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final directionLabel = message.isIncoming ? 'INCOMING' : 'OUTGOING';
     final statusLabel = message.status.name.toUpperCase();
     final statusIcon = switch (message.status) {
@@ -3088,6 +3099,7 @@ class _TimelineItem extends StatelessWidget {
           builder: (context, constraints) {
             final shouldStackMetadata = AppBreakpoints.shouldStackMetadata(
               constraints.maxWidth,
+              textScaleFactor: textScaleFactor,
             );
             final messageContent = Column(
               crossAxisAlignment: CrossAxisAlignment.start,

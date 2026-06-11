@@ -29,5 +29,36 @@ void main() {
       expect(AppBreakpoints.isShortPreviewHeight(219), isTrue);
       expect(AppBreakpoints.isShortPreviewHeight(220), isFalse);
     });
+
+    test('text scale can trigger compact breakpoints on medium widths', () {
+      expect(
+        AppBreakpoints.isCompactLayoutWidth(760, textScaleFactor: 1.2),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.isCompactFilterWidth(600, textScaleFactor: 1.1),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.isCompactControlsWidth(500, textScaleFactor: 1.1),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.isCompactDialogWidth(640, textScaleFactor: 1.1),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.shouldStackHeader(300, textScaleFactor: 1.2),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.shouldStackMetadata(240, textScaleFactor: 1.1),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.isUltraCompactLayoutWidth(390, textScaleFactor: 1.1),
+        isTrue,
+      );
+    });
   });
 }

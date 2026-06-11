@@ -293,8 +293,10 @@ class _PortfolioPreflightActionStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactWidth = AppBreakpoints.isCompactFilterWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
 
     if (isCompactWidth) {

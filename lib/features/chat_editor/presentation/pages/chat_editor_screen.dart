@@ -144,9 +144,13 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactAppBar =
         widget.forceCompactLayout ??
-        AppBreakpoints.isCompactLayoutWidth(MediaQuery.sizeOf(context).width);
+        AppBreakpoints.isCompactLayoutWidth(
+          MediaQuery.sizeOf(context).width,
+          textScaleFactor: textScaleFactor,
+        );
 
     if (widget.projectId == null) {
       return Scaffold(
@@ -382,11 +386,16 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
     final selectedSceneIndex = selectedScene == null
         ? -1
         : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactLayout =
         forceCompactLayout ??
-        AppBreakpoints.isCompactLayoutWidth(MediaQuery.sizeOf(context).width);
+        AppBreakpoints.isCompactLayoutWidth(
+          MediaQuery.sizeOf(context).width,
+          textScaleFactor: textScaleFactor,
+        );
     final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
     final openPlaybackButton = FilledButton.icon(
       key: const Key('chatEditorOpenPlaybackButton'),
@@ -1269,8 +1278,10 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
       for (final character in widget.sceneCharacters)
         character.id: character.bubbleColor,
     };
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
 
     return Card(
@@ -1798,8 +1809,10 @@ class _MessageTimelineHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
     final title = Text(
       'Messages',
@@ -1936,8 +1949,10 @@ class _MessageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
     final bubbleColor = resolveCharacterBubbleTint(
       rawColor: characterBubbleColor,
@@ -2153,7 +2168,11 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
   @override
   Widget build(BuildContext context) {
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(viewportWidth);
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
+    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
+      viewportWidth,
+      textScaleFactor: textScaleFactor,
+    );
 
     return Card(
       child: Padding(
@@ -2654,8 +2673,12 @@ class _MessageActions extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             final viewportWidth = MediaQuery.sizeOf(context).width;
+            final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
             final isUltraCompactLayout =
-                AppBreakpoints.isUltraCompactLayoutWidth(viewportWidth);
+                AppBreakpoints.isUltraCompactLayoutWidth(
+                  viewportWidth,
+                  textScaleFactor: textScaleFactor,
+                );
 
             return ResponsiveAlertDialog(
               title: const Text('Edit Message'),
@@ -2842,8 +2865,10 @@ class _CharacterManagerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
     final controller = ref.read(projectsControllerProvider.notifier);
 
@@ -2994,6 +3019,7 @@ class _CharacterManagerCard extends ConsumerWidget {
                 builder: (context, constraints) {
                   final shouldStackHeader = AppBreakpoints.shouldStackHeader(
                     constraints.maxWidth,
+                    textScaleFactor: textScaleFactor,
                   );
 
                   if (shouldStackHeader) {

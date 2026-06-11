@@ -11,36 +11,72 @@ abstract final class AppBreakpoints {
   // minimum height floor so those behaviors stay aligned.
   static const double shortPreviewHeight = 220;
 
-  static bool isCompactDialogWidth(double width) {
-    return width < compactDialogWidth;
+  static double _effectiveWidth(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    final normalizedTextScale = textScaleFactor < 1 ? 1.0 : textScaleFactor;
+    return width / normalizedTextScale;
   }
 
-  static bool isCompactLayoutWidth(double width) {
-    return width < compactLayoutWidth;
+  static bool isCompactDialogWidth(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
+        compactDialogWidth;
+  }
+
+  static bool isCompactLayoutWidth(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
+        compactLayoutWidth;
   }
 
   static bool isShortViewportHeight(double height) {
     return height < shortViewportHeight;
   }
 
-  static bool isCompactFilterWidth(double width) {
-    return width < compactFilterWidth;
+  static bool isCompactFilterWidth(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
+        compactFilterWidth;
   }
 
-  static bool isCompactControlsWidth(double width) {
-    return width < compactControlsWidth;
+  static bool isCompactControlsWidth(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
+        compactControlsWidth;
   }
 
-  static bool isUltraCompactLayoutWidth(double width) {
-    return width < ultraCompactLayoutWidth;
+  static bool isUltraCompactLayoutWidth(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
+        ultraCompactLayoutWidth;
   }
 
-  static bool shouldStackHeader(double width) {
-    return width < stackedHeaderWidth;
+  static bool shouldStackHeader(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
+        stackedHeaderWidth;
   }
 
-  static bool shouldStackMetadata(double width) {
-    return width < stackedMetadataWidth;
+  static bool shouldStackMetadata(
+    double width, {
+    double textScaleFactor = 1,
+  }) {
+    return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
+        stackedMetadataWidth;
   }
 
   static bool isShortPreviewHeight(double height) {

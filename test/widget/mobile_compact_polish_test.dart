@@ -9,6 +9,7 @@ void main() {
     Size size = const Size(390, 844),
     EdgeInsets padding = EdgeInsets.zero,
     EdgeInsets viewInsets = EdgeInsets.zero,
+    TextScaler textScaler = TextScaler.noScaling,
   }) {
     return MaterialApp(
       home: MediaQuery(
@@ -16,6 +17,7 @@ void main() {
           size: size,
           padding: padding,
           viewInsets: viewInsets,
+          textScaler: textScaler,
         ),
         child: Material(child: Center(child: child)),
       ),
@@ -85,6 +87,26 @@ void main() {
         keyboardConstraints.maxHeight,
         lessThan(initialConstraints.maxHeight),
       );
+    });
+
+    testWidgets('treats medium dialog widths as compact at larger text scale', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildHarness(
+          size: const Size(640, 844),
+          textScaler: const TextScaler.linear(1.1),
+          child: const ResponsiveAlertDialog(
+            title: Text('Dialog title'),
+            content: Text('Dialog body'),
+            actions: [TextButton(onPressed: null, child: Text('Close'))],
+          ),
+        ),
+      );
+
+      final dialog = tester.widget<AlertDialog>(find.byType(AlertDialog));
+
+      expect(dialog.insetPadding, const EdgeInsets.fromLTRB(16, 24, 16, 24));
     });
   });
 

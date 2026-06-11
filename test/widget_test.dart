@@ -1813,6 +1813,34 @@ void main() {
     expect(find.text('Demo Project 1'), findsOneWidget);
   });
 
+  testWidgets('project list switches to compact app bar at larger text scale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: Size(760, 844),
+              textScaler: TextScaler.linear(1.2),
+            ),
+            child: ProjectListScreen(),
+          ),
+        ),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    expect(
+      find.byKey(const Key('projectListOverflowMenuButton')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('toggleProjectSelectionModeButton')),
+      findsNothing,
+    );
+  });
+
   testWidgets('compact project list overflow can load export QA project', (
     tester,
   ) async {

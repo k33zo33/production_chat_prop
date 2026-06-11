@@ -936,9 +936,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final selectedIds = _selectedIdsForProjects(filteredProjects);
     final selectedCount = selectedIds.length;
     final showSelectionMode = _isSelectionMode && filteredProjects.isNotEmpty;
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactAppBar =
         widget.forceCompactAppBar ??
-        AppBreakpoints.isCompactLayoutWidth(MediaQuery.sizeOf(context).width);
+        AppBreakpoints.isCompactLayoutWidth(
+          MediaQuery.sizeOf(context).width,
+          textScaleFactor: textScaleFactor,
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -1066,6 +1070,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   child:
                       AppBreakpoints.isCompactFilterWidth(
                         MediaQuery.sizeOf(context).width,
+                        textScaleFactor: textScaleFactor,
                       )
                       ? KeyedSubtree(
                           key: const Key('projectTypeFilterDropdown'),
@@ -1151,43 +1156,43 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                     child:
                         AppBreakpoints.isCompactFilterWidth(
                           MediaQuery.sizeOf(context).width,
+                          textScaleFactor: textScaleFactor,
                         )
                         ? KeyedSubtree(
                             key: const Key('projectReadinessFilterDropdown'),
-                            child:
-                                DropdownButtonFormField<ProjectReadinessState?>(
-                                  key: ValueKey<String>(
-                                    'projectReadinessFilterField_${_selectedReadinessFilter?.name ?? 'all'}',
+                            child: DropdownButtonFormField<ProjectReadinessState?>(
+                              key: ValueKey<String>(
+                                'projectReadinessFilterField_${_selectedReadinessFilter?.name ?? 'all'}',
+                              ),
+                              isExpanded: true,
+                              initialValue: _selectedReadinessFilter,
+                              decoration: const InputDecoration(
+                                labelText: 'Project Status',
+                              ),
+                              items: [
+                                DropdownMenuItem<ProjectReadinessState?>(
+                                  child: Text(
+                                    'All statuses (${projects.length})',
                                   ),
-                                  isExpanded: true,
-                                  initialValue: _selectedReadinessFilter,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Project Status',
-                                  ),
-                                  items: [
-                                    DropdownMenuItem<ProjectReadinessState?>(
-                                      child: Text(
-                                        'All statuses (${projects.length})',
-                                      ),
-                                    ),
-                                    for (final readiness
-                                        in ProjectReadinessState.values)
-                                      DropdownMenuItem<ProjectReadinessState?>(
-                                        value: readiness,
-                                        child: Text(
-                                          '${_projectReadinessLabel(readiness)} (${readinessCounts[readiness] ?? 0})',
-                                        ),
-                                      ),
-                                  ],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedReadinessFilter = value;
-                                      _pruneSelectionToProjects(
-                                        _filteredProjects(projects),
-                                      );
-                                    });
-                                  },
                                 ),
+                                for (final readiness
+                                    in ProjectReadinessState.values)
+                                  DropdownMenuItem<ProjectReadinessState?>(
+                                    value: readiness,
+                                    child: Text(
+                                      '${_projectReadinessLabel(readiness)} (${readinessCounts[readiness] ?? 0})',
+                                    ),
+                                  ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedReadinessFilter = value;
+                                  _pruneSelectionToProjects(
+                                    _filteredProjects(projects),
+                                  );
+                                });
+                              },
+                            ),
                           )
                         : Align(
                             alignment: Alignment.centerLeft,
@@ -1247,6 +1252,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       final isCompactControls =
                           AppBreakpoints.isCompactControlsWidth(
                             constraints.maxWidth,
+                            textScaleFactor: textScaleFactor,
                           );
                       final sortDropdown =
                           DropdownButtonFormField<_ProjectSortMode>(
@@ -1323,6 +1329,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                           final isCompactPortfolioCard =
                               AppBreakpoints.isCompactFilterWidth(
                                 constraints.maxWidth,
+                                textScaleFactor: textScaleFactor,
                               );
                           final showPortfolioPreflightBadge =
                               !readinessSummary.hasProjects ||
@@ -1614,6 +1621,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                   final useSingleScrollColumn =
                       AppBreakpoints.isCompactLayoutWidth(
                         constraints.maxWidth,
+                        textScaleFactor: textScaleFactor,
                       ) ||
                       AppBreakpoints.isShortViewportHeight(
                         constraints.maxHeight,
@@ -1789,8 +1797,10 @@ class _ProjectCardState extends ConsumerState<_ProjectCard> {
     final isSelected = widget.isSelected;
     final onSelectionChanged = widget.onSelectionChanged;
     final controller = ref.read(projectsControllerProvider.notifier);
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
     final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
       MediaQuery.sizeOf(context).width,
+      textScaleFactor: textScaleFactor,
     );
     final projectHealth = summarizeProjectHealth(project);
     final attentionState = summarizeProjectAttention(project);

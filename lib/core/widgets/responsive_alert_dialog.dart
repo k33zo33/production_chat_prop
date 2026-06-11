@@ -17,9 +17,13 @@ class ResponsiveAlertDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final mediaSize = mediaQuery.size;
+    final textScaleFactor = mediaQuery.textScaler.scale(1);
     final safePadding = mediaQuery.padding;
     final viewInsets = mediaQuery.viewInsets;
-    final isCompactWidth = AppBreakpoints.isCompactDialogWidth(mediaSize.width);
+    final isCompactWidth = AppBreakpoints.isCompactDialogWidth(
+      mediaSize.width,
+      textScaleFactor: textScaleFactor,
+    );
     final isShortHeight = AppBreakpoints.isShortViewportHeight(
       mediaSize.height,
     );
