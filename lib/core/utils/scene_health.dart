@@ -7,21 +7,47 @@ class SceneHealthSummary {
     required this.unusedCharacterNames,
     required this.sharedTimestampCount,
     required this.sharedTimestampMessageCount,
+    required this.sharedTimestampMessageIds,
     required this.overlappingTypingCueCount,
+    required this.overlappingTypingCueMessageIds,
   });
 
   final int messageCount;
   final List<String> unusedCharacterNames;
   final int sharedTimestampCount;
   final int sharedTimestampMessageCount;
+  final Set<String> sharedTimestampMessageIds;
   final int overlappingTypingCueCount;
+  final Set<String> overlappingTypingCueMessageIds;
 
   bool get hasMessages => messageCount > 0;
   int get unusedCharacterCount => unusedCharacterNames.length;
   bool get hasUnusedCharacters => unusedCharacterNames.isNotEmpty;
   bool get hasTimelineWarnings =>
       sharedTimestampCount > 0 || overlappingTypingCueCount > 0;
+  Set<String> get timelineWarningMessageIds => {
+    ...sharedTimestampMessageIds,
+    ...overlappingTypingCueMessageIds,
+  };
   bool get needsAttention => !hasMessages || hasUnusedCharacters;
+
+  bool hasTimelineWarningForMessage(String messageId) {
+    return timelineWarningMessageIds.contains(messageId);
+  }
+
+  String? timelineWarningLabelForMessage(String messageId) {
+    final labels = <String>[];
+    if (sharedTimestampMessageIds.contains(messageId)) {
+      labels.add('shared timestamp');
+    }
+    if (overlappingTypingCueMessageIds.contains(messageId)) {
+      labels.add('overlapping typing cue');
+    }
+    if (labels.isEmpty) {
+      return null;
+    }
+    return labels.join(' • ');
+  }
 
   String get statusLabel {
     if (!hasMessages) {
@@ -98,38 +124,42 @@ SceneHealthSummary summarizeSceneHealth(Scene scene) {
   final usedCharacterIds = <String>{
     for (final message in scene.messages) message.characterId,
   };
-  final messageCountsBySecond = <int, int>{};
-  final typingCueCountsBySecond = <int, int>{};
+  final messageIdsBySecond = <int, List<String>>{};
+  final typingCueMessageIdsBySecond = <int, List<String>>{};
 
   for (final message in scene.messages) {
-    messageCountsBySecond.update(
+    messageIdsBySecond.update(
       message.timestampSeconds,
-      (count) => count + 1,
-      ifAbsent: () => 1,
+      (ids) => [...ids, message.id],
+      ifAbsent: () => [message.id],
     );
     if (message.showTypingBefore && message.timestampSeconds > 0) {
       final typingSecond = message.timestampSeconds - 1;
-      typingCueCountsBySecond.update(
+      typingCueMessageIdsBySecond.update(
         typingSecond,
-        (count) => count + 1,
-        ifAbsent: () => 1,
+        (ids) => [...ids, message.id],
+        ifAbsent: () => [message.id],
       );
     }
   }
 
   var sharedTimestampCount = 0;
   var sharedTimestampMessageCount = 0;
-  for (final count in messageCountsBySecond.values) {
-    if (count > 1) {
+  final sharedTimestampMessageIds = <String>{};
+  for (final messageIds in messageIdsBySecond.values) {
+    if (messageIds.length > 1) {
       sharedTimestampCount++;
-      sharedTimestampMessageCount += count;
+      sharedTimestampMessageCount += messageIds.length;
+      sharedTimestampMessageIds.addAll(messageIds);
     }
   }
 
   var overlappingTypingCueCount = 0;
-  for (final count in typingCueCountsBySecond.values) {
-    if (count > 1) {
+  final overlappingTypingCueMessageIds = <String>{};
+  for (final messageIds in typingCueMessageIdsBySecond.values) {
+    if (messageIds.length > 1) {
       overlappingTypingCueCount++;
+      overlappingTypingCueMessageIds.addAll(messageIds);
     }
   }
 
@@ -143,7 +173,11 @@ SceneHealthSummary summarizeSceneHealth(Scene scene) {
     unusedCharacterNames: unusedCharacterNames,
     sharedTimestampCount: sharedTimestampCount,
     sharedTimestampMessageCount: sharedTimestampMessageCount,
+    sharedTimestampMessageIds: Set.unmodifiable(sharedTimestampMessageIds),
     overlappingTypingCueCount: overlappingTypingCueCount,
+    overlappingTypingCueMessageIds: Set.unmodifiable(
+      overlappingTypingCueMessageIds,
+    ),
   );
 }
 

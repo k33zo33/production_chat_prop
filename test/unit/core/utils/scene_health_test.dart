@@ -142,7 +142,20 @@ void main() {
       expect(summary.hasTimelineWarnings, isTrue);
       expect(summary.sharedTimestampCount, 1);
       expect(summary.sharedTimestampMessageCount, 2);
+      expect(summary.sharedTimestampMessageIds, {'message-1', 'message-2'});
       expect(summary.overlappingTypingCueCount, 1);
+      expect(
+        summary.overlappingTypingCueMessageIds,
+        {'message-1', 'message-2'},
+      );
+      expect(summary.timelineWarningMessageIds, {'message-1', 'message-2'});
+      expect(summary.hasTimelineWarningForMessage('message-1'), isTrue);
+      expect(summary.hasTimelineWarningForMessage('message-3'), isFalse);
+      expect(
+        summary.timelineWarningLabelForMessage('message-1'),
+        'shared timestamp • overlapping typing cue',
+      );
+      expect(summary.timelineWarningLabelForMessage('message-3'), isNull);
       expect(
         summary.timelineStatusLabel,
         '1 shared timestamp • 1 overlapping typing cue',

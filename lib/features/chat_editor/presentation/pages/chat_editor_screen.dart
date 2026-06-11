@@ -565,6 +565,7 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
             sceneMessages: selectedScene.messages,
             sceneCharacters: selectedScene.characters,
             sceneProject: project,
+            sceneHealthSummary: selectedSceneHealth!,
           ),
         ],
         const SizedBox(height: 12),
@@ -1206,6 +1207,7 @@ class _MessageTimelineCard extends ConsumerStatefulWidget {
     required this.sceneMessages,
     required this.sceneCharacters,
     required this.sceneProject,
+    required this.sceneHealthSummary,
   });
 
   final String projectId;
@@ -1214,6 +1216,7 @@ class _MessageTimelineCard extends ConsumerStatefulWidget {
   final List<Message> sceneMessages;
   final List<Character> sceneCharacters;
   final Project sceneProject;
+  final SceneHealthSummary sceneHealthSummary;
 
   @override
   ConsumerState<_MessageTimelineCard> createState() =>
@@ -1501,6 +1504,10 @@ class _MessageTimelineCardState extends ConsumerState<_MessageTimelineCard> {
                       kDefaultCharacterBubbleColorHex,
                   canMoveEarlier: i > 0,
                   canMoveLater: i < widget.sceneMessages.length - 1,
+                  timelineWarningLabel: widget.sceneHealthSummary
+                      .timelineWarningLabelForMessage(
+                        widget.sceneMessages[i].id,
+                      ),
                   selectionMode: _selectionMode,
                   isSelected: _selectedMessageIds.contains(
                     widget.sceneMessages[i].id,
@@ -1886,6 +1893,7 @@ class _MessageRow extends StatelessWidget {
     required this.characterBubbleColor,
     required this.canMoveEarlier,
     required this.canMoveLater,
+    required this.timelineWarningLabel,
     required this.selectionMode,
     required this.isSelected,
     required this.onSelectedChanged,
@@ -1902,6 +1910,7 @@ class _MessageRow extends StatelessWidget {
   final String characterBubbleColor;
   final bool canMoveEarlier;
   final bool canMoveLater;
+  final String? timelineWarningLabel;
   final bool selectionMode;
   final bool isSelected;
   final ValueChanged<bool> onSelectedChanged;
@@ -1917,6 +1926,21 @@ class _MessageRow extends StatelessWidget {
           ? palette.incomingBubbleColor
           : palette.outgoingBubbleColor,
     );
+    final timelineWarningIcon = switch (timelineWarningLabel) {
+      final label? => Tooltip(
+        message: 'Timeline QA warning: $label',
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Icon(
+            Icons.warning_amber_rounded,
+            key: Key('messageTimelineQaWarning_${message.id}'),
+            size: 18,
+            color: palette.textColor,
+          ),
+        ),
+      ),
+      null => null,
+    };
 
     return Container(
       key: Key('editorMessageBubble_${message.id}'),
@@ -1943,10 +1967,18 @@ class _MessageRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(color: palette.textColor),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(color: palette.textColor),
+                            ),
+                          ),
+                          timelineWarningIcon ?? const SizedBox.shrink(),
+                        ],
                       ),
                     ),
                   ],
@@ -1990,11 +2022,18 @@ class _MessageRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(color: palette.textColor),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '$speakerName • t=${message.timestampSeconds}s • ${message.status.name}',
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(color: palette.textColor),
+                        ),
+                      ),
+                      timelineWarningIcon ?? const SizedBox.shrink(),
+                    ],
                   ),
                 ),
                 if (selectionMode)
@@ -2096,9 +2135,6 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
   Widget build(BuildContext context) {
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(viewportWidth);
-    final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(
-      viewportWidth,
-    );
 
     return Card(
       child: Padding(
@@ -2157,7 +2193,7 @@ class _MessageComposerCardState extends ConsumerState<_MessageComposerCard> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<MessageStatus>(
                     key: const Key('messageStatusDropdown'),
-                    isExpanded: isUltraCompactLayout,
+                    isExpanded: true,
                     initialValue: _status,
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: MessageStatus.values

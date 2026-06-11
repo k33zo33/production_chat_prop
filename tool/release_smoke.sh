@@ -15,12 +15,14 @@ declare -a WIDGET_TEST_FILES=(
   "test/widget/playback_export_feedback_test.dart"
   "test/widget/project_not_found_recovery_test.dart"
   "test/widget/scene_route_sync_test.dart"
+  "test/widget/timeline_qa_markers_test.dart"
 )
 
 WIDGET_TEST_FILE="test/widget_test.dart"
 PLAYBACK_EXPORT_FEEDBACK_TEST_FILE="test/widget/playback_export_feedback_test.dart"
 RECOVERY_TEST_FILE="test/widget/project_not_found_recovery_test.dart"
 SCENE_ROUTE_SYNC_TEST_FILE="test/widget/scene_route_sync_test.dart"
+TIMELINE_QA_MARKERS_TEST_FILE="test/widget/timeline_qa_markers_test.dart"
 
 for widget_test_file in "${WIDGET_TEST_FILES[@]}"; do
   if [[ ! -f "$widget_test_file" ]]; then
@@ -85,6 +87,10 @@ declare -a SCENE_ROUTE_SYNC_TEST_NAMES=(
   "playback rewrites the route query when the selected leading scene is deleted"
 )
 
+declare -a TIMELINE_QA_MARKERS_TEST_NAMES=(
+  "chat editor shows inline timeline QA markers for stacked cue messages"
+)
+
 declare -a UNIT_TEST_FILES=(
   "test/unit/core/utils/export_file_name_test.dart"
   "test/unit/features/playback/data/services/screenshot_export_service_test.dart"
@@ -123,6 +129,13 @@ for test_name in "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$TIMELINE_QA_MARKERS_TEST_FILE"; then
+    echo "[release-smoke] missing expected timeline QA marker test: $test_name" >&2
+    exit 1
+  fi
+done
+
 for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
   if [[ ! -f "$unit_test_file" ]]; then
     echo "[release-smoke] missing expected unit test file: $unit_test_file" >&2
@@ -134,9 +147,10 @@ WIDGET_TEST_PATTERN="$(printf '%s\n' "${WIDGET_TEST_NAMES[@]}" | sed -e 's/[][()
 PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_ROUTE_SYNC_TEST_PATTERN="$(printf '%s\n' "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-TEST_PATTERN="${WIDGET_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}"
+TIMELINE_QA_MARKERS_TEST_PATTERN="$(printf '%s\n' "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+TEST_PATTERN="${WIDGET_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
 
-echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync cases"
+echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
 "$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo
