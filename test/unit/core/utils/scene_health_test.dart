@@ -227,6 +227,134 @@ void main() {
   });
 
   group('summarizeProjectHealth', () {
+    test(
+      'classifies project readiness for attention, timeline QA, and ready',
+      () {
+        final needsAttentionProject = Project(
+          id: 'project-attention',
+          name: 'Attention Project',
+          type: ProjectType.other,
+          createdAt: DateTime.utc(2026, 5, 6, 9),
+          updatedAt: DateTime.utc(2026, 5, 6, 10),
+          scenes: const [
+            Scene(
+              id: 'scene-empty',
+              title: 'Empty Scene',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'character-1',
+                  displayName: 'Mia',
+                  avatarPath: null,
+                  bubbleColor: '#2E90FA',
+                ),
+              ],
+              messages: [],
+            ),
+          ],
+        );
+
+        final timelineQaProject = Project(
+          id: 'project-timeline',
+          name: 'Timeline Project',
+          type: ProjectType.series,
+          createdAt: DateTime.utc(2026, 5, 6, 11),
+          updatedAt: DateTime.utc(2026, 5, 6, 12),
+          scenes: const [
+            Scene(
+              id: 'scene-qa',
+              title: 'Stacked Cue',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'character-1',
+                  displayName: 'Taylor',
+                  avatarPath: null,
+                  bubbleColor: '#2E90FA',
+                ),
+                Character(
+                  id: 'character-2',
+                  displayName: 'Jordan',
+                  avatarPath: null,
+                  bubbleColor: '#12B76A',
+                ),
+              ],
+              messages: [
+                Message(
+                  id: 'message-1',
+                  characterId: 'character-1',
+                  text: 'Cue one',
+                  timestampSeconds: 4,
+                  status: MessageStatus.sent,
+                  isIncoming: false,
+                  showTypingBefore: true,
+                ),
+                Message(
+                  id: 'message-2',
+                  characterId: 'character-2',
+                  text: 'Cue two',
+                  timestampSeconds: 4,
+                  status: MessageStatus.delivered,
+                  isIncoming: true,
+                  showTypingBefore: true,
+                ),
+              ],
+            ),
+          ],
+        );
+
+        final readyProject = Project(
+          id: 'project-ready',
+          name: 'Ready Project',
+          type: ProjectType.ad,
+          createdAt: DateTime.utc(2026, 5, 6, 13),
+          updatedAt: DateTime.utc(2026, 5, 6, 14),
+          scenes: const [
+            Scene(
+              id: 'scene-ready',
+              title: 'Ready Scene',
+              styleId: 'studio_slate',
+              aspectRatio: SceneAspectRatio.portrait9x16,
+              characters: [
+                Character(
+                  id: 'character-1',
+                  displayName: 'Taylor',
+                  avatarPath: null,
+                  bubbleColor: '#2E90FA',
+                ),
+              ],
+              messages: [
+                Message(
+                  id: 'message-1',
+                  characterId: 'character-1',
+                  text: 'Ready to export.',
+                  timestampSeconds: 2,
+                  status: MessageStatus.seen,
+                  isIncoming: false,
+                  showTypingBefore: false,
+                ),
+              ],
+            ),
+          ],
+        );
+
+        expect(
+          summarizeProjectReadiness(needsAttentionProject),
+          ProjectReadinessState.needsAttention,
+        );
+        expect(
+          summarizeProjectReadiness(timelineQaProject),
+          ProjectReadinessState.timelineQa,
+        );
+        expect(
+          summarizeProjectReadiness(readyProject),
+          ProjectReadinessState.ready,
+        );
+      },
+    );
+
     test('aggregates empty scenes and staged characters across a project', () {
       final project = Project(
         id: 'project-1',

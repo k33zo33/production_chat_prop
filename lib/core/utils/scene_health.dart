@@ -15,6 +15,12 @@ enum ProjectAttentionKind {
   ready,
 }
 
+enum ProjectReadinessState {
+  needsAttention,
+  timelineQa,
+  ready,
+}
+
 enum ProjectAttentionIntent {
   openEditor,
   openPlayback,
@@ -449,6 +455,18 @@ PortfolioHealthSummary summarizePortfolioHealth(Iterable<Project> projects) {
     firstNeedsAttentionProjectId: firstNeedsAttentionProjectId,
     firstTimelineWarningProjectId: firstTimelineWarningProjectId,
   );
+}
+
+ProjectReadinessState summarizeProjectReadiness(Project project) {
+  final projectHealth = summarizeProjectHealth(project);
+
+  if (projectHealth.needsAttention) {
+    return ProjectReadinessState.needsAttention;
+  }
+  if (projectHealth.hasTimelineWarnings) {
+    return ProjectReadinessState.timelineQa;
+  }
+  return ProjectReadinessState.ready;
 }
 
 ProjectAttentionState summarizeProjectAttention(Project project) {

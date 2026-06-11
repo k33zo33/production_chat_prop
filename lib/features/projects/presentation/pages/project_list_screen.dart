@@ -42,6 +42,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
   late final TextEditingController _searchController;
   String _searchQuery = '';
   ProjectType? _selectedTypeFilter;
+  ProjectReadinessState? _selectedReadinessFilter;
   _ProjectSortMode _selectedSortMode = _ProjectSortMode.updatedNewest;
   bool _isSelectionMode = false;
   Set<String> _selectedProjectIds = <String>{};
@@ -84,7 +85,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           final matchesType =
               _selectedTypeFilter == null ||
               project.type == _selectedTypeFilter;
-          return matchesQuery && matchesType;
+          final matchesReadiness =
+              _selectedReadinessFilter == null ||
+              summarizeProjectReadiness(project) == _selectedReadinessFilter;
+          return matchesQuery && matchesType && matchesReadiness;
         })
         .toList(growable: false)
       ..sort(_projectSortComparator(_selectedSortMode));
@@ -997,6 +1001,18 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               for (final project in projects) {
                 typeCounts[project.type] = (typeCounts[project.type] ?? 0) + 1;
               }
+              final readinessCounts = <ProjectReadinessState, int>{
+                for (final state in ProjectReadinessState.values) state: 0,
+              };
+              for (final project in projects) {
+                final readinessState = summarizeProjectReadiness(project);
+                readinessCounts[readinessState] =
+                    (readinessCounts[readinessState] ?? 0) + 1;
+              }
+
+              final readinessFilterVisible =
+                  readinessCounts.values.where((count) => count > 0).length > 1;
+
               final readinessSummary = summarizePortfolioHealth(
                 filteredProjects,
               );
@@ -1129,6 +1145,101 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                           ),
                         ),
                 ),
+                if (readinessFilterVisible)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child:
+                        AppBreakpoints.isCompactFilterWidth(
+                          MediaQuery.sizeOf(context).width,
+                        )
+                        ? KeyedSubtree(
+                            key: const Key('projectReadinessFilterDropdown'),
+                            child:
+                                DropdownButtonFormField<ProjectReadinessState?>(
+                                  key: ValueKey<String>(
+                                    'projectReadinessFilterField_${_selectedReadinessFilter?.name ?? 'all'}',
+                                  ),
+                                  isExpanded: true,
+                                  initialValue: _selectedReadinessFilter,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Project Status',
+                                  ),
+                                  items: [
+                                    DropdownMenuItem<ProjectReadinessState?>(
+                                      child: Text(
+                                        'All statuses (${projects.length})',
+                                      ),
+                                    ),
+                                    for (final readiness
+                                        in ProjectReadinessState.values)
+                                      DropdownMenuItem<ProjectReadinessState?>(
+                                        value: readiness,
+                                        child: Text(
+                                          '${_projectReadinessLabel(readiness)} (${readinessCounts[readiness] ?? 0})',
+                                        ),
+                                      ),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedReadinessFilter = value;
+                                      _pruneSelectionToProjects(
+                                        _filteredProjects(projects),
+                                      );
+                                    });
+                                  },
+                                ),
+                          )
+                        : Align(
+                            alignment: Alignment.centerLeft,
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                ChoiceChip(
+                                  key: const Key('projectReadinessFilter_all'),
+                                  label: Text(
+                                    'All statuses (${projects.length})',
+                                  ),
+                                  selected: _selectedReadinessFilter == null,
+                                  onSelected: (selected) {
+                                    if (!selected) {
+                                      return;
+                                    }
+                                    setState(() {
+                                      _selectedReadinessFilter = null;
+                                      _pruneSelectionToProjects(
+                                        _filteredProjects(projects),
+                                      );
+                                    });
+                                  },
+                                ),
+                                for (final readiness
+                                    in ProjectReadinessState.values)
+                                  ChoiceChip(
+                                    key: Key(
+                                      'projectReadinessFilter_${readiness.name}',
+                                    ),
+                                    label: Text(
+                                      '${_projectReadinessLabel(readiness)} (${readinessCounts[readiness] ?? 0})',
+                                    ),
+                                    selected:
+                                        _selectedReadinessFilter == readiness,
+                                    onSelected: (selected) {
+                                      if (!selected) {
+                                        return;
+                                      }
+                                      setState(() {
+                                        _selectedReadinessFilter = readiness;
+                                        _pruneSelectionToProjects(
+                                          _filteredProjects(projects),
+                                        );
+                                      });
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: LayoutBuilder(
@@ -1166,6 +1277,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                         onPressed: () {
                           setState(() {
                             _selectedTypeFilter = null;
+                            _selectedReadinessFilter = null;
                             _selectedSortMode = _ProjectSortMode.updatedNewest;
                             _searchQuery = '';
                             _searchController.clear();
@@ -1287,7 +1399,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                             ),
                             if (timelineQaProject != null)
                               OutlinedButton.icon(
-                                key: const Key('portfolioReviewTimelineQaButton'),
+                                key: const Key(
+                                  'portfolioReviewTimelineQaButton',
+                                ),
                                 onPressed: () => _openProjectTimelineQa(
                                   timelineQaProject,
                                 ),
@@ -1614,6 +1728,14 @@ enum _ProjectSelectionAction {
   setTypeOther,
   exportSelected,
   deleteSelected,
+}
+
+String _projectReadinessLabel(ProjectReadinessState state) {
+  return switch (state) {
+    ProjectReadinessState.needsAttention => 'Needs Attention',
+    ProjectReadinessState.timelineQa => 'Timeline QA',
+    ProjectReadinessState.ready => 'Ready',
+  };
 }
 
 String _projectSortLabel(_ProjectSortMode mode) {

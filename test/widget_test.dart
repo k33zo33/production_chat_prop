@@ -9,6 +9,7 @@ import 'package:production_chat_prop/app/app.dart';
 import 'package:production_chat_prop/core/theme/chat_style_palette.dart';
 import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
+import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/controllers/scene_controller.dart';
 import 'package:production_chat_prop/features/chat_editor/presentation/pages/chat_editor_screen.dart';
@@ -2121,7 +2122,9 @@ void main() {
       await container
           .read(projectsControllerProvider.notifier)
           .createDemoProject();
-      await container.read(projectsControllerProvider.notifier).createProject();
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildAttentionProjectImportPayload());
 
       await _pumpNarrowScreenWithContainer(
         tester,
@@ -2130,7 +2133,10 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+      expect(
+        find.text('Showing 2 of 2 projects', skipOffstage: false),
+        findsOneWidget,
+      );
 
       await tester.enterText(
         find.byKey(const Key('projectSearchField')),
@@ -2138,44 +2144,43 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
-      expect(find.text('No projects match current filters.'), findsNothing);
-
-      await tester.enterText(
-        find.byKey(const Key('projectSearchField')),
-        'alex',
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
-      expect(find.text('No projects match current filters.'), findsNothing);
-
-      await tester.enterText(
-        find.byKey(const Key('projectSearchField')),
-        'New Project 2',
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
       expect(
-        find.descendant(
-          of: find.byType(Card),
-          matching: find.text('New Project 2'),
-        ),
+        find.text('Showing 1 of 2 projects', skipOffstage: false),
         findsOneWidget,
       );
-      expect(
-        find.descendant(
-          of: find.byType(Card),
-          matching: find.text('Demo Project 1'),
-        ),
-        findsNothing,
+      expect(find.text('No projects match current filters.'), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'taylor',
       );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Showing 1 of 2 projects', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('No projects match current filters.'), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const Key('projectSearchField')),
+        'Compact Attention Project',
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Showing 1 of 2 projects', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('No projects match current filters.'), findsNothing);
 
       await tester.enterText(find.byKey(const Key('projectSearchField')), '');
       await tester.pumpAndSettle();
 
-      expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+      expect(
+        find.text('Showing 2 of 2 projects', skipOffstage: false),
+        findsOneWidget,
+      );
 
       final compactTypeFilter = find.descendant(
         of: find.byKey(const Key('projectTypeFilterDropdown')),
@@ -2184,13 +2189,40 @@ void main() {
       expect(compactTypeFilter, findsOneWidget);
       expect(find.byKey(const Key('projectTypeFilter_ad')), findsNothing);
 
+      final compactReadinessFilter = find.descendant(
+        of: find.byKey(const Key('projectReadinessFilterDropdown')),
+        matching: find.byType(DropdownButtonFormField<ProjectReadinessState?>),
+      );
+      expect(compactReadinessFilter, findsOneWidget);
+      expect(
+        find.byKey(const Key('projectReadinessFilter_ready')),
+        findsNothing,
+      );
+
+      await tester.tap(compactReadinessFilter);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Needs Attention (1)').last);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Showing 1 of 2 projects', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('No projects match current filters.'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('projectResetFiltersButton')));
+      await tester.pumpAndSettle();
+
       await tester.tap(compactTypeFilter);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Ad (1)').last);
       await tester.pumpAndSettle();
 
-      expect(find.text('Showing 1 of 2 projects'), findsOneWidget);
-      expect(find.text('Demo Project 1'), findsOneWidget);
+      expect(
+        find.text('Showing 1 of 2 projects', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('No projects match current filters.'), findsNothing);
 
       final sortDropdown = find.byKey(const Key('projectSortDropdown'));
       await tester.ensureVisible(sortDropdown);
@@ -2215,8 +2247,12 @@ void main() {
       final searchField = tester.widget<TextField>(searchFieldFinder);
       expect(searchField.controller!.text, isEmpty);
       expect(find.text('All (2)'), findsOneWidget);
+      expect(find.text('All statuses (2)'), findsOneWidget);
       expect(find.text('Updated (Newest)'), findsOneWidget);
-      expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
+      expect(
+        find.text('Showing 2 of 2 projects', skipOffstage: false),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -4382,6 +4418,94 @@ void main() {
     expect(find.text('Showing 2 of 2 projects'), findsOneWidget);
   });
 
+  testWidgets(
+    'project readiness filter chips segment projects by beta status',
+    (
+      tester,
+    ) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .createDemoProject();
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(
+            _buildAttentionProjectImportPayload(
+              projectName: 'Attention Project',
+            ),
+          );
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildTimelineQaProjectImportPayload());
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(800, 900),
+        child: const ProjectListScreen(),
+      );
+
+      expect(find.text('All statuses (3)'), findsOneWidget);
+      expect(
+        find.byKey(const Key('projectReadinessFilter_ready')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('projectReadinessFilter_timelineQa')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('projectReadinessFilter_needsAttention')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('projectReadinessFilter_needsAttention')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Showing 1 of 3 projects', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Attention Project', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Demo Project 1', skipOffstage: false), findsNothing);
+      expect(
+        find.text('Timeline QA Project', skipOffstage: false),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const Key('projectReadinessFilter_timelineQa')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Showing 1 of 3 projects', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Timeline QA Project', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Attention Project', skipOffstage: false), findsNothing);
+
+      await tester.tap(find.byKey(const Key('projectReadinessFilter_ready')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Showing 1 of 3 projects', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Demo Project 1', skipOffstage: false), findsOneWidget);
+    },
+  );
+
   testWidgets('project list shows result summary count', (tester) async {
     await tester.pumpWidget(
       const ProviderScope(child: ProductionChatPropApp()),
@@ -4530,7 +4654,8 @@ void main() {
   );
 
   testWidgets(
-    'portfolio review timeline QA CTA opens playback from summary card', (
+    'portfolio review timeline QA CTA opens playback from summary card',
+    (
       tester,
     ) async {
       await tester.pumpWidget(
