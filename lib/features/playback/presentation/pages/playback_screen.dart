@@ -162,8 +162,9 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
   @override
   Widget build(BuildContext context) {
     final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
-    final isCompactAppBar = AppBreakpoints.isCompactLayoutWidth(
-      MediaQuery.sizeOf(context).width,
+    final viewportSize = MediaQuery.sizeOf(context);
+    final isCompactAppBar = AppBreakpoints.shouldUseCompactLayout(
+      viewportSize,
       textScaleFactor: textScaleFactor,
     );
 
@@ -482,10 +483,11 @@ class _PlaybackTimelineState extends ConsumerState<_PlaybackTimeline> {
 
     final hasPlaybackMessages = sortedMessages.isNotEmpty;
     final sceneHealth = scene == null ? null : summarizeSceneHealth(scene);
-    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final viewportSize = MediaQuery.sizeOf(context);
+    final viewportWidth = viewportSize.width;
     final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
-    final isCompactLayout = AppBreakpoints.isCompactLayoutWidth(
-      viewportWidth,
+    final isCompactLayout = AppBreakpoints.shouldUseCompactLayout(
+      viewportSize,
       textScaleFactor: textScaleFactor,
     );
     final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:production_chat_prop/core/utils/app_breakpoints.dart';
 
@@ -6,6 +8,14 @@ void main() {
     test('compact layout threshold stays aligned with mobile surfaces', () {
       expect(AppBreakpoints.isCompactLayoutWidth(719), isTrue);
       expect(AppBreakpoints.isCompactLayoutWidth(720), isFalse);
+      expect(
+        AppBreakpoints.shouldUseCompactLayout(const Size(844, 390)),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.shouldUseCompactLayout(const Size(844, 480)),
+        isFalse,
+      );
     });
 
     test('compact and ultra-compact helpers keep boundary behavior stable', () {
@@ -24,6 +34,8 @@ void main() {
       expect(AppBreakpoints.shouldStackMetadata(220), isFalse);
       expect(AppBreakpoints.isCompactDialogWidth(599), isTrue);
       expect(AppBreakpoints.isCompactDialogWidth(600), isFalse);
+      expect(AppBreakpoints.isCompactLayoutHeight(479), isTrue);
+      expect(AppBreakpoints.isCompactLayoutHeight(480), isFalse);
       expect(AppBreakpoints.isShortViewportHeight(719), isTrue);
       expect(AppBreakpoints.isShortViewportHeight(720), isFalse);
       expect(AppBreakpoints.isShortPreviewHeight(219), isTrue);
@@ -57,6 +69,13 @@ void main() {
       );
       expect(
         AppBreakpoints.isUltraCompactLayoutWidth(390, textScaleFactor: 1.1),
+        isTrue,
+      );
+      expect(
+        AppBreakpoints.shouldUseCompactLayout(
+          const Size(760, 844),
+          textScaleFactor: 1.2,
+        ),
         isTrue,
       );
     });

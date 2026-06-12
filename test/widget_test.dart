@@ -1841,6 +1841,31 @@ void main() {
     );
   });
 
+  testWidgets('project list treats short landscape viewports as compact', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(size: Size(844, 390)),
+            child: ProjectListScreen(),
+          ),
+        ),
+      ),
+    );
+    await _ensureOnProjectList(tester);
+
+    expect(
+      find.byKey(const Key('projectListOverflowMenuButton')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('toggleProjectSelectionModeButton')),
+      findsNothing,
+    );
+  });
+
   testWidgets('compact project list overflow can load export QA project', (
     tester,
   ) async {
@@ -2009,6 +2034,35 @@ void main() {
 
       expect(find.text('Open Chat Editor'), findsOneWidget);
       expect(find.text('Back to Projects'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'short landscape playback uses compact overflow navigation actions',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final projectId = await container
+          .read(projectsControllerProvider.notifier)
+          .createProject();
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(844, 390),
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('playbackOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('playbackAppBarOpenEditorButton')),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -2615,6 +2669,38 @@ void main() {
     expect(find.textContaining('Scene: Scene 1 Copy'), findsOneWidget);
     expect(find.text('Scenes: 2'), findsOneWidget);
   });
+
+  testWidgets(
+    'short landscape chat editor uses compact scene actions',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final projectId = await _createStarterProjectInContainer(container);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(844, 390),
+        child: ChatEditorScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('chatEditorOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('chatEditorAppBarOpenPlaybackButton')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('compactAddSceneButton')), findsOneWidget);
+      expect(
+        find.byKey(const Key('sceneActionsOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'compact chat editor scene selector shows current scene context on narrow screens',

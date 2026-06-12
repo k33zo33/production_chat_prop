@@ -937,10 +937,11 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final selectedCount = selectedIds.length;
     final showSelectionMode = _isSelectionMode && filteredProjects.isNotEmpty;
     final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
+    final viewportSize = MediaQuery.sizeOf(context);
     final isCompactAppBar =
         widget.forceCompactAppBar ??
-        AppBreakpoints.isCompactLayoutWidth(
-          MediaQuery.sizeOf(context).width,
+        AppBreakpoints.shouldUseCompactLayout(
+          viewportSize,
           textScaleFactor: textScaleFactor,
         );
 

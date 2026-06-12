@@ -145,10 +145,11 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
   @override
   Widget build(BuildContext context) {
     final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
+    final viewportSize = MediaQuery.sizeOf(context);
     final isCompactAppBar =
         widget.forceCompactLayout ??
-        AppBreakpoints.isCompactLayoutWidth(
-          MediaQuery.sizeOf(context).width,
+        AppBreakpoints.shouldUseCompactLayout(
+          viewportSize,
           textScaleFactor: textScaleFactor,
         );
 
@@ -387,10 +388,11 @@ class _ProjectEditorPlaceholder extends ConsumerWidget {
         ? -1
         : project.scenes.indexWhere((scene) => scene.id == selectedScene.id);
     final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
+    final viewportSize = MediaQuery.sizeOf(context);
     final isCompactLayout =
         forceCompactLayout ??
-        AppBreakpoints.isCompactLayoutWidth(
-          MediaQuery.sizeOf(context).width,
+        AppBreakpoints.shouldUseCompactLayout(
+          viewportSize,
           textScaleFactor: textScaleFactor,
         );
     final isUltraCompactLayout = AppBreakpoints.isUltraCompactLayoutWidth(

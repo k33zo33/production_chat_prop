@@ -1,7 +1,10 @@
+import 'dart:ui';
+
 abstract final class AppBreakpoints {
   static const double compactDialogWidth = 600;
   static const double compactLayoutWidth = 720;
   static const double shortViewportHeight = 720;
+  static const double compactLayoutShortHeight = 480;
   static const double compactFilterWidth = 560;
   static const double compactControlsWidth = 480;
   static const double ultraCompactLayoutWidth = 360;
@@ -33,6 +36,21 @@ abstract final class AppBreakpoints {
   }) {
     return _effectiveWidth(width, textScaleFactor: textScaleFactor) <
         compactLayoutWidth;
+  }
+
+  static bool shouldUseCompactLayout(
+    Size viewportSize, {
+    double textScaleFactor = 1,
+  }) {
+    return isCompactLayoutWidth(
+          viewportSize.width,
+          textScaleFactor: textScaleFactor,
+        ) ||
+        isCompactLayoutHeight(viewportSize.height);
+  }
+
+  static bool isCompactLayoutHeight(double height) {
+    return height < compactLayoutShortHeight;
   }
 
   static bool isShortViewportHeight(double height) {
