@@ -1332,10 +1332,10 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                                 constraints.maxWidth,
                                 textScaleFactor: textScaleFactor,
                               );
-                          final showPortfolioPreflightBadge =
-                              !readinessSummary.hasProjects ||
-                              readinessSummary.hasTimelineWarnings ||
-                              filteredProjects.length > 1;
+                          // Keep the beta handoff / QA gate visible even for
+                          // single-project views so release guidance and quick
+                          // actions stay one tap away during compact review.
+                          const showPortfolioPreflightBadge = true;
                           final preflightBadge = PortfolioPreflightBadge(
                             summary: readinessSummary,
                             attentionProjectName: attentionProject?.name,
