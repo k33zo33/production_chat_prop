@@ -12,7 +12,10 @@ smoke_run_analyze "release-smoke" "$FLUTTER_BIN"
 
 declare -a WIDGET_TEST_FILES=(
   "test/widget_test.dart"
+  "test/widget/mobile_compact_polish_test.dart"
+  "test/widget/playback_empty_state_actions_test.dart"
   "test/widget/playback_export_feedback_test.dart"
+  "test/widget/portfolio_preflight_badge_test.dart"
   "test/widget/project_not_found_recovery_test.dart"
   "test/widget/scene_status_badge_test.dart"
   "test/widget/scene_route_sync_test.dart"
@@ -20,7 +23,10 @@ declare -a WIDGET_TEST_FILES=(
 )
 
 WIDGET_TEST_FILE="test/widget_test.dart"
+MOBILE_COMPACT_POLISH_TEST_FILE="test/widget/mobile_compact_polish_test.dart"
+PLAYBACK_EMPTY_STATE_TEST_FILE="test/widget/playback_empty_state_actions_test.dart"
 PLAYBACK_EXPORT_FEEDBACK_TEST_FILE="test/widget/playback_export_feedback_test.dart"
+PORTFOLIO_PREFLIGHT_BADGE_TEST_FILE="test/widget/portfolio_preflight_badge_test.dart"
 RECOVERY_TEST_FILE="test/widget/project_not_found_recovery_test.dart"
 SCENE_STATUS_BADGE_TEST_FILE="test/widget/scene_status_badge_test.dart"
 SCENE_ROUTE_SYNC_TEST_FILE="test/widget/scene_route_sync_test.dart"
@@ -65,17 +71,45 @@ declare -a WIDGET_TEST_NAMES=(
   "playback stays responsive with imported 500+ messages"
 )
 
+declare -a MOBILE_COMPACT_POLISH_TEST_NAMES=(
+  "adds safe-area padding to compact dialog insets"
+  "moves above the keyboard and shrinks content height"
+  "treats medium dialog widths as compact at larger text scale"
+  "CompactSceneSelector keeps a 48dp touch target"
+)
+
+declare -a PLAYBACK_EMPTY_STATE_TEST_NAMES=(
+  "playback empty state offers editor and template recovery actions"
+  "playback empty state hides template hint when no scene is available"
+  "playback empty state can seed a briefing template directly"
+)
+
 declare -a PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES=(
   "playback preview toggles affect screenshot export feedback"
+  "export pre-flight dialog reflects current playback export state"
+  "playback screenshot export shows failure feedback"
   "video export button copies fallback package to clipboard when download is unavailable"
+  "video export button shows failure when clipboard fallback fails"
+  "copy handoff button copies fallback package to clipboard"
+  "copy handoff button shows clipboard failure feedback"
+)
+
+declare -a PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES=(
+  "compact portfolio pre-flight dialog surfaces timeline QA details and action"
 )
 
 declare -a RECOVERY_TEST_NAMES=(
   "compact missing-project recovery stacks actions on phone-width screens"
+  "wide missing-project recovery keeps wrap actions on roomy screens"
+  "missing editor route can recover by creating a starter project"
+  "missing playback route can recover by opening a demo project"
+  "missing project recovery can return to the project list"
 )
 
 declare -a SCENE_STATUS_BADGE_TEST_NAMES=(
   "compact chat editor app bar keeps scene status badge visible for empty scenes"
+  "scene status dialog covers needs-lines details without redundant sections"
+  "scene status dialog covers ready details"
   "playback app bar shows timeline QA status badge on wide layouts"
 )
 
@@ -115,9 +149,30 @@ for test_name in "${WIDGET_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${MOBILE_COMPACT_POLISH_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$MOBILE_COMPACT_POLISH_TEST_FILE"; then
+    echo "[release-smoke] missing expected mobile polish test: $test_name" >&2
+    exit 1
+  fi
+done
+
+for test_name in "${PLAYBACK_EMPTY_STATE_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$PLAYBACK_EMPTY_STATE_TEST_FILE"; then
+    echo "[release-smoke] missing expected playback empty-state test: $test_name" >&2
+    exit 1
+  fi
+done
+
 for test_name in "${PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$PLAYBACK_EXPORT_FEEDBACK_TEST_FILE"; then
     echo "[release-smoke] missing expected export feedback test: $test_name" >&2
+    exit 1
+  fi
+done
+
+for test_name in "${PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$PORTFOLIO_PREFLIGHT_BADGE_TEST_FILE"; then
+    echo "[release-smoke] missing expected portfolio pre-flight test: $test_name" >&2
     exit 1
   fi
 done
@@ -158,14 +213,17 @@ for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
 done
 
 WIDGET_TEST_PATTERN="$(printf '%s\n' "${WIDGET_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+MOBILE_COMPACT_POLISH_TEST_PATTERN="$(printf '%s\n' "${MOBILE_COMPACT_POLISH_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+PLAYBACK_EMPTY_STATE_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EMPTY_STATE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+PORTFOLIO_PREFLIGHT_BADGE_TEST_PATTERN="$(printf '%s\n' "${PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_STATUS_BADGE_TEST_PATTERN="$(printf '%s\n' "${SCENE_STATUS_BADGE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_ROUTE_SYNC_TEST_PATTERN="$(printf '%s\n' "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 TIMELINE_QA_MARKERS_TEST_PATTERN="$(printf '%s\n' "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-TEST_PATTERN="${WIDGET_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
+TEST_PATTERN="${WIDGET_TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${PORTFOLIO_PREFLIGHT_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
 
-echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status badge + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
+echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]} portfolio pre-flight + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status badge + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
 "$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo
@@ -177,7 +235,7 @@ echo
 
 echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
-echo "- It now covers key compact-width, scene deep-link sync/stale-link recovery, export, and focus-preview regressions automatically."
+echo "- It now covers key compact-width, dialog ergonomics, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
 echo "- Then do the browser pass from docs/08-web-smoke-checklist.md for real browser history/back-forward behavior and visual confirmation."
 echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md for compact visual/layout confirmation."
 echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
