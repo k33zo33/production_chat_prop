@@ -8837,13 +8837,14 @@ Future<void> _pumpNarrowScreenWithContainer(
   required ProviderContainer container,
   required Widget child,
   Size size = const Size(390, 844),
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
         home: MediaQuery(
-          data: MediaQueryData(size: size),
+          data: MediaQueryData(size: size, textScaler: textScaler),
           child: child,
         ),
       ),

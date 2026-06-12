@@ -1997,7 +1997,6 @@ class _PlaybackFocusPreviewScreenState
                         constraints.maxWidth,
                         textScaleFactor: textScaleFactor,
                       );
-
                   return Stack(
                     children: [
                       Positioned.fill(
@@ -2073,37 +2072,12 @@ class _PlaybackFocusPreviewScreenState
                         top: 8,
                         left: 8,
                         right: 8,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            IconButton.filledTonal(
-                              key: const Key('focusPreviewCloseButton'),
-                              tooltip: 'Close Focus Preview',
-                              onPressed: () => Navigator.of(context).pop(),
-                              icon: const Icon(
-                                Icons.close_fullscreen_rounded,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xB3000000),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Text(
-                                  '${scene?.title ?? 'No scene'} • ${_formatTimecode(playbackState.currentSecond)} / ${_formatTimecode(maxSecond)} • ${playbackState.status.name}',
-                                  key: const Key('focusPreviewStatusLabel'),
-                                  style: Theme.of(context).textTheme.labelLarge
-                                      ?.copyWith(color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: FocusPreviewHeader(
+                          sceneTitle: scene?.title,
+                          currentSecond: playbackState.currentSecond,
+                          maxSecond: maxSecond,
+                          statusName: playbackState.status.name,
+                          onClose: () => Navigator.of(context).pop(),
                         ),
                       ),
                       Positioned(
@@ -2119,7 +2093,7 @@ class _PlaybackFocusPreviewScreenState
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _FocusPreviewTransportControls(
+                              FocusPreviewTransportControls(
                                 isCompactLayout: isCompactLayout,
                                 isUltraCompactLayout: isUltraCompactLayout,
                                 hasPlaybackMessages: hasPlaybackMessages,
@@ -2243,8 +2217,120 @@ String _formatTimecode(int seconds) {
   return '$minutes:$remainingSeconds';
 }
 
-class _FocusPreviewTransportControls extends StatelessWidget {
-  const _FocusPreviewTransportControls({
+class FocusPreviewHeader extends StatelessWidget {
+  const FocusPreviewHeader({
+    required this.sceneTitle,
+    required this.currentSecond,
+    required this.maxSecond,
+    required this.statusName,
+    required this.onClose,
+    super.key,
+  });
+
+  final String? sceneTitle;
+  final int currentSecond;
+  final int maxSecond;
+  final String statusName;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final shouldStackHeader =
+            AppBreakpoints.isUltraCompactLayoutWidth(
+              constraints.maxWidth,
+              textScaleFactor: textScaleFactor,
+            ) ||
+            AppBreakpoints.shouldStackHeader(
+              constraints.maxWidth,
+              textScaleFactor: textScaleFactor,
+            );
+
+        if (shouldStackHeader) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IconButton.filledTonal(
+                key: const Key('focusPreviewCloseButton'),
+                tooltip: 'Close Focus Preview',
+                onPressed: onClose,
+                icon: const Icon(Icons.close_fullscreen_rounded),
+              ),
+              const SizedBox(height: 8),
+              _FocusPreviewStatusBanner(
+                sceneTitle: sceneTitle,
+                currentSecond: currentSecond,
+                maxSecond: maxSecond,
+                statusName: statusName,
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            IconButton.filledTonal(
+              key: const Key('focusPreviewCloseButton'),
+              tooltip: 'Close Focus Preview',
+              onPressed: onClose,
+              icon: const Icon(Icons.close_fullscreen_rounded),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _FocusPreviewStatusBanner(
+                sceneTitle: sceneTitle,
+                currentSecond: currentSecond,
+                maxSecond: maxSecond,
+                statusName: statusName,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _FocusPreviewStatusBanner extends StatelessWidget {
+  const _FocusPreviewStatusBanner({
+    required this.sceneTitle,
+    required this.currentSecond,
+    required this.maxSecond,
+    required this.statusName,
+  });
+
+  final String? sceneTitle;
+  final int currentSecond;
+  final int maxSecond;
+  final String statusName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xB3000000),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        '${sceneTitle ?? 'No scene'} • ${_formatTimecode(currentSecond)} / ${_formatTimecode(maxSecond)} • $statusName',
+        key: const Key('focusPreviewStatusLabel'),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(
+          context,
+        ).textTheme.labelLarge?.copyWith(color: Colors.white),
+      ),
+    );
+  }
+}
+
+class FocusPreviewTransportControls extends StatelessWidget {
+  const FocusPreviewTransportControls({
     required this.isCompactLayout,
     required this.isUltraCompactLayout,
     required this.hasPlaybackMessages,
@@ -2262,6 +2348,7 @@ class _FocusPreviewTransportControls extends StatelessWidget {
     required this.onSeekForward,
     required this.onNextCue,
     required this.onRestart,
+    super.key,
   });
 
   final bool isCompactLayout;
@@ -2411,43 +2498,75 @@ class _FocusPreviewTransportControls extends StatelessWidget {
       ),
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
+    final textScaleFactor = MediaQuery.textScalerOf(context).scale(1);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final shouldStackTimeline =
+            isUltraCompactLayout ||
+            AppBreakpoints.shouldStackMetadata(
+              constraints.maxWidth,
+              textScaleFactor: textScaleFactor,
+            );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              _formatTimecode(currentSecond),
-              key: const Key('focusPreviewCurrentTimeLabel'),
-              style: timelineLabelStyle,
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: slider),
-            const SizedBox(width: 8),
-            Text(
-              _formatTimecode(maxSecond),
-              key: const Key('focusPreviewMaxTimeLabel'),
-              style: timelineLabelStyle,
-            ),
+            if (shouldStackTimeline) ...[
+              slider,
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    _formatTimecode(currentSecond),
+                    key: const Key('focusPreviewCurrentTimeLabel'),
+                    style: timelineLabelStyle,
+                  ),
+                  const Spacer(),
+                  Text(
+                    _formatTimecode(maxSecond),
+                    key: const Key('focusPreviewMaxTimeLabel'),
+                    style: timelineLabelStyle,
+                  ),
+                ],
+              ),
+            ] else
+              Row(
+                children: [
+                  Text(
+                    _formatTimecode(currentSecond),
+                    key: const Key('focusPreviewCurrentTimeLabel'),
+                    style: timelineLabelStyle,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(child: slider),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatTimecode(maxSecond),
+                    key: const Key('focusPreviewMaxTimeLabel'),
+                    style: timelineLabelStyle,
+                  ),
+                ],
+              ),
+            const SizedBox(height: 8),
+            if (isUltraCompactLayout)
+              compactControls
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (final control in standardControls)
+                    if (isCompactLayout)
+                      SizedBox(height: 40, child: control)
+                    else
+                      control,
+                ],
+              ),
           ],
-        ),
-        const SizedBox(height: 8),
-        if (isUltraCompactLayout)
-          compactControls
-        else
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              for (final control in standardControls)
-                if (isCompactLayout)
-                  SizedBox(height: 40, child: control)
-                else
-                  control,
-            ],
-          ),
-      ],
+        );
+      },
     );
   }
 }
