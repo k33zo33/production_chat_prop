@@ -26,10 +26,13 @@ void main() {
       final filledStyle = theme.filledButtonTheme.style;
       final outlinedStyle = theme.outlinedButtonTheme.style;
       final textStyle = theme.textButtonTheme.style;
+      final iconStyle = theme.iconButtonTheme.style;
 
       expect(filledStyle?.minimumSize?.resolve({}), const Size(0, 48));
       expect(outlinedStyle?.minimumSize?.resolve({}), const Size(0, 48));
       expect(textStyle?.minimumSize?.resolve({}), const Size(0, 48));
+      expect(iconStyle?.minimumSize?.resolve({}), const Size(48, 48));
+      expect(iconStyle?.padding?.resolve({}), const EdgeInsets.all(12));
       expect(theme.dividerTheme.space, 1);
       expect(theme.inputDecorationTheme.fillColor, Colors.white);
       expect(
@@ -56,6 +59,25 @@ void main() {
         fail('Expected an OutlineInputBorder for focusedErrorBorder.');
       }
       expect(theme.chipTheme.showCheckmark, isFalse);
+    });
+
+    test('keeps shared menu and floating action surfaces aligned', () {
+      expect(
+        theme.floatingActionButtonTheme.backgroundColor,
+        theme.colorScheme.primary,
+      );
+      expect(
+        theme.floatingActionButtonTheme.foregroundColor,
+        theme.colorScheme.onPrimary,
+      );
+      expect(
+        theme.floatingActionButtonTheme.shape,
+        isA<RoundedRectangleBorder>(),
+      );
+      expect(theme.popupMenuTheme.color, Colors.white);
+      expect(theme.popupMenuTheme.surfaceTintColor, Colors.transparent);
+      expect(theme.popupMenuTheme.shape, isA<RoundedRectangleBorder>());
+      expect(theme.popupMenuTheme.elevation, 0);
     });
   });
 }
