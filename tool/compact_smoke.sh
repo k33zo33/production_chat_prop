@@ -84,6 +84,7 @@ declare -a PLAYBACK_EMPTY_STATE_TEST_NAMES=(
 
 declare -a SCENE_STATUS_BADGE_TEST_NAMES=(
   "compact chat editor app bar keeps scene status badge visible for empty scenes"
+  "compact playback app bar keeps timeline QA status badge visible on narrow screens"
 )
 
 declare -a RECOVERY_TEST_NAMES=(

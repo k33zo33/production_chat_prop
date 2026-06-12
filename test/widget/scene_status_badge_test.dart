@@ -181,6 +181,68 @@ void main() {
   );
 
   testWidgets(
+    'compact playback app bar keeps timeline QA status badge visible on narrow screens',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await container
+          .read(projectsControllerProvider.notifier)
+          .importProjectFromJson(_buildTimelineQaProjectImportPayload());
+      final projects = await container.read(projectsControllerProvider.future);
+      final projectId = projects.single.id;
+
+      await tester.binding.setSurfaceSize(const Size(390, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(size: Size(390, 900)),
+              child: PlaybackScreen(projectId: projectId),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('playbackSceneStatusBadge')), findsOneWidget);
+      expect(find.byKey(const Key('playbackOverflowMenuButton')), findsOneWidget);
+      expect(find.text('Timeline QA'), findsNothing);
+      expect(
+        find.byTooltip(
+          '1 shared timestamp • 1 overlapping typing cue • '
+          '2 messages land on the same second and can stack in playback or export. '
+          'Multiple typing indicators fire together and may feel crowded in compact previews.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('playbackSceneStatusBadge')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('sceneStatusDetailsDialog')), findsOneWidget);
+      expect(find.text('Scene status • Timeline QA'), findsOneWidget);
+      expect(
+        find.text('1 shared timestamp • 1 overlapping typing cue'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          '2 messages land on the same second and can stack in playback or export. '
+          'Multiple typing indicators fire together and may feel crowded in compact previews.',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'playback app bar shows timeline QA status badge on wide layouts',
     (tester) async {
       final container = ProviderContainer();
