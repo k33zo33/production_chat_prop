@@ -5158,7 +5158,11 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('Projects: 1 • Ready scenes: 1/1 • Messages: 2'),
+        find.textContaining('Playback: 0/1 ready • 0 empty • 1 style'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Projects: 1 • Ready scenes: 0/1 • Messages: 2'),
         findsOneWidget,
       );
       expect(

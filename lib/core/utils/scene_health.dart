@@ -359,10 +359,13 @@ ProjectHealthSummary summarizeProjectHealth(Project project) {
 
   for (final scene in project.scenes) {
     final sceneHealth = summarizeSceneHealth(scene);
+    final isReadyScene =
+        sceneHealth.hasMessages && !sceneHealth.hasUnusedCharacters;
+
     totalMessages += scene.messages.length;
-    if (sceneHealth.hasMessages) {
+    if (isReadyScene) {
       readyScenes++;
-    } else {
+    } else if (!sceneHealth.hasMessages) {
       emptyScenes++;
       firstEmptySceneId ??= scene.id;
     }

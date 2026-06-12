@@ -415,7 +415,7 @@ void main() {
       final summary = summarizeProjectHealth(project);
 
       expect(summary.totalScenes, 2);
-      expect(summary.readyScenes, 1);
+      expect(summary.readyScenes, 0);
       expect(summary.emptyScenes, 1);
       expect(summary.totalMessages, 1);
       expect(summary.unusedCharacterCount, 1);
@@ -540,6 +540,7 @@ void main() {
 
       final summary = summarizeProjectHealth(project);
 
+      expect(summary.readyScenes, 1);
       expect(summary.hasTimelineWarnings, isTrue);
       expect(summary.sharedTimestampCount, 1);
       expect(summary.overlappingTypingCueCount, 1);
