@@ -416,6 +416,7 @@ void main() {
         child: const ProjectListScreen(forceCompactAppBar: true),
       );
 
+      await _ensureProjectCardVisibleByName(tester, longProjectName);
       final projectTitle = tester.widget<Text>(
         find.text(longProjectName).first,
       );
@@ -4361,6 +4362,7 @@ void main() {
         find.byKey(const Key('projectListOverflowMenuButton')),
         findsOneWidget,
       );
+      await _ensureProjectCardVisibleByName(tester, 'Demo Project 1');
       expect(find.text('Demo Project 1'), findsOneWidget);
       expect(find.byKey(Key('projectOpenEditor_$projectId')), findsOneWidget);
 
@@ -9077,13 +9079,33 @@ Future<void> _prepareProjectActionTap(
   await tester.pumpAndSettle();
 }
 
+Future<void> _ensureProjectCardVisibleByName(
+  WidgetTester tester,
+  String projectName,
+) async {
+  final projectNameFinder = find.text(projectName);
+  final scrollView =
+      find.byKey(const Key('projectListScrollView')).evaluate().isNotEmpty
+      ? find.byKey(const Key('projectListScrollView'))
+      : find.byType(Scrollable).first;
+
+  for (var i = 0; i < 8 && projectNameFinder.evaluate().isEmpty; i += 1) {
+    await tester.drag(scrollView, const Offset(0, -220));
+    await tester.pumpAndSettle();
+  }
+
+  expect(projectNameFinder, findsWidgets);
+  await tester.ensureVisible(projectNameFinder.first);
+  await tester.pumpAndSettle();
+}
+
 Future<String> _openProjectMenuForProject(
   WidgetTester tester,
   String projectName,
 ) async {
+  await _ensureProjectCardVisibleByName(tester, projectName);
+
   final projectNameFinder = find.text(projectName).first;
-  await tester.ensureVisible(projectNameFinder);
-  await tester.pumpAndSettle();
 
   final projectCard = find
       .ancestor(
