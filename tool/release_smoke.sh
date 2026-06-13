@@ -20,6 +20,7 @@ declare -a WIDGET_TEST_FILES=(
   "test/widget/project_not_found_recovery_test.dart"
   "test/widget/scene_status_badge_test.dart"
   "test/widget/scene_route_sync_test.dart"
+  "test/widget/short_height_entry_states_test.dart"
   "test/widget/timeline_qa_markers_test.dart"
 )
 
@@ -32,6 +33,7 @@ PORTFOLIO_PREFLIGHT_BADGE_TEST_FILE="test/widget/portfolio_preflight_badge_test.
 RECOVERY_TEST_FILE="test/widget/project_not_found_recovery_test.dart"
 SCENE_STATUS_BADGE_TEST_FILE="test/widget/scene_status_badge_test.dart"
 SCENE_ROUTE_SYNC_TEST_FILE="test/widget/scene_route_sync_test.dart"
+SHORT_HEIGHT_ENTRY_STATES_TEST_FILE="test/widget/short_height_entry_states_test.dart"
 TIMELINE_QA_MARKERS_TEST_FILE="test/widget/timeline_qa_markers_test.dart"
 
 for widget_test_file in "${WIDGET_TEST_FILES[@]}"; do
@@ -137,6 +139,13 @@ declare -a SCENE_ROUTE_SYNC_TEST_NAMES=(
   "playback rewrites the route query when the selected leading scene is deleted"
 )
 
+declare -a SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES=(
+  "empty project state stays scroll-safe on short mobile heights"
+  "missing-project recovery stays scroll-safe on short mobile heights"
+  "chat editor no-project placeholder uses the short-height scroll shell"
+  "playback no-project placeholder uses the short-height scroll shell"
+)
+
 declare -a TIMELINE_QA_MARKERS_TEST_NAMES=(
   "chat editor shows inline timeline QA markers for stacked cue messages"
 )
@@ -214,6 +223,13 @@ for test_name in "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$SHORT_HEIGHT_ENTRY_STATES_TEST_FILE"; then
+    echo "[release-smoke] missing expected short-height entry-state test: $test_name" >&2
+    exit 1
+  fi
+done
+
 for test_name in "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$TIMELINE_QA_MARKERS_TEST_FILE"; then
     echo "[release-smoke] missing expected timeline QA marker test: $test_name" >&2
@@ -237,10 +253,11 @@ PORTFOLIO_PREFLIGHT_BADGE_TEST_PATTERN="$(printf '%s\n' "${PORTFOLIO_PREFLIGHT_B
 RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_STATUS_BADGE_TEST_PATTERN="$(printf '%s\n' "${SCENE_STATUS_BADGE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_ROUTE_SYNC_TEST_PATTERN="$(printf '%s\n' "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN="$(printf '%s\n' "${SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 TIMELINE_QA_MARKERS_TEST_PATTERN="$(printf '%s\n' "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-TEST_PATTERN="${WIDGET_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${PORTFOLIO_PREFLIGHT_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
+TEST_PATTERN="${WIDGET_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${PORTFOLIO_PREFLIGHT_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
 
-echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]} portfolio pre-flight + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status badge + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
+echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]} portfolio pre-flight + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status badge + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} short-height entry/recovery + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
 "$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo
@@ -252,7 +269,7 @@ echo
 
 echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
-echo "- It now covers key compact-width, dialog ergonomics, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
+echo "- It now covers key compact-width, dialog ergonomics, short-height empty/recovery entry shells, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
 echo "- Then do the browser pass from docs/08-web-smoke-checklist.md for real browser history/back-forward behavior and visual confirmation."
 echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md for compact visual/layout confirmation."
 echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
