@@ -47,11 +47,14 @@ done
 
 declare -a WIDGET_TEST_NAMES=(
   "compact project list app bar uses overflow menu actions"
+  "project list switches to compact app bar at larger text scale"
   "compact chat editor app bar uses overflow navigation actions"
+  "chat editor switches to compact controls at larger text scale"
   "compact chat editor keeps scene actions in overflow menu"
   "compact chat editor scene selector shows current scene context on narrow screens"
   "ultra-compact chat editor composer stays usable on phone-width screens"
   "compact playback app bar uses overflow navigation actions"
+  "playback switches to compact controls at larger text scale"
   "compact playback export and transport controls remain usable"
   "ultra-compact playback actions stay usable on phone-width screens"
   "compact playback scene selector switches demo scenes and resets progress"
@@ -283,7 +286,7 @@ echo
 
 echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
-echo "- It now covers key compact-width, short-landscape focus-preview chrome, dialog ergonomics, short-height empty/recovery entry shells, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
+echo "- It now covers key compact-width, larger-text compact breakpoints, short-landscape focus-preview chrome, dialog ergonomics, short-height empty/recovery entry shells, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
 echo "- Then do the browser pass from docs/08-web-smoke-checklist.md for real browser history/back-forward behavior and visual confirmation."
 echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md for compact visual/layout confirmation."
 echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."

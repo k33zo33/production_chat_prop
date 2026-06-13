@@ -2006,6 +2006,51 @@ void main() {
   );
 
   testWidgets(
+    'chat editor switches to compact controls at larger text scale',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final controller = container.read(projectsControllerProvider.notifier);
+      final projectId = await controller.createProject();
+      await controller.addScene(projectId: projectId, title: 'Scene 2');
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(760, 844),
+        textScaler: const TextScaler.linear(1.2),
+        child: ChatEditorScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('chatEditorOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('chatEditorAppBarOpenPlaybackButton')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('compactEditorSceneDropdown')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('compactEditorSceneSummary')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('editorSceneDropdown')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('chatEditorOverflowMenuButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open Playback'), findsOneWidget);
+      expect(find.text('Back to Projects'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'compact playback app bar uses overflow navigation actions',
     (tester) async {
       final container = ProviderContainer();
@@ -2029,6 +2074,51 @@ void main() {
         find.byKey(const Key('playbackAppBarOpenEditorButton')),
         findsNothing,
       );
+
+      await tester.tap(find.byKey(const Key('playbackOverflowMenuButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open Chat Editor'), findsOneWidget);
+      expect(find.text('Back to Projects'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'playback switches to compact controls at larger text scale',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final controller = container.read(projectsControllerProvider.notifier);
+      final projectId = await controller.createProject();
+      await controller.addScene(projectId: projectId, title: 'Scene 2');
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        size: const Size(760, 844),
+        textScaler: const TextScaler.linear(1.2),
+        child: PlaybackScreen(projectId: projectId),
+      );
+
+      expect(
+        find.byKey(const Key('playbackOverflowMenuButton')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('playbackAppBarOpenEditorButton')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('compactPlaybackSceneDropdown')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('compactPlaybackSceneSummary')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('playbackSceneDropdown')), findsNothing);
 
       await tester.tap(find.byKey(const Key('playbackOverflowMenuButton')));
       await tester.pumpAndSettle();
@@ -2232,7 +2322,10 @@ void main() {
         find.byKey(const Key('projectNotFoundRecoveryScrollView')),
         findsNothing,
       );
-      expect(find.byKey(const Key('chatEditorOverflowMenuButton')), findsOneWidget);
+      expect(
+        find.byKey(const Key('chatEditorOverflowMenuButton')),
+        findsOneWidget,
+      );
       expect(find.textContaining('Scene:'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -2286,7 +2379,9 @@ void main() {
       );
       expect(tester.takeException(), isNull);
 
-      await tester.tap(find.byKey(const Key('projectNotFoundCreateDemoButton')));
+      await tester.tap(
+        find.byKey(const Key('projectNotFoundCreateDemoButton')),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Project not found.'), findsNothing);
@@ -2294,7 +2389,10 @@ void main() {
         find.byKey(const Key('projectNotFoundRecoveryScrollView')),
         findsNothing,
       );
-      expect(find.byKey(const Key('playbackOverflowMenuButton')), findsOneWidget);
+      expect(
+        find.byKey(const Key('playbackOverflowMenuButton')),
+        findsOneWidget,
+      );
       expect(find.textContaining('Scene:'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
