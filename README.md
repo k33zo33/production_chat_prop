@@ -112,6 +112,7 @@ Najčešće komande:
 
 Napomene:
 - `./tool/release_smoke.sh` je brži export/reliability/focus-preview preflight i sada pokriva i ciljane export unit testove, ali nije zamjena za puni `./tool/verify.sh` prije release odluke.
+- `./tool/verify.sh` sada uz analyze/test/build web validira i source + built web shell metadata te brand-neutrality checkove.
 - `./tool/brand_neutrality_smoke.sh` automatski skenira user-facing app copy i build output za zabranjene reference na stvarne messaging brandove prije beta handoffa.
 - `./tool/compact_smoke.sh` sada hvata i stale-link/missing-project recovery putanje, ne samo narrow layout i export kontrole.
 - `./tool/navigation_smoke.sh` drži scene deep-link sync, stale query normalizaciju i recovery navigaciju u brzom web preflightu prije punog verify koraka.
