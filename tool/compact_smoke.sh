@@ -15,6 +15,7 @@ declare -a TEST_NAMES=(
   "compact project delete confirmation keeps long project names readable on narrow screens"
   "compact editor and playback headers clamp long project names without exceptions"
   "compact project list app bar uses overflow menu actions"
+  "project list treats short landscape viewports as compact"
   "ultra-compact project list uses one scroll and keeps lower cards reachable"
   "compact project list search, filters, and sort controls stay usable on narrow screens"
   "compact selection overflow keeps bulk actions reachable on narrow screens"
@@ -24,6 +25,7 @@ declare -a TEST_NAMES=(
   "compact portfolio continue editing focuses first empty scene for attention projects"
   "compact chat editor app bar uses overflow navigation actions"
   "compact chat editor keeps scene actions in overflow menu"
+  "short landscape chat editor uses compact scene actions"
   "compact chat editor scene selector shows current scene context on narrow screens"
   "compact scene settings dialog stays usable on narrow screens"
   "compact scene settings keep manual style entry preview in sync"
@@ -33,6 +35,7 @@ declare -a TEST_NAMES=(
   "ultra-compact chat editor composer stays usable on phone-width screens"
   "compact character manager keeps actions usable through overflow menu"
   "compact playback app bar uses overflow navigation actions"
+  "short landscape playback uses compact overflow navigation actions"
   "compact playback export and transport controls remain usable"
   "compact playback scene selector switches demo scenes and resets progress"
   "compact playback scene switch resets deep preview scroll in long scenes"
@@ -53,6 +56,7 @@ MOBILE_COMPACT_POLISH_TEST_FILE="test/widget/mobile_compact_polish_test.dart"
 PLAYBACK_EMPTY_STATE_TEST_FILE="test/widget/playback_empty_state_actions_test.dart"
 SCENE_STATUS_BADGE_TEST_FILE="test/widget/scene_status_badge_test.dart"
 FOCUS_PREVIEW_CHROME_TEST_FILE="test/widget/focus_preview_chrome_test.dart"
+FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE="test/widget/focus_preview_short_height_test.dart"
 
 for path in \
   "$WIDGET_TEST_FILE" \
@@ -60,7 +64,8 @@ for path in \
   "$MOBILE_COMPACT_POLISH_TEST_FILE" \
   "$PLAYBACK_EMPTY_STATE_TEST_FILE" \
   "$SCENE_STATUS_BADGE_TEST_FILE" \
-  "$FOCUS_PREVIEW_CHROME_TEST_FILE"; do
+  "$FOCUS_PREVIEW_CHROME_TEST_FILE" \
+  "$FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE"; do
   if [[ ! -f "$path" ]]; then
     echo "[compact-smoke] missing expected test file: $path" >&2
     exit 1
@@ -105,6 +110,10 @@ declare -a FOCUS_PREVIEW_CHROME_TEST_NAMES=(
   "focus preview transport stacks timeline on ultra-compact larger text"
 )
 
+declare -a FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES=(
+  "focus preview switches to dense chrome on short landscape heights"
+)
+
 for test_name in "${MOBILE_COMPACT_POLISH_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$MOBILE_COMPACT_POLISH_TEST_FILE"; then
     echo "[compact-smoke] missing expected mobile polish test: $test_name" >&2
@@ -140,15 +149,23 @@ for test_name in "${FOCUS_PREVIEW_CHROME_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE"; then
+    echo "[compact-smoke] missing expected focus preview short-height test: $test_name" >&2
+    exit 1
+  fi
+done
+
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 MOBILE_COMPACT_POLISH_TEST_PATTERN="$(printf '%s\n' "${MOBILE_COMPACT_POLISH_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 PLAYBACK_EMPTY_STATE_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EMPTY_STATE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_STATUS_BADGE_TEST_PATTERN="$(printf '%s\n' "${SCENE_STATUS_BADGE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FOCUS_PREVIEW_CHROME_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_CHROME_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-COMBINED_TEST_PATTERN="${TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}"
+FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+COMBINED_TEST_PATTERN="${TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}|${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN}"
 
-echo "[compact-smoke] tests: ${#TEST_NAMES[@]} compact/export + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status + ${#RECOVERY_TEST_NAMES[@]} recovery/layout + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome cases (batched)"
+echo "[compact-smoke] tests: ${#TEST_NAMES[@]} compact/export + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status + ${#RECOVERY_TEST_NAMES[@]} recovery/layout + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome + ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} focus-preview short-height cases (batched)"
 "$FLUTTER_BIN" test \
   "$WIDGET_TEST_FILE" \
   "$RECOVERY_TEST_FILE" \
@@ -156,6 +173,7 @@ echo "[compact-smoke] tests: ${#TEST_NAMES[@]} compact/export + ${#MOBILE_COMPAC
   "$PLAYBACK_EMPTY_STATE_TEST_FILE" \
   "$SCENE_STATUS_BADGE_TEST_FILE" \
   "$FOCUS_PREVIEW_CHROME_TEST_FILE" \
+  "$FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE" \
   --name "^(${COMBINED_TEST_PATTERN})$"
 
 echo
@@ -163,6 +181,6 @@ echo
 echo "[compact-smoke] manual follow-up"
 echo "- If this targeted pass is green, run ./tool/verify.sh before release or deploy decisions."
 echo "- Then do the human browser pass from docs/08-web-smoke-checklist.md, docs/09-compact-smoke-checklist.md, and docs/04-export-qa-checklist.md."
-echo "- This compact pass now also covers dialog safe-area/keyboard behavior, ultra-compact editor/playback footer stacking, focus-preview chrome stacking at larger text, compact scene-selector ergonomics, empty playback recovery actions, and the compact empty-scene status badge."
+echo "- This compact pass now also covers dialog safe-area/keyboard behavior, short-landscape compact app-bar flows, ultra-compact editor/playback footer stacking, focus-preview chrome stacking at larger text, short-height focus-preview chrome, compact scene-selector ergonomics, empty playback recovery actions, and the compact empty-scene status badge."
 
 echo "[compact-smoke] done"
