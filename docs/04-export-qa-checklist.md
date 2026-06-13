@@ -4,7 +4,7 @@ Svrha: brza ručna provjera da je export workflow konzistentan s previewem i da 
 
 ## 1) Preduvjeti
 - Pokrenut app lokalno (`flutter run -d web-server` ili browser target)
-- Prije ručnog passa pokrenuti `./tool/release_smoke.sh` kao brzi automatski preflight za export/reliability/focus-preview regressions (widget + export unit testovi)
+- Prije ručnog passa pokrenuti `./tool/release_smoke.sh` kao brzi automatski preflight za export/reliability/focus-preview regressions, uključujući deep long-scene focus-preview auto-follow u overlayu (widget + export unit testovi)
 - Prije release/deploy odluke i dalje odraditi puni `./tool/verify.sh`
 - U app učitati standardni QA projekt preko `Load Export QA Project` quick action ili ručno importati `docs/fixtures/export-qa-project.json`
 - Fixture već pokriva:

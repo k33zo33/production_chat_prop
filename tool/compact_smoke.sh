@@ -58,6 +58,7 @@ RECOVERY_TEST_FILE="test/widget/project_not_found_recovery_test.dart"
 MOBILE_COMPACT_POLISH_TEST_FILE="test/widget/mobile_compact_polish_test.dart"
 PLAYBACK_EMPTY_STATE_TEST_FILE="test/widget/playback_empty_state_actions_test.dart"
 SCENE_STATUS_BADGE_TEST_FILE="test/widget/scene_status_badge_test.dart"
+FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE="test/widget/focus_preview_autofollow_test.dart"
 FOCUS_PREVIEW_CHROME_TEST_FILE="test/widget/focus_preview_chrome_test.dart"
 FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE="test/widget/focus_preview_short_height_test.dart"
 SHORT_HEIGHT_ENTRY_STATES_TEST_FILE="test/widget/short_height_entry_states_test.dart"
@@ -68,6 +69,7 @@ for path in \
   "$MOBILE_COMPACT_POLISH_TEST_FILE" \
   "$PLAYBACK_EMPTY_STATE_TEST_FILE" \
   "$SCENE_STATUS_BADGE_TEST_FILE" \
+  "$FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE" \
   "$FOCUS_PREVIEW_CHROME_TEST_FILE" \
   "$FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE" \
   "$SHORT_HEIGHT_ENTRY_STATES_TEST_FILE"; do
@@ -110,6 +112,11 @@ declare -a RECOVERY_TEST_NAMES=(
   "missing project recovery can return to the project list"
 )
 
+declare -a FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES=(
+  "focus preview auto-follows deep cues in long scenes"
+  "focus preview re-follows earlier cues after backward scrub"
+)
+
 declare -a FOCUS_PREVIEW_CHROME_TEST_NAMES=(
   "focus preview header stacks on ultra-compact larger text"
   "focus preview transport stacks timeline on ultra-compact larger text"
@@ -147,6 +154,13 @@ for test_name in "${SCENE_STATUS_BADGE_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE"; then
+    echo "[compact-smoke] missing expected focus preview auto-follow test: $test_name" >&2
+    exit 1
+  fi
+done
+
 for test_name in "${RECOVERY_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$RECOVERY_TEST_FILE"; then
     echo "[compact-smoke] missing expected recovery test: $test_name" >&2
@@ -179,19 +193,21 @@ TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/
 MOBILE_COMPACT_POLISH_TEST_PATTERN="$(printf '%s\n' "${MOBILE_COMPACT_POLISH_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 PLAYBACK_EMPTY_STATE_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EMPTY_STATE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SCENE_STATUS_BADGE_TEST_PATTERN="$(printf '%s\n' "${SCENE_STATUS_BADGE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+FOCUS_PREVIEW_AUTOFOLLOW_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 RECOVERY_TEST_PATTERN="$(printf '%s\n' "${RECOVERY_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FOCUS_PREVIEW_CHROME_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_CHROME_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN="$(printf '%s\n' "${SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-COMBINED_TEST_PATTERN="${TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}|${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN}|${SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN}"
+COMBINED_TEST_PATTERN="${TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${FOCUS_PREVIEW_AUTOFOLLOW_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}|${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN}|${SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN}"
 
-echo "[compact-smoke] tests: ${#TEST_NAMES[@]} compact/export + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status + ${#RECOVERY_TEST_NAMES[@]} recovery/layout + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome + ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} focus-preview short-height + ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} short-height entry/recovery cases (batched)"
+echo "[compact-smoke] tests: ${#TEST_NAMES[@]} compact/export + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status + ${#FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]} focus-preview auto-follow + ${#RECOVERY_TEST_NAMES[@]} recovery/layout + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome + ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} focus-preview short-height + ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} short-height entry/recovery cases (batched)"
 "$FLUTTER_BIN" test \
   "$WIDGET_TEST_FILE" \
   "$RECOVERY_TEST_FILE" \
   "$MOBILE_COMPACT_POLISH_TEST_FILE" \
   "$PLAYBACK_EMPTY_STATE_TEST_FILE" \
   "$SCENE_STATUS_BADGE_TEST_FILE" \
+  "$FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE" \
   "$FOCUS_PREVIEW_CHROME_TEST_FILE" \
   "$FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE" \
   "$SHORT_HEIGHT_ENTRY_STATES_TEST_FILE" \
@@ -202,6 +218,6 @@ echo
 echo "[compact-smoke] manual follow-up"
 echo "- If this targeted pass is green, run ./tool/verify.sh before release or deploy decisions."
 echo "- Then do the human browser pass from docs/08-web-smoke-checklist.md, docs/09-compact-smoke-checklist.md, and docs/04-export-qa-checklist.md."
-echo "- This compact pass now also covers dialog safe-area/keyboard behavior, larger-text compact breakpoints on project/editor/playback surfaces, short-landscape compact app-bar flows, ultra-compact editor/playback footer stacking, focus-preview chrome stacking at larger text, short-height focus-preview chrome, short-height empty/recovery entry shells, compact scene-selector ergonomics, empty playback recovery actions, and the compact empty-scene status badge."
+echo "- This compact pass now also covers dialog safe-area/keyboard behavior, larger-text compact breakpoints on project/editor/playback surfaces, short-landscape compact app-bar flows, ultra-compact editor/playback footer stacking, deep long-scene focus-preview auto-follow, focus-preview chrome stacking at larger text, short-height focus-preview chrome, short-height empty/recovery entry shells, compact scene-selector ergonomics, empty playback recovery actions, and the compact empty-scene status badge."
 
 echo "[compact-smoke] done"
