@@ -1541,6 +1541,10 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
           final isShortPreview = AppBreakpoints.isShortPreviewHeight(
             previewHeight,
           );
+          final isNarrowPreview = previewWidth < 180;
+          final useCompactPreviewChrome = isShortPreview || isNarrowPreview;
+          final effectiveShowDeviceFrame =
+              widget.showDeviceFrame && !isNarrowPreview;
 
           return Align(
             alignment: Alignment.topCenter,
@@ -1551,16 +1555,16 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
                 aspectRatio: previewAspectRatio,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: widget.showDeviceFrame
+                    color: effectiveShowDeviceFrame
                         ? Colors.black
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(
-                      widget.showDeviceFrame ? 28 : 0,
+                      effectiveShowDeviceFrame ? 28 : 0,
                     ),
-                    border: widget.showDeviceFrame
+                    border: effectiveShowDeviceFrame
                         ? Border.all(color: Colors.black87, width: 6)
                         : null,
-                    boxShadow: widget.showDeviceFrame
+                    boxShadow: effectiveShowDeviceFrame
                         ? const [
                             BoxShadow(
                               color: Color(0x22000000),
@@ -1570,51 +1574,55 @@ class _PlaybackPreviewCardState extends State<_PlaybackPreviewCard> {
                           ]
                         : null,
                   ),
-                  padding: EdgeInsets.all(widget.showDeviceFrame ? 12 : 0),
+                  padding: EdgeInsets.all(effectiveShowDeviceFrame ? 12 : 0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(
-                      widget.showDeviceFrame ? 20 : 0,
+                      effectiveShowDeviceFrame ? 20 : 0,
                     ),
                     child: Card(
                       margin: EdgeInsets.zero,
                       color: widget.palette.surfaceColor,
                       child: Padding(
-                        padding: EdgeInsets.all(isShortPreview ? 12 : 16),
+                        padding: EdgeInsets.all(
+                          useCompactPreviewChrome ? 10 : 16,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (!widget.cleanPreview) ...[
+                            if (!widget.cleanPreview &&
+                                useCompactPreviewChrome) ...[
+                              Text(
+                                'Timeline preview',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                              const SizedBox(height: 6),
+                            ] else if (!widget.cleanPreview) ...[
                               Text(
                                 'Playback Timeline (read-only)',
-                                style: isShortPreview
-                                    ? Theme.of(context).textTheme.titleSmall
-                                    : Theme.of(context).textTheme.titleMedium,
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
-                              SizedBox(height: isShortPreview ? 6 : 8),
-                              Text(
-                                isShortPreview
-                                    ? 'Timeline preview follows cue time.'
-                                    : 'Timeline preview follows timecode: queued messages stay dim until their cue time.',
-                                style: isShortPreview
-                                    ? Theme.of(context).textTheme.bodySmall
-                                    : null,
-                                maxLines: isShortPreview ? 2 : null,
-                                overflow: isShortPreview
-                                    ? TextOverflow.ellipsis
-                                    : TextOverflow.visible,
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Timeline preview follows timecode: queued messages stay dim until their cue time.',
                               ),
-                              SizedBox(height: isShortPreview ? 8 : 12),
+                              const SizedBox(height: 12),
                             ],
                             if (widget.cleanPreview)
                               Text(
                                 'Preview • ${_formatTimecode(widget.currentSecond)} / ${_formatTimecode(widget.maxSecond)}',
                                 key: const Key('cleanPreviewHeader'),
-                                style: isShortPreview
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: useCompactPreviewChrome
                                     ? Theme.of(context).textTheme.labelMedium
                                     : Theme.of(context).textTheme.labelLarge,
                               ),
                             if (widget.cleanPreview)
-                              SizedBox(height: isShortPreview ? 8 : 12),
+                              SizedBox(
+                                height: useCompactPreviewChrome ? 8 : 12,
+                              ),
                             Expanded(
                               child: widget.messages.isEmpty
                                   ? const Align(
@@ -1984,182 +1992,242 @@ class _PlaybackFocusPreviewScreenState
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final previewMaxHeight = math.max(
-                    AppBreakpoints.shortPreviewHeight,
-                    constraints.maxHeight - 148.0,
-                  );
-                  final isCompactLayout = AppBreakpoints.isCompactFilterWidth(
-                    constraints.maxWidth,
-                    textScaleFactor: textScaleFactor,
-                  );
+                  final isCompactLayout =
+                      AppBreakpoints.isCompactFilterWidth(
+                        constraints.maxWidth,
+                        textScaleFactor: textScaleFactor,
+                      ) ||
+                      AppBreakpoints.isCompactPreviewChromeHeight(
+                        constraints.maxHeight,
+                      );
                   final isUltraCompactLayout =
                       AppBreakpoints.isUltraCompactLayoutWidth(
                         constraints.maxWidth,
                         textScaleFactor: textScaleFactor,
+                      ) ||
+                      AppBreakpoints.isUltraCompactPreviewChromeHeight(
+                        constraints.maxHeight,
                       );
+                  final isShortHeightLayout =
+                      AppBreakpoints.isCompactPreviewChromeHeight(
+                        constraints.maxHeight,
+                      );
+                  final previewSidePadding = (isCompactLayout ? 12 : 16)
+                      .toDouble();
+                  final previewTopPadding =
+                      (isShortHeightLayout
+                              ? 52
+                              : isCompactLayout
+                              ? 56
+                              : 72)
+                          .toDouble();
+                  final previewBottomPadding =
+                      (isShortHeightLayout
+                              ? 64
+                              : isUltraCompactLayout
+                              ? 72
+                              : 88)
+                          .toDouble();
+                  final previewMaxHeight = math.max<double>(
+                    AppBreakpoints.shortPreviewHeight,
+                    constraints.maxHeight -
+                        previewTopPadding -
+                        previewBottomPadding,
+                  );
+
+                  void handlePreviewLongPress() {
+                    unawaited(Feedback.forLongPress(context));
+                    Navigator.of(context).pop();
+                  }
+
+                  Widget wrapPreviewGestures(Widget child, {Key? key}) {
+                    return GestureDetector(
+                      key: key,
+                      behavior: HitTestBehavior.opaque,
+                      onTap: hasPlaybackMessages
+                          ? () => _togglePlayback(
+                              hasPlaybackMessages: hasPlaybackMessages,
+                              maxSecond: maxSecond,
+                              playbackState: playbackState,
+                              playbackController: playbackController,
+                            )
+                          : null,
+                      onDoubleTapDown: (details) {
+                        _lastDoubleTapPosition = details.localPosition;
+                      },
+                      onDoubleTap: hasPlaybackMessages
+                          ? () => _jumpBetweenCuesFromDoubleTap(
+                              surfaceWidth: constraints.maxWidth,
+                              previousCue: previousCue,
+                              nextCue: nextCue,
+                              hasPlaybackMessages: hasPlaybackMessages,
+                              maxSecond: maxSecond,
+                              playbackState: playbackState,
+                              playbackController: playbackController,
+                            )
+                          : null,
+                      onHorizontalDragEnd: hasPlaybackMessages
+                          ? (details) => _handleHorizontalGestureSeek(
+                              details: details,
+                              maxSecond: maxSecond,
+                              playbackController: playbackController,
+                            )
+                          : null,
+                      onLongPress: handlePreviewLongPress,
+                      child: child,
+                    );
+                  }
+
+                  final previewSurface = Center(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        previewSidePadding,
+                        previewTopPadding,
+                        previewSidePadding,
+                        previewBottomPadding,
+                      ),
+                      child: _PlaybackPreviewCard(
+                        sceneId: scene?.id,
+                        boundaryKey: _previewBoundaryKey,
+                        aspectRatio: selectedAspectRatio,
+                        palette: palette,
+                        showDeviceFrame: widget.initialShowDeviceFrame,
+                        cleanPreview: widget.initialCleanPreview,
+                        currentSecond: playbackState.currentSecond,
+                        maxSecond: maxSecond,
+                        messages: sortedMessages,
+                        speakerNameById: speakerNameById,
+                        characterAvatarPathById: characterAvatarPathById,
+                        characterBubbleColorById: characterBubbleColorById,
+                        resolveSpeakerName: _resolveSpeakerName,
+                        showTypingIndicator: showsTypingIndicatorAtSecond,
+                        maxPreviewHeight: previewMaxHeight,
+                      ),
+                    ),
+                  );
+
+                  final header = FocusPreviewHeader(
+                    sceneTitle: scene?.title,
+                    currentSecond: playbackState.currentSecond,
+                    maxSecond: maxSecond,
+                    statusName: playbackState.status.name,
+                    onClose: () => Navigator.of(context).pop(),
+                  );
+
+                  final transportPanel = ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: isShortHeightLayout ? 120 : 220,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Container(
+                        padding: EdgeInsets.all(isShortHeightLayout ? 10 : 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xB3000000),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FocusPreviewTransportControls(
+                              isCompactLayout: isCompactLayout,
+                              isUltraCompactLayout: isUltraCompactLayout,
+                              hasPlaybackMessages: hasPlaybackMessages,
+                              isPlaying: playbackState.isPlaying,
+                              currentSecond: playbackState.currentSecond,
+                              maxSecond: maxSecond,
+                              sliderMax: sliderMax,
+                              sliderValue: sliderValue,
+                              previousCue: previousCue,
+                              nextCue: nextCue,
+                              onSliderChanged: maxSecond == 0
+                                  ? null
+                                  : (value) => playbackController.scrubTo(
+                                      second: value.round(),
+                                      maxSecond: maxSecond,
+                                    ),
+                              onPrevCue: previousCue == null
+                                  ? null
+                                  : () => playbackController.scrubTo(
+                                      second: previousCue,
+                                      maxSecond: maxSecond,
+                                    ),
+                              onSeekBackward: maxSecond == 0
+                                  ? null
+                                  : () => playbackController.seekBy(
+                                      delta: -1,
+                                      maxSecond: maxSecond,
+                                    ),
+                              onTogglePlayback: hasPlaybackMessages
+                                  ? () => _togglePlayback(
+                                      hasPlaybackMessages: hasPlaybackMessages,
+                                      maxSecond: maxSecond,
+                                      playbackState: playbackState,
+                                      playbackController: playbackController,
+                                    )
+                                  : null,
+                              onSeekForward: maxSecond == 0
+                                  ? null
+                                  : () => playbackController.seekBy(
+                                      delta: 1,
+                                      maxSecond: maxSecond,
+                                    ),
+                              onNextCue: nextCue == null
+                                  ? null
+                                  : () => playbackController.scrubTo(
+                                      second: nextCue,
+                                      maxSecond: maxSecond,
+                                    ),
+                              onRestart:
+                                  hasPlaybackMessages ||
+                                      playbackState.currentSecond > 0
+                                  ? playbackController.restart
+                                  : null,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              isShortHeightLayout
+                                  ? 'Tap play/pause • Swipe ±5s • Double-tap edges for cues • Long press to exit.'
+                                  : 'Tap to play or pause. Swipe left/right for ±5s. Double-tap the left/right edge for previous/next cue. Press Esc on desktop or long press anywhere to exit.',
+                              key: const Key('focusPreviewHintLabel'),
+                              textAlign: TextAlign.center,
+                              maxLines: isShortHeightLayout
+                                  ? 2
+                                  : isUltraCompactLayout
+                                  ? 3
+                                  : null,
+                              overflow:
+                                  isShortHeightLayout || isUltraCompactLayout
+                                  ? TextOverflow.ellipsis
+                                  : TextOverflow.visible,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+
                   return Stack(
                     children: [
                       Positioned.fill(
-                        child: GestureDetector(
+                        child: wrapPreviewGestures(
+                          previewSurface,
                           key: const Key('focusPreviewTapSurface'),
-                          behavior: HitTestBehavior.opaque,
-                          onTap: hasPlaybackMessages
-                              ? () => _togglePlayback(
-                                  hasPlaybackMessages: hasPlaybackMessages,
-                                  maxSecond: maxSecond,
-                                  playbackState: playbackState,
-                                  playbackController: playbackController,
-                                )
-                              : null,
-                          onDoubleTapDown: (details) {
-                            _lastDoubleTapPosition = details.localPosition;
-                          },
-                          onDoubleTap: hasPlaybackMessages
-                              ? () => _jumpBetweenCuesFromDoubleTap(
-                                  surfaceWidth: constraints.maxWidth,
-                                  previousCue: previousCue,
-                                  nextCue: nextCue,
-                                  hasPlaybackMessages: hasPlaybackMessages,
-                                  maxSecond: maxSecond,
-                                  playbackState: playbackState,
-                                  playbackController: playbackController,
-                                )
-                              : null,
-                          onHorizontalDragEnd: hasPlaybackMessages
-                              ? (details) => _handleHorizontalGestureSeek(
-                                  details: details,
-                                  maxSecond: maxSecond,
-                                  playbackController: playbackController,
-                                )
-                              : null,
-                          onLongPress: () {
-                            unawaited(Feedback.forLongPress(context));
-                            Navigator.of(context).pop();
-                          },
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                16,
-                                72,
-                                16,
-                                88,
-                              ),
-                              child: _PlaybackPreviewCard(
-                                sceneId: scene?.id,
-                                boundaryKey: _previewBoundaryKey,
-                                aspectRatio: selectedAspectRatio,
-                                palette: palette,
-                                showDeviceFrame: widget.initialShowDeviceFrame,
-                                cleanPreview: widget.initialCleanPreview,
-                                currentSecond: playbackState.currentSecond,
-                                maxSecond: maxSecond,
-                                messages: sortedMessages,
-                                speakerNameById: speakerNameById,
-                                characterAvatarPathById:
-                                    characterAvatarPathById,
-                                characterBubbleColorById:
-                                    characterBubbleColorById,
-                                resolveSpeakerName: _resolveSpeakerName,
-                                showTypingIndicator:
-                                    showsTypingIndicatorAtSecond,
-                                maxPreviewHeight: previewMaxHeight,
-                              ),
-                            ),
-                          ),
                         ),
                       ),
                       Positioned(
                         top: 8,
                         left: 8,
                         right: 8,
-                        child: FocusPreviewHeader(
-                          sceneTitle: scene?.title,
-                          currentSecond: playbackState.currentSecond,
-                          maxSecond: maxSecond,
-                          statusName: playbackState.status.name,
-                          onClose: () => Navigator.of(context).pop(),
-                        ),
+                        child: header,
                       ),
                       Positioned(
                         left: 12,
                         right: 12,
                         bottom: 12,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xB3000000),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              FocusPreviewTransportControls(
-                                isCompactLayout: isCompactLayout,
-                                isUltraCompactLayout: isUltraCompactLayout,
-                                hasPlaybackMessages: hasPlaybackMessages,
-                                isPlaying: playbackState.isPlaying,
-                                currentSecond: playbackState.currentSecond,
-                                maxSecond: maxSecond,
-                                sliderMax: sliderMax,
-                                sliderValue: sliderValue,
-                                previousCue: previousCue,
-                                nextCue: nextCue,
-                                onSliderChanged: maxSecond == 0
-                                    ? null
-                                    : (value) => playbackController.scrubTo(
-                                        second: value.round(),
-                                        maxSecond: maxSecond,
-                                      ),
-                                onPrevCue: previousCue == null
-                                    ? null
-                                    : () => playbackController.scrubTo(
-                                        second: previousCue,
-                                        maxSecond: maxSecond,
-                                      ),
-                                onSeekBackward: maxSecond == 0
-                                    ? null
-                                    : () => playbackController.seekBy(
-                                        delta: -1,
-                                        maxSecond: maxSecond,
-                                      ),
-                                onTogglePlayback: hasPlaybackMessages
-                                    ? () => _togglePlayback(
-                                        hasPlaybackMessages:
-                                            hasPlaybackMessages,
-                                        maxSecond: maxSecond,
-                                        playbackState: playbackState,
-                                        playbackController: playbackController,
-                                      )
-                                    : null,
-                                onSeekForward: maxSecond == 0
-                                    ? null
-                                    : () => playbackController.seekBy(
-                                        delta: 1,
-                                        maxSecond: maxSecond,
-                                      ),
-                                onNextCue: nextCue == null
-                                    ? null
-                                    : () => playbackController.scrubTo(
-                                        second: nextCue,
-                                        maxSecond: maxSecond,
-                                      ),
-                                onRestart:
-                                    hasPlaybackMessages ||
-                                        playbackState.currentSecond > 0
-                                    ? playbackController.restart
-                                    : null,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Tap to play or pause. Swipe left/right for ±5s. Double-tap the left/right edge for previous/next cue. Press Esc on desktop or long press anywhere to exit.',
-                                key: const Key('focusPreviewHintLabel'),
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: Colors.white70),
-                              ),
-                            ],
-                          ),
-                        ),
+                        child: transportPanel,
                       ),
                     ],
                   );

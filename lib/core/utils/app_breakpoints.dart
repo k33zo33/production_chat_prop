@@ -13,6 +13,10 @@ abstract final class AppBreakpoints {
   // Shared by the playback preview “short layout” check and the focus-preview
   // minimum height floor so those behaviors stay aligned.
   static const double shortPreviewHeight = 220;
+  // Dense focus-preview transport kicks in for short landscape phone heights
+  // before the controls start crowding the preview surface.
+  static const double compactPreviewChromeHeight = 520;
+  static const double ultraCompactPreviewChromeHeight = 420;
 
   static double _effectiveWidth(
     double width, {
@@ -99,5 +103,13 @@ abstract final class AppBreakpoints {
 
   static bool isShortPreviewHeight(double height) {
     return height < shortPreviewHeight;
+  }
+
+  static bool isCompactPreviewChromeHeight(double height) {
+    return height < compactPreviewChromeHeight;
+  }
+
+  static bool isUltraCompactPreviewChromeHeight(double height) {
+    return height < ultraCompactPreviewChromeHeight;
   }
 }
