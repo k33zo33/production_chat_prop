@@ -11,6 +11,7 @@ import 'package:production_chat_prop/core/utils/character_bubble_colors.dart';
 import 'package:production_chat_prop/core/utils/message_timeline_sort.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/centered_scrollable_state.dart';
 import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/export_preflight_badge.dart';
@@ -171,21 +172,19 @@ class _PlaybackScreenState extends ConsumerState<PlaybackScreen> {
     if (widget.projectId == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Playback')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('No project selected.'),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: () => context.goNamed('projects'),
-                  icon: const Icon(Icons.list_alt_rounded),
-                  label: const Text('Back to Projects'),
-                ),
-              ],
-            ),
+        body: CenteredScrollableState(
+          scrollViewKey: const Key('playbackNoProjectScrollView'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('No project selected.'),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () => context.goNamed('projects'),
+                icon: const Icon(Icons.list_alt_rounded),
+                label: const Text('Back to Projects'),
+              ),
+            ],
           ),
         ),
       );

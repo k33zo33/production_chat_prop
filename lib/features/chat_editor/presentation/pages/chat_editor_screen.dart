@@ -10,6 +10,7 @@ import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/centered_scrollable_state.dart';
 import 'package:production_chat_prop/core/widgets/character_avatar.dart';
 import 'package:production_chat_prop/core/widgets/compact_scene_selector.dart';
 import 'package:production_chat_prop/core/widgets/project_not_found_recovery_state.dart';
@@ -156,21 +157,19 @@ class _ChatEditorScreenState extends ConsumerState<ChatEditorScreen> {
     if (widget.projectId == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Chat Editor')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('No project selected.'),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: () => context.goNamed('projects'),
-                  icon: const Icon(Icons.list_alt_rounded),
-                  label: const Text('Back to Projects'),
-                ),
-              ],
-            ),
+        body: CenteredScrollableState(
+          scrollViewKey: const Key('chatEditorNoProjectScrollView'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('No project selected.'),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: () => context.goNamed('projects'),
+                icon: const Icon(Icons.list_alt_rounded),
+                label: const Text('Back to Projects'),
+              ),
+            ],
           ),
         ),
       );

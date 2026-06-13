@@ -9,6 +9,7 @@ import 'package:production_chat_prop/core/utils/display_labels.dart';
 import 'package:production_chat_prop/core/utils/file_picker/file_picker.dart';
 import 'package:production_chat_prop/core/utils/scene_health.dart';
 import 'package:production_chat_prop/core/widgets/app_content_frame.dart';
+import 'package:production_chat_prop/core/widgets/centered_scrollable_state.dart';
 import 'package:production_chat_prop/core/widgets/responsive_alert_dialog.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_package_export_service.dart';
 import 'package:production_chat_prop/features/projects/data/services/project_portfolio_export_service.dart';
@@ -2022,52 +2023,51 @@ class _EmptyProjectState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.workspaces_outline,
-              size: 42,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 12),
-            const Text('No projects yet'),
-            const SizedBox(height: 4),
-            const Text(
-              'Create your first project to start editing a chat scene.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                FilledButton.icon(
-                  key: const Key('emptyCreateProjectButton'),
-                  onPressed: onCreateProject,
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('Create Project'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('emptyCreateDemoButton'),
-                  onPressed: onCreateDemoProject,
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('Load Demo Project'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('emptyLoadExportQaButton'),
-                  onPressed: onLoadExportQaProject,
-                  icon: const Icon(Icons.fact_check_outlined),
-                  label: const Text('Load Export QA Project'),
-                ),
-              ],
-            ),
-          ],
-        ),
+    return CenteredScrollableState(
+      maxWidth: 520,
+      scrollViewKey: const Key('emptyProjectStateScrollView'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.workspaces_outline,
+            size: 42,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(height: 12),
+          const Text('No projects yet'),
+          const SizedBox(height: 4),
+          const Text(
+            'Create your first project to start editing a chat scene.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              FilledButton.icon(
+                key: const Key('emptyCreateProjectButton'),
+                onPressed: onCreateProject,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Create Project'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('emptyCreateDemoButton'),
+                onPressed: onCreateDemoProject,
+                icon: const Icon(Icons.auto_awesome_rounded),
+                label: const Text('Load Demo Project'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('emptyLoadExportQaButton'),
+                onPressed: onLoadExportQaProject,
+                icon: const Icon(Icons.fact_check_outlined),
+                label: const Text('Load Export QA Project'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
