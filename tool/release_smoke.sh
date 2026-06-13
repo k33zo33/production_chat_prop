@@ -129,6 +129,8 @@ declare -a PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES=(
 
 declare -a PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES=(
   "compact portfolio pre-flight dialog surfaces timeline QA details and action"
+  "compact portfolio pre-flight continue editing action opens the ready project editor"
+  "compact portfolio pre-flight review attention action opens the flagged project editor"
 )
 
 declare -a RECOVERY_TEST_NAMES=(
@@ -143,6 +145,7 @@ declare -a SCENE_STATUS_BADGE_TEST_NAMES=(
   "compact chat editor app bar keeps scene status badge visible for empty scenes"
   "scene status dialog covers needs-lines details without redundant sections"
   "scene status dialog covers ready details"
+  "compact playback app bar keeps timeline QA status badge visible on narrow screens"
   "playback app bar shows timeline QA status badge on wide layouts"
 )
 
