@@ -2069,6 +2069,59 @@ void main() {
   );
 
   testWidgets(
+    'chat editor app bar disables open playback when the project is missing',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: ChatEditorScreen(projectId: 'missing-project'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project not found.'), findsOneWidget);
+
+      final openPlaybackButton = tester.widget<IconButton>(
+        find.byKey(const Key('chatEditorAppBarOpenPlaybackButton')),
+      );
+      expect(openPlaybackButton.onPressed, isNull);
+    },
+  );
+
+  testWidgets(
+    'compact chat editor overflow disables open playback when the project is missing',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await _pumpNarrowScreenWithContainer(
+        tester,
+        container: container,
+        child: const ChatEditorScreen(projectId: 'missing-project'),
+      );
+
+      expect(find.text('Project not found.'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('chatEditorOverflowMenuButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open Playback'), findsOneWidget);
+
+      await tester.tap(find.text('Open Playback'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatEditorScreen), findsOneWidget);
+      expect(find.text('Project not found.'), findsOneWidget);
+      expect(find.text('Open Playback'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'playback app bar disables open editor when the project is missing',
     (tester) async {
       final container = ProviderContainer();
@@ -2118,6 +2171,132 @@ void main() {
       expect(find.byType(PlaybackScreen), findsOneWidget);
       expect(find.text('Project not found.'), findsOneWidget);
       expect(find.text('Open Chat Editor'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'compact editor recovery actions stay usable and can create a starter project',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final router = GoRouter(
+        initialLocation: '/editor/missing-project',
+        routes: [
+          GoRoute(
+            path: '/',
+            name: 'projects',
+            builder: (context, state) => const ProjectListScreen(),
+          ),
+          GoRoute(
+            path: '/editor/:projectId',
+            name: 'editorProject',
+            builder: (context, state) => ChatEditorScreen(
+              projectId: state.pathParameters['projectId'],
+              initialSceneId: state.uri.queryParameters['sceneId'],
+            ),
+          ),
+          GoRoute(
+            path: '/playback/:projectId',
+            name: 'playbackProject',
+            builder: (context, state) => PlaybackScreen(
+              projectId: state.pathParameters['projectId'],
+              initialSceneId: state.uri.queryParameters['sceneId'],
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await _pumpNarrowRouterWithContainer(
+        tester,
+        container: container,
+        router: router,
+        size: const Size(320, 700),
+      );
+
+      expect(find.text('Project not found.'), findsOneWidget);
+      expect(
+        find.byKey(const Key('projectNotFoundRecoveryScrollView')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(
+        find.byKey(const Key('projectNotFoundCreateStarterButton')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project not found.'), findsNothing);
+      expect(
+        find.byKey(const Key('projectNotFoundRecoveryScrollView')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('chatEditorOverflowMenuButton')), findsOneWidget);
+      expect(find.textContaining('Scene:'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'compact playback recovery actions stay usable and can open a demo project',
+    (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final router = GoRouter(
+        initialLocation: '/playback/missing-project',
+        routes: [
+          GoRoute(
+            path: '/',
+            name: 'projects',
+            builder: (context, state) => const ProjectListScreen(),
+          ),
+          GoRoute(
+            path: '/editor/:projectId',
+            name: 'editorProject',
+            builder: (context, state) => ChatEditorScreen(
+              projectId: state.pathParameters['projectId'],
+              initialSceneId: state.uri.queryParameters['sceneId'],
+            ),
+          ),
+          GoRoute(
+            path: '/playback/:projectId',
+            name: 'playbackProject',
+            builder: (context, state) => PlaybackScreen(
+              projectId: state.pathParameters['projectId'],
+              initialSceneId: state.uri.queryParameters['sceneId'],
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await _pumpNarrowRouterWithContainer(
+        tester,
+        container: container,
+        router: router,
+        size: const Size(320, 700),
+      );
+
+      expect(find.text('Project not found.'), findsOneWidget);
+      expect(
+        find.byKey(const Key('projectNotFoundRecoveryScrollView')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byKey(const Key('projectNotFoundCreateDemoButton')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project not found.'), findsNothing);
+      expect(
+        find.byKey(const Key('projectNotFoundRecoveryScrollView')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('playbackOverflowMenuButton')), findsOneWidget);
+      expect(find.textContaining('Scene:'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     },
   );
 
@@ -8848,6 +9027,28 @@ Future<void> _pumpNarrowScreenWithContainer(
         home: MediaQuery(
           data: MediaQueryData(size: size, textScaler: textScaler),
           child: child,
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pumpNarrowRouterWithContainer(
+  WidgetTester tester, {
+  required ProviderContainer container,
+  required GoRouter router,
+  Size size = const Size(390, 844),
+  TextScaler textScaler = TextScaler.noScaling,
+}) async {
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(
+        routerConfig: router,
+        builder: (context, child) => MediaQuery(
+          data: MediaQueryData(size: size, textScaler: textScaler),
+          child: child ?? const SizedBox.shrink(),
         ),
       ),
     ),
