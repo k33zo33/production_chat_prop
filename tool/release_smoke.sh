@@ -12,6 +12,7 @@ smoke_run_analyze "release-smoke" "$FLUTTER_BIN"
 
 declare -a WIDGET_TEST_FILES=(
   "test/widget_test.dart"
+  "test/widget/export_qa_avatar_preview_test.dart"
   "test/widget/focus_preview_autofollow_test.dart"
   "test/widget/focus_preview_chrome_test.dart"
   "test/widget/focus_preview_short_height_test.dart"
@@ -27,6 +28,7 @@ declare -a WIDGET_TEST_FILES=(
 )
 
 WIDGET_TEST_FILE="test/widget_test.dart"
+EXPORT_QA_AVATAR_PREVIEW_TEST_FILE="test/widget/export_qa_avatar_preview_test.dart"
 FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE="test/widget/focus_preview_autofollow_test.dart"
 FOCUS_PREVIEW_CHROME_TEST_FILE="test/widget/focus_preview_chrome_test.dart"
 FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE="test/widget/focus_preview_short_height_test.dart"
@@ -80,6 +82,10 @@ declare -a WIDGET_TEST_NAMES=(
   "changing aspect ratio keeps playback progress stable"
   "long chat scene keeps playback controls and export available"
   "playback stays responsive with imported 500+ messages"
+)
+
+declare -a EXPORT_QA_AVATAR_PREVIEW_TEST_NAMES=(
+  "export QA hero portrait keeps embedded avatar visible in playback and focus preview"
 )
 
 declare -a FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES=(
@@ -183,6 +189,13 @@ for test_name in "${WIDGET_TEST_NAMES[@]}"; do
   fi
 done
 
+for test_name in "${EXPORT_QA_AVATAR_PREVIEW_TEST_NAMES[@]}"; do
+  if ! grep -Fq "$test_name" "$EXPORT_QA_AVATAR_PREVIEW_TEST_FILE"; then
+    echo "[release-smoke] missing expected export QA avatar preview test: $test_name" >&2
+    exit 1
+  fi
+done
+
 for test_name in "${FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]}"; do
   if ! grep -Fq "$test_name" "$FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE"; then
     echo "[release-smoke] missing expected focus preview auto-follow test: $test_name" >&2
@@ -275,6 +288,7 @@ for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
 done
 
 WIDGET_TEST_PATTERN="$(printf '%s\n' "${WIDGET_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
+EXPORT_QA_AVATAR_PREVIEW_TEST_PATTERN="$(printf '%s\n' "${EXPORT_QA_AVATAR_PREVIEW_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FOCUS_PREVIEW_AUTOFOLLOW_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FOCUS_PREVIEW_CHROME_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_CHROME_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
@@ -287,9 +301,9 @@ SCENE_STATUS_BADGE_TEST_PATTERN="$(printf '%s\n' "${SCENE_STATUS_BADGE_TEST_NAME
 SCENE_ROUTE_SYNC_TEST_PATTERN="$(printf '%s\n' "${SCENE_ROUTE_SYNC_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN="$(printf '%s\n' "${SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 TIMELINE_QA_MARKERS_TEST_PATTERN="$(printf '%s\n' "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
-TEST_PATTERN="${WIDGET_TEST_PATTERN}|${FOCUS_PREVIEW_AUTOFOLLOW_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}|${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${PORTFOLIO_PREFLIGHT_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
+TEST_PATTERN="${WIDGET_TEST_PATTERN}|${EXPORT_QA_AVATAR_PREVIEW_TEST_PATTERN}|${FOCUS_PREVIEW_AUTOFOLLOW_TEST_PATTERN}|${FOCUS_PREVIEW_CHROME_TEST_PATTERN}|${FOCUS_PREVIEW_SHORT_HEIGHT_TEST_PATTERN}|${MOBILE_COMPACT_POLISH_TEST_PATTERN}|${PLAYBACK_EMPTY_STATE_TEST_PATTERN}|${PLAYBACK_EXPORT_FEEDBACK_TEST_PATTERN}|${PORTFOLIO_PREFLIGHT_BADGE_TEST_PATTERN}|${RECOVERY_TEST_PATTERN}|${SCENE_STATUS_BADGE_TEST_PATTERN}|${SCENE_ROUTE_SYNC_TEST_PATTERN}|${SHORT_HEIGHT_ENTRY_STATES_TEST_PATTERN}|${TIMELINE_QA_MARKERS_TEST_PATTERN}"
 
-echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]} focus-preview auto-follow + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome + ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} focus-preview short-height + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]} portfolio pre-flight + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status badge + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} short-height entry/recovery + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
+echo "[release-smoke] widget tests: ${#WIDGET_TEST_NAMES[@]} widget + ${#EXPORT_QA_AVATAR_PREVIEW_TEST_NAMES[@]} export-QA avatar preview + ${#FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]} focus-preview auto-follow + ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} focus-preview chrome + ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} focus-preview short-height + ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} mobile polish + ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} playback empty-state + ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} export feedback + ${#PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]} portfolio pre-flight + ${#RECOVERY_TEST_NAMES[@]} recovery + ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} scene-status badge + ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} route-sync + ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} short-height entry/recovery + ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} timeline-QA marker cases"
 "$FLUTTER_BIN" test "${WIDGET_TEST_FILES[@]}" --name "^(${TEST_PATTERN})$"
 
 echo
@@ -301,7 +315,7 @@ echo
 
 echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
-echo "- It now covers key compact-width, larger-text compact breakpoints, short-landscape focus-preview chrome, deep long-scene focus-preview auto-follow, dialog ergonomics, short-height empty/recovery entry shells, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
+echo "- It now covers key compact-width, larger-text compact breakpoints, short-landscape focus-preview chrome, deep long-scene focus-preview auto-follow, embedded export-QA avatar preview retention, dialog ergonomics, short-height empty/recovery entry shells, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
 echo "- Then do the browser pass from docs/08-web-smoke-checklist.md for real browser history/back-forward behavior and visual confirmation."
 echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md for compact visual/layout confirmation."
 echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
