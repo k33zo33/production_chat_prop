@@ -179,14 +179,39 @@ run_gemini() {
     return 2
   fi
 
+  local gemini_output
+  local gemini_status=0
+
   # Gemini requires a prompt argument for -p; an empty string keeps the actual
   # payload on stdin, which avoids shell ARG_MAX limits for large diffs.
-  if ! printf '%s' "$prompt" | timeout "$HELPER_TIMEOUT_SECONDS" gemini -p '' \
+  set +e
+  gemini_output="$(printf '%s' "$prompt" | timeout "$HELPER_TIMEOUT_SECONDS" gemini -p '' \
     --approval-mode plan \
-    --output-format text; then
-    echo "Gemini helper failed or timed out after ${HELPER_TIMEOUT_SECONDS}s; continuing without Gemini output." >&2
+    --output-format text 2>&1)"
+  gemini_status=$?
+  set -e
+
+  if [[ $gemini_status -eq 0 ]]; then
+    printf '%s\n' "$gemini_output"
+    return 0
+  fi
+
+  if grep -Fq 'UNSUPPORTED_CLIENT' <<< "$gemini_output" || \
+    grep -Fq 'This client is no longer supported for Gemini Code Assist for individuals' <<< "$gemini_output"; then
+    printf '%s\n' "$gemini_output" >&2
+    echo "Gemini helper is configured with an unsupported client/auth tier. Re-auth with a supported Gemini/Antigravity setup or temporarily skip helper review until the local CLI is fixed." >&2
+    return 3
+  fi
+
+  if [[ $gemini_status -eq 124 ]]; then
+    printf '%s\n' "$gemini_output" >&2
+    echo "Gemini helper timed out after ${HELPER_TIMEOUT_SECONDS}s; continuing without Gemini output." >&2
     return 1
   fi
+
+  printf '%s\n' "$gemini_output" >&2
+  echo "Gemini helper failed; continuing without Gemini output." >&2
+  return 1
 }
 
 mode="${1:-}"
@@ -200,10 +225,13 @@ case "$mode" in
   review)
     prompt="$(build_review_payload "$@")"
     printf '===== GEMINI CLI REVIEW =====\n'
-    if ! run_gemini "$prompt"; then
-      gemini_status=$?
+    gemini_status=0
+    run_gemini "$prompt" || gemini_status=$?
+    if [[ "$gemini_status" -ne 0 ]]; then
       if [[ "$gemini_status" -eq 2 ]]; then
         echo '[ai-helper] Gemini helper unavailable.' >&2
+      elif [[ "$gemini_status" -eq 3 ]]; then
+        echo '[ai-helper] Gemini helper unsupported on the current local auth/client setup.' >&2
       else
         echo '[ai-helper] Gemini helper failed.' >&2
       fi
@@ -224,10 +252,13 @@ case "$mode" in
     prompt+="$question"
     prompt+=$'\n\nRules:\n- Read-only analysis only.\n- Be concise and practical.\n- Prefer concrete recommendations over theory.\n- If something looks uncertain, say so plainly.\n- If the task mentions ignored local workflow files such as AGENTS.md or HEARTBEAT.md, use the inlined repo context above instead of trying to read those files from disk unless the prompt explicitly includes their contents.'
     printf '===== GEMINI CLI ANALYSIS =====\n'
-    if ! run_gemini "$prompt"; then
-      gemini_status=$?
+    gemini_status=0
+    run_gemini "$prompt" || gemini_status=$?
+    if [[ "$gemini_status" -ne 0 ]]; then
       if [[ "$gemini_status" -eq 2 ]]; then
         echo '[ai-helper] Gemini helper unavailable.' >&2
+      elif [[ "$gemini_status" -eq 3 ]]; then
+        echo '[ai-helper] Gemini helper unsupported on the current local auth/client setup.' >&2
       else
         echo '[ai-helper] Gemini helper failed.' >&2
       fi

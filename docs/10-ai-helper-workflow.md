@@ -1,12 +1,12 @@
 # AI Helper Workflow
 
-Ovaj projekt koristi **Claude CLI** i **Gemini CLI** kao read-only helper alate.
+Ovaj projekt trenutno koristi **Gemini CLI** kao read-only helper alat.
 
 ## Osnovno pravilo
 - Za helper analizu i review **ne koristi MCP kao default path**.
 - Preferirani način je direktni CLI poziv u read-only modu.
-- Oba helpera služe za analizu, review, debugging i drugi pogled prije odluke.
-- Nijedan helper ne smije pisati, editirati, commitati ni pushati kod.
+- Helper služi za analizu, review, debugging i drugi pogled prije odluke.
+- Helper ne smije pisati, editirati, commitati ni pushati kod.
 
 ## Kada koristiti helpere
 
@@ -28,9 +28,8 @@ Očekivani workflow:
 2. pokreni lokalnu verifikaciju
 3. ako želiš review točno onoga što planiraš commitati, prvo stageaj diff (`git add -A` ili ciljane fileove)
 4. pokreni `./tool/ai_helper.sh review`
-5. usporedi Claude i Gemini nalaze
-6. primijeni koristan feedback
-7. odluči je li diff spreman za commit
+5. primijeni koristan feedback ako helper vrati koristan nalaz
+6. odluči je li diff spreman za commit
 
 Napomena:
 - Kad **nema staged promjena**, `review` automatski uključuje tracked working-tree diff **i untracked fileove**.
@@ -51,26 +50,19 @@ Primjeri:
 ```
 
 ## Tehnički detalji
-- Claude CLI se pokreće non-interactive preko `claude -p`
-- Claude radi u `--permission-mode plan` i ograničen je na `Read,Grep,Glob` alate
 - Gemini CLI se pokreće non-interactive preko `gemini -p ''` uz payload preko stdin-a
 - Gemini radi u `--approval-mode plan`
-- Wrapper skripta ispisuje Claude i Gemini sekcije odvojeno radi lakše usporedbe
-- Ako jedan helper faila, nije instaliran, ili istekne timeout, wrapper nastavlja s drugim helperom
 - Timeout se može podesiti preko `HELPER_TIMEOUT_SECONDS` varijable okoline
-- Prompt payload se helperima šalje preko stdin-a kako veliki diffovi ne bi padali na shell `ARG_MAX` limit
-- Claude u oba moda dobiva `--add-dir` pristup za read-only čitanje repoa, dok Gemini odgovara samo na temelju prompt payload-a
-- Wrapper sada helper promptu inline-a kratak repo/workflow sažetak (scope, source-of-truth docs, heartbeat prioritet) kako analiza ne bi ovisila o git-ignored lokalnim datotekama poput `AGENTS.md` ili `HEARTBEAT.md`
+- Prompt payload se helperu šalje preko stdin-a kako veliki diffovi ne bi padali na shell `ARG_MAX` limit
+- Wrapper helper promptu inline-a kratak repo/workflow sažetak (scope, source-of-truth docs, heartbeat prioritet) kako analiza ne bi ovisila o git-ignored lokalnim datotekama poput `AGENTS.md` ili `HEARTBEAT.md`
 - Za untracked fileove skripta generira patch-style pregled (`git diff --no-color --no-ext-diff --no-index`) tako da review ne preskoči nove datoteke
 - Za binarne untracked fileove skripta preskače raw patch i zadržava samo stat sažetak da review ostane čitljiv
+- Ako lokalni Gemini CLI vrati unsupported-client / unsupported-tier grešku, wrapper sada ispisuje jasan hint da treba popraviti lokalni auth/client setup umjesto generičkog faila
 
 ## Pravila odlučivanja
-- Claude i Gemini su helperi, ne autori odluke.
-- Ako se slažu i nalaz je razuman, primijeni ga.
-- Ako se razilaze, preferiraj:
-  1. product docs
-  2. repo kontekst i test evidence
-  3. manji i sigurniji diff
+- Helper je pomoćni reviewer, ne autor odluke.
+- Ako nalaz izgleda razumno, primijeni ga.
+- Ako helper nije dostupan ili je lokalni client/auth setup pokvaren, osloni se na product docs, repo kontekst i test evidence dok se helper ne popravi.
 - Ako helper traži dodatni kontekst ili postavi follow-up pitanje koje stvarno blokira odluku, stani i eskaliraj korisniku.
 
 ## Što nije dozvoljeno
