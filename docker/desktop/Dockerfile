@@ -11,6 +11,8 @@ RUN apt-get update \
     cmake \
     libgtk-3-dev \
     liblzma-dev \
+    lld-18 \
+    llvm-18 \
     ninja-build \
     pkg-config \
   && rm -rf /var/lib/apt/lists/*
