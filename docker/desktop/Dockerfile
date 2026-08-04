@@ -15,18 +15,22 @@ RUN apt-get update \
     llvm-18 \
     ninja-build \
     pkg-config \
+  && chown -R ubuntu:ubuntu /sdks/flutter \
   && rm -rf /var/lib/apt/lists/*
 
+USER ubuntu
+ENV HOME=/home/ubuntu
 WORKDIR /app
+RUN git config --global --add safe.directory /sdks/flutter
 
-COPY pubspec.yaml pubspec.lock ./
+COPY --chown=ubuntu:ubuntu pubspec.yaml pubspec.lock ./
 RUN flutter config --enable-linux-desktop \
   && flutter pub get
 
-COPY analysis_options.yaml .metadata ./
-COPY docs/fixtures/ docs/fixtures/
-COPY lib/ lib/
-COPY linux/ linux/
+COPY --chown=ubuntu:ubuntu analysis_options.yaml .metadata ./
+COPY --chown=ubuntu:ubuntu docs/fixtures/ docs/fixtures/
+COPY --chown=ubuntu:ubuntu lib/ lib/
+COPY --chown=ubuntu:ubuntu linux/ linux/
 RUN flutter build linux --release
 
 FROM ubuntu:24.04 AS runtime
