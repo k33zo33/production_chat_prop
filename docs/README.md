@@ -1,29 +1,40 @@
-# Production Chat Prop — starter paket za Codex
+# Production Chat Prop docs
 
-Ovaj paket je pripremljen kao ulaz za AI coding asistenta i kao početna dokumentacija za novi Flutter projekt.
+Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, ne više samo starter paket za novi scaffold.
 
-## Što je unutra
-- `01-product-spec-mvp.md` — proizvodna specifikacija MVP-a
-- `02-technical-architecture-flutter.md` — tehnička arhitektura i odluke
-- `03-roadmap-and-sprints.md` — faze rada i sprintovi
-- `04-codex-master-prompt.md` — glavni prompt koji zalijepiš u Codex
-- `04-export-qa-checklist.md` — ručna QA checklista za export flow
-- `05-vscode-setup-and-workflow.md` — preporučeni način rada u VS Codeu
-- `05-web-done-checklist.md` — trenutni status web MVP-a i release gate pregled
-- `06-product-description.md` — landing/product copy draft za prezentaciju
-- `07-demo-script.md` — koraci za 2-3 minute produkt demo walkthrough
-- `08-web-smoke-checklist.md` — kratki ručni smoke pass za finalnu web provjeru
-- `09-compact-smoke-checklist.md` — ručni compact/mobile smoke pass
-- `10-ai-helper-workflow.md` — Claude/Gemini read-only helper workflow i review wrapper
-- `11-video-fallback-workflow.md` — objašnjenje trenutnog `Export Video` JSON handoff workflowa za post-produkciju
-- `production-chat-prop.code-workspace` — opcionalni workspace file za VS Code
+## Core product docs
+- `01-product-spec-mvp.md` — MVP scope, use-caseovi i product pravila
+- `02-technical-architecture-flutter.md` — arhitektura, feature split i release pristup
+- `03-roadmap-and-sprints.md` — sprint plan i scope guardrails
 
-## Preporučeni redoslijed
-1. Napravi novi folder/repo: `production_chat_prop`
-2. Kopiraj ove dokumente u root projekta ili u `docs/`
-3. Otvori folder u VS Codeu
-4. Pokreni Codex i prvo mu daj sadržaj iz `04-codex-master-prompt.md`
-5. Nakon što generira skeleton, radi po sprintovima iz `03-roadmap-and-sprints.md`
+## Beta / release docs
+- `04-export-qa-checklist.md` — ručni export QA pass
+- `05-web-done-checklist.md` — trenutni web MVP status i release gate pregled
+- `06-product-description.md` — kratki product/landing copy draft
+- `07-demo-script.md` — 2-3 minute demo walkthrough
+- `08-web-smoke-checklist.md` — kratki browser smoke pass
+- `09-compact-smoke-checklist.md` — compact/mobile smoke pass
+- `11-video-fallback-workflow.md` — objašnjenje trenutnog `Export Video` JSON handoff workflowa
 
-## Napomena
-Za jedan Flutter app **ne trebaš** odmah poseban multi-root VS Code workspace. Dovoljan je jedan folder. Workspace file je uključen kao opcija ako kasnije dodaš landing page, backend ili asset pipeline.
+## Developer workflow docs
+- `04-codex-master-prompt.md` — historical prompt/bootstrap reference
+- `05-vscode-setup-and-workflow.md` — editor/workstation workflow notes
+- `10-ai-helper-workflow.md` — Gemini read-only helper workflow i wrapper ponašanje
+- `production-chat-prop.code-workspace` — opcionalni VS Code workspace file
+
+## Recommended reading order
+1. `01-product-spec-mvp.md`
+2. `02-technical-architecture-flutter.md`
+3. `03-roadmap-and-sprints.md`
+4. `05-web-done-checklist.md`
+5. relevant smoke / QA checklist for the slice you are touching
+
+## Practical usage
+- Za product odluke: kreni od `01` + `03`
+- Za arhitekturu i repo wiring: kreni od `02`
+- Za beta handoff/release provjeru: kreni od `05`, zatim `08`, `09`, `04`, `11`
+- Za helper/review workflow: vidi `10-ai-helper-workflow.md`
+
+## Notes
+- Helper workflow je Gemini-only dok se ne odluči drugačije; starije Claude reference treba tretirati kao povijesne ili overridane novijim pravilima.
+- `Export Video` u trenutnom beta MVP-u i dalje znači dokumentirani `.json` handoff paket, ne finalni encoded video render.
