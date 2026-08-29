@@ -27,6 +27,7 @@ Examples:
   ./tool/ai_helper.sh review
   ./tool/ai_helper.sh review origin/main...HEAD
   ./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md
+  ./tool/ai_helper.sh review HEAD~1..HEAD -- tool/ai_helper.sh
   ./tool/ai_helper.sh ask "Review the playback export architecture and name the main risks."
 
 Notes:
@@ -138,12 +139,26 @@ build_review_payload() {
   local path_filters=()
   local diff_cmd=()
   local include_untracked=false
+  local separator_index=-1
 
   if [[ ${#diff_args[@]} -gt 0 ]]; then
-    if [[ "${diff_args[0]}" == "--" ]]; then
-      path_filters=("${diff_args[@]:1}")
+    for i in "${!diff_args[@]}"; do
+      if [[ "${diff_args[i]}" == "--" ]]; then
+        separator_index=$i
+        break
+      fi
+    done
+
+    if [[ "$separator_index" -ge 0 ]]; then
+      diff_base_args=("${diff_args[@]:0:$separator_index}")
+      path_filters=("${diff_args[@]:$((separator_index + 1))}")
     else
       diff_base_args=("${diff_args[@]}")
+    fi
+
+    if [[ ${#diff_base_args[@]} -eq 0 && ${#path_filters[@]} -eq 0 ]]; then
+      echo "review mode requires a diff range or at least one path after --" >&2
+      exit 1
     fi
   fi
 
