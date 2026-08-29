@@ -19,7 +19,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 ## Developer workflow docs
 - `04-codex-master-prompt.md` — historical prompt/bootstrap reference
 - `05-vscode-setup-and-workflow.md` — editor/workstation workflow notes
-- `10-ai-helper-workflow.md` — Gemini read-only helper workflow i wrapper ponašanje
+- `10-ai-helper-workflow.md` — Gemini read-only helper workflow, wrapper ponašanje i `./tool/ai_helper.sh doctor` preflight
 - `production-chat-prop.code-workspace` — opcionalni VS Code workspace file
 
 ## Recommended reading order
@@ -33,7 +33,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - Za product odluke: kreni od `01` + `03`
 - Za arhitekturu i repo wiring: kreni od `02`
 - Za beta handoff/release provjeru: kreni od `05`, zatim pokreni `./tool/manual_beta_checklist.sh`, pa odradi `08`, `09`, `04`, `11`
-- Za helper/review workflow: vidi `10-ai-helper-workflow.md`
+- Za helper/review workflow: kreni s `./tool/ai_helper.sh doctor`, zatim vidi `10-ai-helper-workflow.md`
 
 ## Notes
 - Helper workflow je Gemini-only dok se ne odluči drugačije; starije Claude reference treba tretirati kao povijesne ili overridane novijim pravilima.

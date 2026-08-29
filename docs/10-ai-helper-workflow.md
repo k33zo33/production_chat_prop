@@ -10,6 +10,21 @@ Ovaj projekt trenutno koristi **Gemini CLI** kao read-only helper alat.
 
 ## Kada koristiti helpere
 
+### 0. Prvo provjeri helper okruženje
+Ako helper u ovom okruženju zna biti nedostupan, prvo provjeri lokalni setup:
+
+```bash
+./tool/ai_helper.sh doctor
+```
+
+To je brzi preflight za:
+- `git`
+- `timeout`
+- `gemini`
+- trenutni `HELPER_TIMEOUT_SECONDS`
+
+Ako `doctor` padne, nemoj očekivati da će `review` ili `ask` uspjeti bez popravka lokalnog CLI setupa.
+
 ### 1. Prije svakog commita
 Obavezno pokrenuti zajednički review trenutnog diffa:
 
@@ -57,6 +72,7 @@ Primjeri:
 - Wrapper helper promptu inline-a kratak repo/workflow sažetak (scope, source-of-truth docs, heartbeat prioritet) kako analiza ne bi ovisila o git-ignored lokalnim datotekama poput `AGENTS.md` ili `HEARTBEAT.md`
 - Za untracked fileove skripta generira patch-style pregled (`git diff --no-color --no-ext-diff --no-index`) tako da review ne preskoči nove datoteke
 - Za binarne untracked fileove skripta preskače raw patch i zadržava samo stat sažetak da review ostane čitljiv
+- `doctor` daje brzi signal nedostaje li lokalni `gemini` binary prije nego što review padne tek na kraju slicea
 - Ako lokalni Gemini CLI vrati unsupported-client / unsupported-tier grešku, wrapper sada ispisuje jasan hint da treba popraviti lokalni auth/client setup umjesto generičkog faila
 
 ## Pravila odlučivanja

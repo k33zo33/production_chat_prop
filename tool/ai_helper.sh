@@ -7,10 +7,14 @@ cd "$ROOT_DIR"
 usage() {
   cat <<'EOF'
 Usage:
+  ./tool/ai_helper.sh doctor
   ./tool/ai_helper.sh review [git-diff-args...]
   ./tool/ai_helper.sh ask <question>
 
 Modes:
+  doctor   Checks whether the local helper environment is ready before you rely
+           on Gemini for read-only review or analysis.
+
   review   Runs a read-only Gemini CLI review against the current git diff
            (default diff target: --cached, or HEAD if nothing is staged, or a
            custom git diff argument list you pass through). In default HEAD
@@ -19,6 +23,7 @@ Modes:
   ask      Sends the same read-only project question to Gemini CLI.
 
 Examples:
+  ./tool/ai_helper.sh doctor
   ./tool/ai_helper.sh review
   ./tool/ai_helper.sh review origin/main...HEAD
   ./tool/ai_helper.sh ask "Review the playback export architecture and name the main risks."
@@ -38,6 +43,39 @@ require_bin() {
 }
 
 HELPER_TIMEOUT_SECONDS="${HELPER_TIMEOUT_SECONDS:-120}"
+
+run_helper_doctor() {
+  local failures=0
+
+  echo '===== GEMINI CLI DOCTOR ====='
+  echo "[ai-helper] repo: $ROOT_DIR"
+
+  for required_bin in git timeout; do
+    if command -v "$required_bin" >/dev/null 2>&1; then
+      echo "[ai-helper] ok: found $required_bin"
+    else
+      echo "[ai-helper] missing: $required_bin" >&2
+      failures=1
+    fi
+  done
+
+  if command -v gemini >/dev/null 2>&1; then
+    echo '[ai-helper] ok: found gemini'
+  else
+    echo '[ai-helper] missing: gemini' >&2
+    echo '[ai-helper] hint: install or re-auth the local Gemini CLI before relying on helper review.' >&2
+    failures=1
+  fi
+
+  echo "[ai-helper] helper timeout: ${HELPER_TIMEOUT_SECONDS}s"
+
+  if [[ "$failures" -ne 0 ]]; then
+    echo '[ai-helper] doctor verdict: needs attention' >&2
+    return 1
+  fi
+
+  echo '[ai-helper] doctor verdict: ready'
+}
 
 # Keep this summary aligned with the current project phase when heartbeat
 # priorities or source-of-truth docs change.
@@ -222,6 +260,9 @@ fi
 shift || true
 
 case "$mode" in
+  doctor)
+    run_helper_doctor
+    ;;
   review)
     prompt="$(build_review_payload "$@")"
     printf '===== GEMINI CLI REVIEW =====\n'
