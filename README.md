@@ -94,6 +94,8 @@ GitHub Actions i lokalni beta handoff koriste isti redoslijed za web release gat
 
 Uz to, GitHub Actions sada vrti i zaseban `desktop_smoke` job koji pokreće `./tool/desktop_smoke.sh` kako bi Docker desktop packaging/noVNC flow ostao živ bez miješanja u web handoff redoslijed.
 
+GitHub Actions dodatno vrti i zaseban `helper_smoke` job koji pokreće `./tool/ai_helper_smoke.sh`, tako da Gemini helper wrapper parsing i fallback ponašanje ne driftaju tiho dok je lokalni Gemini CLI nedostupan.
+
 Ako sve prođe, CI upload-a gotovi web build artefakt.
 
 Najčešće komande:
@@ -123,6 +125,7 @@ Napomene:
 - `./tool/manual_beta_checklist.sh` potvrđuje da su ručne QA reference i fixture prisutni te ispisuje standardni redoslijed browser/compact/export provjera.
 - `./tool/ai_helper.sh doctor` daje brzi preflight za lokalni Gemini helper setup prije `review` ili `ask`.
 - `./tool/ai_helper_smoke.sh` provjerava helper wrapper parsing i fallback ponašanje u privremenom git repou, bez potrebe za dostupnim Gemini CLI backendom.
+- GitHub Actions vrti `./tool/ai_helper_smoke.sh` u zasebnom `helper_smoke` jobu kako helper workflow regresije ne bi čekale ručni lokalni check.
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`

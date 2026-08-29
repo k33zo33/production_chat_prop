@@ -14,6 +14,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  helper_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run AI helper smoke gate
+        run: ./tool/ai_helper_smoke.sh
+
   beta_handoff:
     runs-on: ubuntu-latest
     timeout-minutes: 35

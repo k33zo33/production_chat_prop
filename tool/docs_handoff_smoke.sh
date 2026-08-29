@@ -295,6 +295,8 @@ checks = [
      'tool/ai_helper.sh should dispatch the doctor mode explicitly'),
     ('run: ./tool/beta_handoff.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
+    ('helper_smoke:' in workflow and 'run: ./tool/ai_helper_smoke.sh' in workflow,
+     'GitHub Actions should keep invoking ./tool/ai_helper_smoke.sh in the helper_smoke job'),
     ('desktop_smoke:' in workflow and 'run: ./tool/desktop_smoke.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/desktop_smoke.sh in the desktop_smoke job'),
     ('docs/11-video-fallback-workflow.md' in release_smoke,

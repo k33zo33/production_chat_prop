@@ -32,6 +32,7 @@ This checklist reflects the current web MVP state after the automated beta hando
 - [x] `./tool/brand_neutrality_smoke.sh` scans user-facing app copy and built web output for forbidden real-brand references
 - [x] `./tool/demo_smoke.sh` covers the core beta demo/import/export flow
 - [x] `./tool/import_smoke.sh` hardens JSON import, sanitizer, and persistence recovery paths
+- [x] `./tool/ai_helper_smoke.sh` keeps the Gemini helper wrapper parsing and fallback behavior covered without depending on a live Gemini backend
 - [x] `./tool/beta_handoff.sh`
 - [x] `./tool/desktop_smoke.sh` keeps the Docker desktop fallback path checked in CI as a separate gate
 - [x] Main widget flow stabilized on web
@@ -84,6 +85,7 @@ Run `./tool/manual_beta_checklist.sh`, then finish the three manual checklists (
 - `./tool/navigation_smoke.sh` now catches scene deep-link sync, stale route query normalization, and recovery navigation regressions before the heavier full-suite verify step
 - `bash tool/release_smoke.sh` now covers empty-scene export disabling, larger-text compact breakpoint regressions, deep long-scene focus-preview auto-follow alongside focus-preview transport/keyboard flow plus compact/wide chrome stacking and timeline/preview-state continuity, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
 - GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke` before uploading the web artifact
+- GitHub Actions now also runs `./tool/ai_helper_smoke.sh` as a separate `helper_smoke` job so helper workflow regressions surface even while Gemini CLI is unavailable locally
 - GitHub Actions now also runs `./tool/desktop_smoke.sh` as a separate `desktop_smoke` job so Docker desktop packaging/noVNC regressions surface before they become a beta handoff surprise
 - web shell metadata is now gated for both source `web/` assets and built `build/web` output, so title/manifest/icon regressions get caught before beta handoff
 - user-facing app copy and built output now get dedicated brand-neutrality scans, so accidental forbidden messaging-brand labels are blocked before beta handoff
