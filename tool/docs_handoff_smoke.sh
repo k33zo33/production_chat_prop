@@ -230,6 +230,8 @@ checks = [
      'docs/05-web-done-checklist.md should describe the current beta handoff order including docs_handoff_smoke'),
     ('./tool/desktop_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the desktop smoke gate'),
+    ('./tool/ai_helper_smoke.sh' in web_done,
+     'docs/05-web-done-checklist.md should mention the AI helper smoke gate'),
     ('./tool/brand_neutrality_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the brand-neutrality smoke gate'),
     ('navigation_smoke' in web_done and './tool/navigation_smoke.sh' in web_done,
