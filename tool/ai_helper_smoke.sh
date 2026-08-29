@@ -76,6 +76,14 @@ assert_status 1 "$review_path_status" "staged path-filter review"
 assert_output_contains "===== GEMINI CLI REVIEW =====" "$review_path_output" "staged path-filter review"
 assert_output_contains "[ai-helper] Gemini helper unavailable." "$review_path_output" "staged path-filter review"
 
+result="$(run_and_capture "$TMP_DIR/tool/ai_helper.sh" preview-review -- tracked.txt)"
+preview_status="$(printf '%s\n' "$result" | head -n1)"
+preview_output="$(printf '%s\n' "$result" | tail -n +2)"
+assert_status 0 "$preview_status" "preview-review path-filter"
+assert_output_contains "Changed files:" "$preview_output" "preview-review path-filter"
+assert_output_contains "tracked.txt" "$preview_output" "preview-review path-filter"
+assert_output_contains "Diff:" "$preview_output" "preview-review path-filter"
+
 git commit -q -m "update tracked files"
 
 result="$(run_and_capture "$TMP_DIR/tool/ai_helper.sh" review HEAD~1..HEAD -- tracked.txt)"
@@ -93,6 +101,7 @@ assert_output_contains "No diff detected for review." "$missing_path_output" "mi
 
 echo "[ai-helper-smoke] doctor path detects missing Gemini"
 echo "[ai-helper-smoke] staged path-filter review reaches the Gemini invocation path"
+echo "[ai-helper-smoke] preview-review prints the local review payload without Gemini"
 echo "[ai-helper-smoke] range-plus-path review reaches the Gemini invocation path"
 echo "[ai-helper-smoke] missing-path review still fails fast with a clear no-diff signal"
 echo "[ai-helper-smoke] done"

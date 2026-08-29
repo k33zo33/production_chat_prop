@@ -8,12 +8,16 @@ usage() {
   cat <<'EOF'
 Usage:
   ./tool/ai_helper.sh doctor
+  ./tool/ai_helper.sh preview-review [git-diff-args...]
   ./tool/ai_helper.sh review [git-diff-args...]
   ./tool/ai_helper.sh ask <question>
 
 Modes:
   doctor   Checks whether the local helper environment is ready before you rely
            on Gemini for read-only review or analysis.
+
+  preview-review
+           Prints the generated review payload locally without invoking Gemini.
 
   review   Runs a read-only Gemini CLI review against the current git diff
            (default diff target: --cached, or HEAD if nothing is staged, or a
@@ -24,6 +28,7 @@ Modes:
 
 Examples:
   ./tool/ai_helper.sh doctor
+  ./tool/ai_helper.sh preview-review -- tool/ai_helper.sh
   ./tool/ai_helper.sh review
   ./tool/ai_helper.sh review origin/main...HEAD
   ./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md
@@ -33,6 +38,7 @@ Examples:
 Notes:
 - Gemini runs in read-only mode.
 - Gemini uses: gemini -p '' --approval-mode plan --output-format text
+- preview-review stays fully local and never invokes Gemini.
 - Output is written to stdout directly.
 EOF
 }
@@ -301,6 +307,9 @@ shift || true
 case "$mode" in
   doctor)
     run_helper_doctor
+    ;;
+  preview-review)
+    build_review_payload "$@"
     ;;
   review)
     prompt="$(build_review_payload "$@")"
