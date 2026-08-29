@@ -241,8 +241,6 @@ checks = [
     ('smoke_print_manual_beta_handoff_hint' in navigation_smoke,
      'tool/navigation_smoke.sh should use the shared manual beta handoff helper'),
     ('./tool/manual_beta_checklist.sh' in demo_smoke,
-     'tool/demo_smoke.sh should point its manual handoff at the shared manual beta checklist helper'),
-    ('./tool/manual_beta_checklist.sh' in demo_smoke,
      'tool/demo_smoke.sh should mention the shared manual beta checklist helper explicitly'),
     ('run: ./tool/beta_handoff.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
