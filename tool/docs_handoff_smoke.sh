@@ -12,6 +12,7 @@ COMPACT_SMOKE_DOC_PATH="$ROOT_DIR/docs/09-compact-smoke-checklist.md"
 VIDEO_WORKFLOW_PATH="$ROOT_DIR/docs/11-video-fallback-workflow.md"
 WORKFLOW_PATH="$ROOT_DIR/.github/workflows/flutter_ci.yml"
 BETA_HANDOFF_PATH="$ROOT_DIR/tool/beta_handoff.sh"
+MANUAL_BETA_CHECKLIST_PATH="$ROOT_DIR/tool/manual_beta_checklist.sh"
 BRAND_SMOKE_PATH="$ROOT_DIR/tool/brand_neutrality_smoke.sh"
 DEMO_SMOKE_PATH="$ROOT_DIR/tool/demo_smoke.sh"
 RELEASE_SMOKE_PATH="$ROOT_DIR/tool/release_smoke.sh"
@@ -36,6 +37,7 @@ for path in \
   "$VIDEO_WORKFLOW_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
+  "$MANUAL_BETA_CHECKLIST_PATH" \
   "$BRAND_SMOKE_PATH" \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
@@ -65,6 +67,7 @@ python3 - \
   "$VIDEO_WORKFLOW_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
+  "$MANUAL_BETA_CHECKLIST_PATH" \
   "$BRAND_SMOKE_PATH" \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
@@ -93,6 +96,7 @@ import sys
     video_workflow_raw,
     workflow_raw,
     beta_handoff_raw,
+    manual_beta_checklist_raw,
     brand_smoke_raw,
     demo_smoke_raw,
     release_smoke_raw,
@@ -117,6 +121,7 @@ compact_smoke_doc_path = pathlib.Path(compact_smoke_doc_raw)
 video_workflow_path = pathlib.Path(video_workflow_raw)
 workflow_path = pathlib.Path(workflow_raw)
 beta_handoff_path = pathlib.Path(beta_handoff_raw)
+manual_beta_checklist_path = pathlib.Path(manual_beta_checklist_raw)
 brand_smoke_path = pathlib.Path(brand_smoke_raw)
 demo_smoke_path = pathlib.Path(demo_smoke_raw)
 release_smoke_path = pathlib.Path(release_smoke_raw)
@@ -140,6 +145,7 @@ compact_smoke_doc = compact_smoke_doc_path.read_text(encoding='utf-8')
 video_workflow = video_workflow_path.read_text(encoding='utf-8')
 workflow = workflow_path.read_text(encoding='utf-8')
 beta_handoff = beta_handoff_path.read_text(encoding='utf-8')
+manual_beta_checklist = manual_beta_checklist_path.read_text(encoding='utf-8')
 brand_smoke = brand_smoke_path.read_text(encoding='utf-8')
 demo_smoke = demo_smoke_path.read_text(encoding='utf-8')
 release_smoke = release_smoke_path.read_text(encoding='utf-8')
@@ -170,6 +176,8 @@ checks = [
      'README common commands should mention ./tool/brand_neutrality_smoke.sh'),
     ('./tool/navigation_smoke.sh' in readme,
      'README common commands should mention ./tool/navigation_smoke.sh'),
+    ('./tool/manual_beta_checklist.sh' in readme,
+     'README common commands should mention ./tool/manual_beta_checklist.sh'),
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
      'README should mention the separate desktop_smoke gate'),
     (expected_sequence in web_done,
@@ -180,6 +188,10 @@ checks = [
      'docs/05-web-done-checklist.md should mention the brand-neutrality smoke gate'),
     ('navigation_smoke' in web_done and './tool/navigation_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the navigation smoke gate'),
+    ('./tool/manual_beta_checklist.sh' in web_done,
+     'docs/05-web-done-checklist.md should mention the manual beta checklist helper'),
+    ('manual_beta_checklist.sh' in web_done and '11-video-fallback-workflow.md' in web_done,
+     'docs/05-web-done-checklist.md should keep the manual checklist helper tied to the video fallback handoff doc'),
     ('DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"' in beta_handoff,
      'tool/beta_handoff.sh must define the docs handoff smoke gate'),
     ('BRAND_NEUTRALITY_SMOKE_SCRIPT="./tool/brand_neutrality_smoke.sh"' in beta_handoff,
@@ -196,8 +208,21 @@ checks = [
      'tool/beta_handoff.sh must execute the navigation smoke gate after the navigation/deep-link preflight label'),
     (re.search(r'echo "\[beta-handoff\] built web brand-neutrality check"\s*\n"\$BRAND_NEUTRALITY_SMOKE_SCRIPT" build/web', beta_handoff) is not None,
      'tool/beta_handoff.sh must execute the built web brand-neutrality smoke gate after the built-web label'),
+    ('MANUAL_BETA_CHECKLIST_SCRIPT="./tool/manual_beta_checklist.sh"' in beta_handoff,
+     'tool/beta_handoff.sh must define the manual beta checklist helper'),
+    (re.search(r'echo "- \./tool/manual_beta_checklist\.sh"\s*\n.*"\$MANUAL_BETA_CHECKLIST_SCRIPT"', beta_handoff, re.S) is not None,
+     'tool/beta_handoff.sh manual follow-up should announce and execute the manual beta checklist helper'),
     ('docs/11-video-fallback-workflow.md' in beta_handoff,
      'tool/beta_handoff.sh manual follow-up should include docs/11-video-fallback-workflow.md'),
+    ('docs/08-web-smoke-checklist.md' in manual_beta_checklist and
+     'docs/09-compact-smoke-checklist.md' in manual_beta_checklist and
+     'docs/04-export-qa-checklist.md' in manual_beta_checklist,
+     'tool/manual_beta_checklist.sh should keep the standard manual pass order explicit'),
+    ('docs/11-video-fallback-workflow.md' in manual_beta_checklist and
+     'docs/fixtures/export-qa-project.json' in manual_beta_checklist,
+     'tool/manual_beta_checklist.sh should keep the video workflow doc and export QA fixture in the handoff'),
+    ('?sceneId=...' in manual_beta_checklist and 'flutter run -d web-server' in manual_beta_checklist,
+     'tool/manual_beta_checklist.sh should keep the browser run target and stale-link spot-check guidance explicit'),
     ('run: ./tool/beta_handoff.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
     ('desktop_smoke:' in workflow and 'run: ./tool/desktop_smoke.sh' in workflow,

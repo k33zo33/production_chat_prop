@@ -32,7 +32,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 ## Practical usage
 - Za product odluke: kreni od `01` + `03`
 - Za arhitekturu i repo wiring: kreni od `02`
-- Za beta handoff/release provjeru: kreni od `05`, zatim `08`, `09`, `04`, `11`
+- Za beta handoff/release provjeru: kreni od `05`, zatim pokreni `./tool/manual_beta_checklist.sh`, pa odradi `08`, `09`, `04`, `11`
 - Za helper/review workflow: vidi `10-ai-helper-workflow.md`
 
 ## Notes
