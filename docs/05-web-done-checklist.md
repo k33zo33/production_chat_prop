@@ -60,16 +60,17 @@ These are not current blockers for the automated web gate, but are sensible next
 ## Recommended verification order
 
 1. Run `./tool/beta_handoff.sh` for the standard beta preflight order (`docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`)
-2. Run the quick browser pass from `08-web-smoke-checklist.md`
-3. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
-4. Run the focused export pass from `04-export-qa-checklist.md` and keep `11-video-fallback-workflow.md` alongside the handoff
-5. If all four are clean, treat web MVP as functionally ready and choose between:
+2. Run `./tool/manual_beta_checklist.sh` so the browser/export handoff starts from one standard manual order and fixture
+3. Run the quick browser pass from `08-web-smoke-checklist.md`
+4. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
+5. Run the focused export pass from `04-export-qa-checklist.md` and keep `11-video-fallback-workflow.md` alongside the handoff
+6. If all five are clean, treat web MVP as functionally ready and choose between:
    - mobile kickoff, or
    - one final web polish-only pass
 
 ## Recommended next step
 
-Finish the three manual checklists (`08-web-smoke-checklist.md`, `09-compact-smoke-checklist.md`, and `04-export-qa-checklist.md`) using the latest green `./tool/beta_handoff.sh` run as the automated baseline.
+Run `./tool/manual_beta_checklist.sh`, then finish the three manual checklists (`08-web-smoke-checklist.md`, `09-compact-smoke-checklist.md`, and `04-export-qa-checklist.md`) using the latest green `./tool/beta_handoff.sh` run as the automated baseline.
 
 ## Latest verification snapshot
 

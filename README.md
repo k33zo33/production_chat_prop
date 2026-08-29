@@ -108,6 +108,7 @@ Najčešće komande:
 ./tool/desktop_smoke.sh
 ./tool/verify.sh
 ./tool/beta_handoff.sh
+./tool/manual_beta_checklist.sh
 ```
 
 Napomene:
@@ -116,7 +117,8 @@ Napomene:
 - `./tool/brand_neutrality_smoke.sh` automatski skenira user-facing app copy i build output za zabranjene reference na stvarne messaging brandove prije beta handoffa.
 - `./tool/compact_smoke.sh` sada hvata i larger-text compact breakpoint regresije na project list/editor/playback površinama, short-landscape compact nav/focus-preview regresije te stale-link/missing-project recovery putanje, ne samo narrow layout i export kontrole.
 - `./tool/navigation_smoke.sh` drži scene deep-link sync, stale query normalizaciju i recovery navigaciju u brzom web preflightu prije punog verify koraka.
-- `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery i navigation/deep-link gate, i na kraju podsjeti na ručne checklist provjere.
+- `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery i navigation/deep-link gate, a zatim poziva `./tool/manual_beta_checklist.sh` za uredan ručni handoff.
+- `./tool/manual_beta_checklist.sh` potvrđuje da su ručne QA reference i fixture prisutni te ispisuje standardni redoslijed browser/compact/export provjera.
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`

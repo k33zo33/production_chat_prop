@@ -15,8 +15,9 @@ BRAND_NEUTRALITY_SMOKE_SCRIPT="./tool/brand_neutrality_smoke.sh"
 VERIFY_SCRIPT="./tool/verify.sh"
 WEB_SHELL_SMOKE_SCRIPT="./tool/web_shell_smoke.sh"
 DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"
+MANUAL_BETA_CHECKLIST_SCRIPT="./tool/manual_beta_checklist.sh"
 
-for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$NAVIGATION_SMOKE_SCRIPT" "$BRAND_NEUTRALITY_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT"; do
+for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$NAVIGATION_SMOKE_SCRIPT" "$BRAND_NEUTRALITY_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT" "$MANUAL_BETA_CHECKLIST_SCRIPT"; do
   if [[ ! -f "$script_path" ]]; then
     echo "[beta-handoff] missing required script: $script_path" >&2
     exit 1
@@ -75,8 +76,7 @@ echo "[beta-handoff] built web brand-neutrality check"
 
 echo
 echo "[beta-handoff] manual follow-up"
-echo "- docs/08-web-smoke-checklist.md"
-echo "- docs/09-compact-smoke-checklist.md"
-echo "- docs/04-export-qa-checklist.md"
+echo "- ./tool/manual_beta_checklist.sh"
 echo "- docs/11-video-fallback-workflow.md"
+"$MANUAL_BETA_CHECKLIST_SCRIPT"
 echo "[beta-handoff] done"
