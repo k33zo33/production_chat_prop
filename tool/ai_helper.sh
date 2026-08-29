@@ -145,6 +145,7 @@ build_review_payload() {
   local path_filters=()
   local diff_cmd=()
   local include_untracked=false
+  local collect_filtered_untracked=false
   local separator_index=-1
 
   if [[ ${#diff_args[@]} -gt 0 ]]; then
@@ -172,6 +173,9 @@ build_review_payload() {
     diff_cmd=(git diff --no-color --no-ext-diff "${diff_base_args[@]}")
   elif ! git diff --cached --quiet; then
     diff_cmd=(git diff --no-color --no-ext-diff --cached)
+    if [[ ${#path_filters[@]} -gt 0 ]]; then
+      collect_filtered_untracked=true
+    fi
   else
     include_untracked=true
     # Brand-new repos may not have HEAD yet; in that case we can still review
@@ -191,7 +195,7 @@ build_review_payload() {
   fi
 
   local untracked_files=''
-  if [[ "$include_untracked" == true ]]; then
+  if [[ "$include_untracked" == true || "$collect_filtered_untracked" == true ]]; then
     untracked_files="$(list_untracked_files "${path_filters[@]}")"
   fi
 

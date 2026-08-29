@@ -74,6 +74,7 @@ Napomena:
 - Kad **nema staged promjena**, `review` automatski uključuje tracked working-tree diff **i untracked fileove**.
 - Kad **ima staged promjena**, default review ostaje fokusiran na staged diff kao commit kandidat.
 - Kad želiš samo dio tog default kandidata, koristi `review -- <paths...>` umjesto custom diff rangea.
+  Ako neki od tih pathova cilja untracked file, wrapper ga sada i dalje uključuje čak i kad postoje druge staged promjene.
 - Kad želiš specifičan range i samo dio tog rangea, koristi `review <diff-range> -- <paths...>`. To je najkorisnije za već commitani range poput `HEAD~1..HEAD`, ne za trenutni staged kandidat.
 
 ### 2. Kad zapneš
@@ -102,6 +103,7 @@ Primjeri:
 - `preview-review` ispisuje puni review payload lokalno, pa možeš debugirati diff selection / path filtering čak i kad `gemini` nije dostupan
 - `doctor` daje brzi signal nedostaje li lokalni `gemini` binary prije nego što review padne tek na kraju slicea
 - `review -- <paths...>` sada filtrira isti default staged/HEAD review kandidat, umjesto da tiho promijeni diff base
+- eksplicitni untracked path filteri ostaju uključeni u `review -- <paths...>` i `preview-review -- <paths...>` čak i kad u repo-u postoji zaseban staged diff
 - `review <diff-range> -- <paths...>` sada podržava i custom range i path filter u istoj komandi
 - Ako lokalni Gemini CLI vrati unsupported-client / unsupported-tier grešku, wrapper sada ispisuje jasan hint da treba popraviti lokalni auth/client setup umjesto generičkog faila
 

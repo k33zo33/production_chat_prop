@@ -299,8 +299,9 @@ checks = [
      'tool/ai_helper.sh should keep the preview-review mode documented'),
     ('staged path-filter review reaches the Gemini invocation path' in ai_helper_smoke and
      'preview-review prints the local review payload without Gemini' in ai_helper_smoke and
+     'explicit untracked path filters stay reviewable even with staged changes' in ai_helper_smoke and
      'range-plus-path review reaches the Gemini invocation path' in ai_helper_smoke,
-     'tool/ai_helper_smoke.sh should keep covering preview-review, staged path-filter, and range-plus-path review behavior'),
+     'tool/ai_helper_smoke.sh should keep covering preview-review, staged path-filter, untracked path-filter, and range-plus-path review behavior'),
     (re.search(r'case "\$mode" in\s+doctor\)', ai_helper, re.S) is not None and
      re.search(r'case "\$mode" in.*preview-review\)', ai_helper, re.S) is not None,
      'tool/ai_helper.sh should dispatch the doctor and preview-review modes explicitly'),
