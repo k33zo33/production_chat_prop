@@ -316,11 +316,11 @@ echo "[release-smoke] unit tests: ${#UNIT_TEST_FILES[@]} export payload and file
 
 echo
 
-echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
 echo "- It now covers key compact-width, larger-text compact breakpoints, short-landscape focus-preview chrome, deep long-scene focus-preview auto-follow, embedded export-QA avatar preview retention, dialog ergonomics, short-height empty/recovery entry shells, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
-echo "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order."
-echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
+smoke_print_manual_beta_handoff_hint \
+  "release-smoke" \
+  "Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
 echo "- Keep docs/11-video-fallback-workflow.md with the handoff so downstream render users know Export Video emits a documented .json package."
 
 echo "[release-smoke] done"

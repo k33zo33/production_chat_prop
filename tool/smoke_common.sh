@@ -32,3 +32,15 @@ smoke_run_analyze() {
   echo "[$label] analyze"
   "$flutter_bin" analyze
 }
+
+smoke_print_manual_beta_handoff_hint() {
+  local label="$1"
+  local extra_message="${2:-}"
+
+  echo "[$label] manual follow-up"
+  echo "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order."
+
+  if [[ -n "$extra_message" ]]; then
+    echo "- $extra_message"
+  fi
+}

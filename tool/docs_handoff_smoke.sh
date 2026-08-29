@@ -13,6 +13,7 @@ VIDEO_WORKFLOW_PATH="$ROOT_DIR/docs/11-video-fallback-workflow.md"
 WORKFLOW_PATH="$ROOT_DIR/.github/workflows/flutter_ci.yml"
 BETA_HANDOFF_PATH="$ROOT_DIR/tool/beta_handoff.sh"
 MANUAL_BETA_CHECKLIST_PATH="$ROOT_DIR/tool/manual_beta_checklist.sh"
+SMOKE_COMMON_PATH="$ROOT_DIR/tool/smoke_common.sh"
 BRAND_SMOKE_PATH="$ROOT_DIR/tool/brand_neutrality_smoke.sh"
 DEMO_SMOKE_PATH="$ROOT_DIR/tool/demo_smoke.sh"
 RELEASE_SMOKE_PATH="$ROOT_DIR/tool/release_smoke.sh"
@@ -38,6 +39,7 @@ for path in \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
   "$MANUAL_BETA_CHECKLIST_PATH" \
+  "$SMOKE_COMMON_PATH" \
   "$BRAND_SMOKE_PATH" \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
@@ -68,6 +70,7 @@ python3 - \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
   "$MANUAL_BETA_CHECKLIST_PATH" \
+  "$SMOKE_COMMON_PATH" \
   "$BRAND_SMOKE_PATH" \
   "$DEMO_SMOKE_PATH" \
   "$RELEASE_SMOKE_PATH" \
@@ -97,6 +100,7 @@ import sys
     workflow_raw,
     beta_handoff_raw,
     manual_beta_checklist_raw,
+    smoke_common_raw,
     brand_smoke_raw,
     demo_smoke_raw,
     release_smoke_raw,
@@ -122,6 +126,7 @@ video_workflow_path = pathlib.Path(video_workflow_raw)
 workflow_path = pathlib.Path(workflow_raw)
 beta_handoff_path = pathlib.Path(beta_handoff_raw)
 manual_beta_checklist_path = pathlib.Path(manual_beta_checklist_raw)
+smoke_common_path = pathlib.Path(smoke_common_raw)
 brand_smoke_path = pathlib.Path(brand_smoke_raw)
 demo_smoke_path = pathlib.Path(demo_smoke_raw)
 release_smoke_path = pathlib.Path(release_smoke_raw)
@@ -146,6 +151,7 @@ video_workflow = video_workflow_path.read_text(encoding='utf-8')
 workflow = workflow_path.read_text(encoding='utf-8')
 beta_handoff = beta_handoff_path.read_text(encoding='utf-8')
 manual_beta_checklist = manual_beta_checklist_path.read_text(encoding='utf-8')
+smoke_common = smoke_common_path.read_text(encoding='utf-8')
 brand_smoke = brand_smoke_path.read_text(encoding='utf-8')
 demo_smoke = demo_smoke_path.read_text(encoding='utf-8')
 release_smoke = release_smoke_path.read_text(encoding='utf-8')
@@ -223,16 +229,21 @@ checks = [
      'tool/manual_beta_checklist.sh should keep the video workflow doc and export QA fixture in the handoff'),
     ('?sceneId=...' in manual_beta_checklist and 'flutter run -d web-server' in manual_beta_checklist,
      'tool/manual_beta_checklist.sh should keep the browser run target and stale-link spot-check guidance explicit'),
-    ('./tool/manual_beta_checklist.sh' in import_smoke,
-     'tool/import_smoke.sh should point manual follow-up at the shared manual beta checklist helper'),
-    ('./tool/manual_beta_checklist.sh' in release_smoke,
-     'tool/release_smoke.sh should point manual follow-up at the shared manual beta checklist helper'),
-    ('./tool/manual_beta_checklist.sh' in compact_smoke,
-     'tool/compact_smoke.sh should point manual follow-up at the shared manual beta checklist helper'),
-    ('./tool/manual_beta_checklist.sh' in navigation_smoke,
-     'tool/navigation_smoke.sh should point manual follow-up at the shared manual beta checklist helper'),
+    ('smoke_print_manual_beta_handoff_hint' in smoke_common and
+     './tool/manual_beta_checklist.sh' in smoke_common,
+     'tool/smoke_common.sh should define the shared manual beta handoff helper'),
+    ('smoke_print_manual_beta_handoff_hint' in import_smoke,
+     'tool/import_smoke.sh should use the shared manual beta handoff helper'),
+    ('smoke_print_manual_beta_handoff_hint' in release_smoke,
+     'tool/release_smoke.sh should use the shared manual beta handoff helper'),
+    ('smoke_print_manual_beta_handoff_hint' in compact_smoke,
+     'tool/compact_smoke.sh should use the shared manual beta handoff helper'),
+    ('smoke_print_manual_beta_handoff_hint' in navigation_smoke,
+     'tool/navigation_smoke.sh should use the shared manual beta handoff helper'),
     ('./tool/manual_beta_checklist.sh' in demo_smoke,
      'tool/demo_smoke.sh should point its manual handoff at the shared manual beta checklist helper'),
+    ('./tool/manual_beta_checklist.sh' in demo_smoke,
+     'tool/demo_smoke.sh should mention the shared manual beta checklist helper explicitly'),
     ('run: ./tool/beta_handoff.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
     ('desktop_smoke:' in workflow and 'run: ./tool/desktop_smoke.sh' in workflow,

@@ -215,9 +215,9 @@ echo "[compact-smoke] tests: ${#TEST_NAMES[@]} compact/export + ${#MOBILE_COMPAC
 
 echo
 
-echo "[compact-smoke] manual follow-up"
 echo "- If this targeted pass is green, run ./tool/verify.sh before release or deploy decisions."
-echo "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order."
-echo "- This compact pass now also covers dialog safe-area/keyboard behavior, larger-text compact breakpoints on project/editor/playback surfaces, short-landscape compact app-bar flows, ultra-compact editor/playback footer stacking, deep long-scene focus-preview auto-follow, focus-preview chrome stacking at larger text, short-height focus-preview chrome, short-height empty/recovery entry shells, compact scene-selector ergonomics, empty playback recovery actions, and the compact empty-scene status badge."
+smoke_print_manual_beta_handoff_hint \
+  "compact-smoke" \
+  "This compact pass now also covers dialog safe-area/keyboard behavior, larger-text compact breakpoints on project/editor/playback surfaces, short-landscape compact app-bar flows, ultra-compact editor/playback footer stacking, deep long-scene focus-preview auto-follow, focus-preview chrome stacking at larger text, short-height focus-preview chrome, short-height empty/recovery entry shells, compact scene-selector ergonomics, empty playback recovery actions, and the compact empty-scene status badge."
 
 echo "[compact-smoke] done"

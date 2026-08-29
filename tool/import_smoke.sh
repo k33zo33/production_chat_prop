@@ -129,9 +129,9 @@ echo "[import-smoke] tests: $TOTAL_TARGETED_TESTS targeted import/widget/sanitiz
 
 echo
 
-echo "[import-smoke] manual follow-up"
 echo "- Run ./tool/beta_handoff.sh for the full preflight sequence when you want the release-ready gate stack."
-echo "- Then run ./tool/manual_beta_checklist.sh so browser/import/export spot-checks start from one shared handoff order."
-echo "- Keep one real browser import pass during that manual handoff for clipboard/file-picker behavior."
+smoke_print_manual_beta_handoff_hint \
+  "import-smoke" \
+  "Keep one real browser import pass during that manual handoff for clipboard/file-picker behavior."
 
 echo "[import-smoke] done"

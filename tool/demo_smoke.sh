@@ -69,6 +69,6 @@ echo "6) Import payload with Import Project JSON (paste or file picker), batch p
 echo "7) Repeat one pass at a narrow phone-ish width (~390px) and confirm compact overflow actions still work"
 echo "8) Optionally stress-test with 500+ messages and verify playback stays responsive"
 echo "9) Open Playback, verify controls + export feedback"
-echo "10) Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff"
+echo "10) Then use the shared handoff helper: ./tool/manual_beta_checklist.sh"
 
 echo "[demo-smoke] done"
