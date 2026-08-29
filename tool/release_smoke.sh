@@ -319,11 +319,8 @@ echo
 echo "[release-smoke] manual follow-up"
 echo "- This is a fast preflight, not a replacement for ./tool/verify.sh."
 echo "- It now covers key compact-width, larger-text compact breakpoints, short-landscape focus-preview chrome, deep long-scene focus-preview auto-follow, embedded export-QA avatar preview retention, dialog ergonomics, short-height empty/recovery entry shells, empty-state recovery, scene deep-link sync/stale-link recovery, export, portfolio pre-flight, and focus-preview regressions automatically."
-echo "- Then do the browser pass from docs/08-web-smoke-checklist.md for real browser history/back-forward behavior and visual confirmation."
-echo "- Repeat the phone-width pass from docs/09-compact-smoke-checklist.md for compact visual/layout confirmation."
+echo "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order."
 echo "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview."
-echo "- Import docs/fixtures/export-qa-project.json for the standard portrait/landscape/empty/long-scene export pass."
 echo "- Keep docs/11-video-fallback-workflow.md with the handoff so downstream render users know Export Video emits a documented .json package."
-echo "- Finish with docs/04-export-qa-checklist.md before a release/deploy decision."
 
 echo "[release-smoke] done"

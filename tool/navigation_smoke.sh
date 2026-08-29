@@ -82,7 +82,7 @@ echo "[navigation-smoke] tests: ${#WIDGET_TEST_NAMES[@]} navigation widget + ${#
 echo
 
 echo "[navigation-smoke] manual follow-up"
-echo "- If this targeted pass is green, keep browser back/forward, deep-link, and cleared-query spot-checks in docs/08-web-smoke-checklist.md and docs/09-compact-smoke-checklist.md."
+echo "- If this targeted pass is green, keep browser back/forward, deep-link, and cleared-query spot-checks in ./tool/manual_beta_checklist.sh and its linked docs."
 echo "- Then run ./tool/verify.sh before release or deploy decisions."
 
 echo "[navigation-smoke] done"
