@@ -25,6 +25,12 @@ To je brzi preflight za:
 
 Ako `doctor` padne, nemoj očekivati da će `review` ili `ask` uspjeti bez popravka lokalnog CLI setupa.
 
+Ako mijenjaš wrapper, brzo potvrdi lokalno ponašanje bez oslanjanja na pravi Gemini CLI:
+
+```bash
+./tool/ai_helper_smoke.sh
+```
+
 ### 1. Prije svakog commita
 Obavezno pokrenuti zajednički review trenutnog diffa:
 
@@ -86,6 +92,7 @@ Primjeri:
 - Wrapper helper promptu inline-a kratak repo/workflow sažetak (scope, source-of-truth docs, heartbeat prioritet) kako analiza ne bi ovisila o git-ignored lokalnim datotekama poput `AGENTS.md` ili `HEARTBEAT.md`
 - Za untracked fileove skripta generira patch-style pregled (`git diff --no-color --no-ext-diff --no-index`) tako da review ne preskoči nove datoteke
 - Za binarne untracked fileove skripta preskače raw patch i zadržava samo stat sažetak da review ostane čitljiv
+- `./tool/ai_helper_smoke.sh` koristi privremeni git repo kako bi provjerio doctor, staged path-filter review, combined range+path review i clear no-diff failure bez pravog helper backenda
 - `doctor` daje brzi signal nedostaje li lokalni `gemini` binary prije nego što review padne tek na kraju slicea
 - `review -- <paths...>` sada filtrira isti default staged/HEAD review kandidat, umjesto da tiho promijeni diff base
 - `review <diff-range> -- <paths...>` sada podržava i custom range i path filter u istoj komandi

@@ -110,6 +110,7 @@ Najčešće komande:
 ./tool/beta_handoff.sh
 ./tool/manual_beta_checklist.sh
 ./tool/ai_helper.sh doctor
+./tool/ai_helper_smoke.sh
 ```
 
 Napomene:
@@ -121,6 +122,7 @@ Napomene:
 - `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery i navigation/deep-link gate, a zatim poziva `./tool/manual_beta_checklist.sh` za uredan ručni handoff.
 - `./tool/manual_beta_checklist.sh` potvrđuje da su ručne QA reference i fixture prisutni te ispisuje standardni redoslijed browser/compact/export provjera.
 - `./tool/ai_helper.sh doctor` daje brzi preflight za lokalni Gemini helper setup prije `review` ili `ask`.
+- `./tool/ai_helper_smoke.sh` provjerava helper wrapper parsing i fallback ponašanje u privremenom git repou, bez potrebe za dostupnim Gemini CLI backendom.
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`
   - `docs/04-export-qa-checklist.md`

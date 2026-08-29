@@ -23,6 +23,7 @@ COMPACT_SMOKE_PATH="$ROOT_DIR/tool/compact_smoke.sh"
 NAVIGATION_SMOKE_PATH="$ROOT_DIR/tool/navigation_smoke.sh"
 IMPORT_SMOKE_PATH="$ROOT_DIR/tool/import_smoke.sh"
 AI_HELPER_PATH="$ROOT_DIR/tool/ai_helper.sh"
+AI_HELPER_SMOKE_PATH="$ROOT_DIR/tool/ai_helper_smoke.sh"
 WIDGET_TEST_PATH="$ROOT_DIR/test/widget_test.dart"
 PLAYBACK_EXPORT_FEEDBACK_TEST_PATH="$ROOT_DIR/test/widget/playback_export_feedback_test.dart"
 SCENE_ROUTE_SYNC_TEST_PATH="$ROOT_DIR/test/widget/scene_route_sync_test.dart"
@@ -52,6 +53,7 @@ for path in \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
   "$AI_HELPER_PATH" \
+  "$AI_HELPER_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
   "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
@@ -86,6 +88,7 @@ python3 - \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
   "$AI_HELPER_PATH" \
+  "$AI_HELPER_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
   "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
@@ -119,6 +122,7 @@ import sys
     navigation_smoke_raw,
     import_smoke_raw,
     ai_helper_raw,
+    ai_helper_smoke_raw,
     widget_test_raw,
     playback_export_feedback_test_raw,
     scene_route_sync_test_raw,
@@ -148,6 +152,7 @@ compact_smoke_path = pathlib.Path(compact_smoke_raw)
 navigation_smoke_path = pathlib.Path(navigation_smoke_raw)
 import_smoke_path = pathlib.Path(import_smoke_raw)
 ai_helper_path = pathlib.Path(ai_helper_raw)
+ai_helper_smoke_path = pathlib.Path(ai_helper_smoke_raw)
 widget_test_path = pathlib.Path(widget_test_raw)
 playback_export_feedback_test_path = pathlib.Path(playback_export_feedback_test_raw)
 scene_route_sync_test_path = pathlib.Path(scene_route_sync_test_raw)
@@ -176,6 +181,7 @@ compact_smoke = compact_smoke_path.read_text(encoding='utf-8')
 navigation_smoke = navigation_smoke_path.read_text(encoding='utf-8')
 import_smoke = import_smoke_path.read_text(encoding='utf-8')
 ai_helper = ai_helper_path.read_text(encoding='utf-8')
+ai_helper_smoke = ai_helper_smoke_path.read_text(encoding='utf-8')
 widget_test = widget_test_path.read_text(encoding='utf-8')
 playback_export_feedback_test = playback_export_feedback_test_path.read_text(encoding='utf-8')
 scene_route_sync_test = scene_route_sync_test_path.read_text(encoding='utf-8')
@@ -204,12 +210,16 @@ checks = [
      'README common commands should mention ./tool/manual_beta_checklist.sh'),
     ('./tool/ai_helper.sh doctor' in readme,
      'README common commands should mention ./tool/ai_helper.sh doctor'),
+    ('./tool/ai_helper_smoke.sh' in readme,
+     'README common commands should mention ./tool/ai_helper_smoke.sh'),
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
      'README should mention the separate desktop_smoke gate'),
-    ('./tool/ai_helper.sh doctor' in docs_readme and '10-ai-helper-workflow.md' in docs_readme,
-     'docs/README.md should point helper users to ./tool/ai_helper.sh doctor and 10-ai-helper-workflow.md'),
+    ('./tool/ai_helper.sh doctor' in docs_readme and './tool/ai_helper_smoke.sh' in docs_readme and '10-ai-helper-workflow.md' in docs_readme,
+     'docs/README.md should point helper users to doctor, ai_helper_smoke, and 10-ai-helper-workflow.md'),
     ('./tool/ai_helper.sh doctor' in ai_helper_workflow,
      'docs/10-ai-helper-workflow.md should document ./tool/ai_helper.sh doctor'),
+    ('./tool/ai_helper_smoke.sh' in ai_helper_workflow,
+     'docs/10-ai-helper-workflow.md should document ./tool/ai_helper_smoke.sh'),
     ('./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md' in ai_helper_workflow,
      'docs/10-ai-helper-workflow.md should show the path-filter review example'),
     ('./tool/ai_helper.sh review HEAD~1..HEAD -- tool/ai_helper.sh' in ai_helper_workflow,
@@ -278,6 +288,9 @@ checks = [
      'tool/ai_helper.sh usage should keep the path-filter review example documented'),
     ('./tool/ai_helper.sh review HEAD~1..HEAD -- tool/ai_helper.sh' in ai_helper,
      'tool/ai_helper.sh usage should keep the combined diff-range plus path-filter example documented'),
+    ('staged path-filter review reaches the Gemini invocation path' in ai_helper_smoke and
+     'range-plus-path review reaches the Gemini invocation path' in ai_helper_smoke,
+     'tool/ai_helper_smoke.sh should keep covering staged path-filter and range-plus-path review behavior'),
     (re.search(r'case "\$mode" in\s+doctor\)', ai_helper, re.S) is not None,
      'tool/ai_helper.sh should dispatch the doctor mode explicitly'),
     ('run: ./tool/beta_handoff.sh' in workflow,
