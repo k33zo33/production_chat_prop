@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 README_PATH="$ROOT_DIR/README.md"
+DOCS_README_PATH="$ROOT_DIR/docs/README.md"
+AI_HELPER_WORKFLOW_PATH="$ROOT_DIR/docs/10-ai-helper-workflow.md"
 WEB_DONE_PATH="$ROOT_DIR/docs/05-web-done-checklist.md"
 EXPORT_QA_PATH="$ROOT_DIR/docs/04-export-qa-checklist.md"
 WEB_SMOKE_PATH="$ROOT_DIR/docs/08-web-smoke-checklist.md"
@@ -20,6 +22,7 @@ RELEASE_SMOKE_PATH="$ROOT_DIR/tool/release_smoke.sh"
 COMPACT_SMOKE_PATH="$ROOT_DIR/tool/compact_smoke.sh"
 NAVIGATION_SMOKE_PATH="$ROOT_DIR/tool/navigation_smoke.sh"
 IMPORT_SMOKE_PATH="$ROOT_DIR/tool/import_smoke.sh"
+AI_HELPER_PATH="$ROOT_DIR/tool/ai_helper.sh"
 WIDGET_TEST_PATH="$ROOT_DIR/test/widget_test.dart"
 PLAYBACK_EXPORT_FEEDBACK_TEST_PATH="$ROOT_DIR/test/widget/playback_export_feedback_test.dart"
 SCENE_ROUTE_SYNC_TEST_PATH="$ROOT_DIR/test/widget/scene_route_sync_test.dart"
@@ -31,6 +34,8 @@ FIXTURE_TEST_PATH="$ROOT_DIR/test/unit/features/projects/domain/export_qa_fixtur
 
 for path in \
   "$README_PATH" \
+  "$DOCS_README_PATH" \
+  "$AI_HELPER_WORKFLOW_PATH" \
   "$WEB_DONE_PATH" \
   "$EXPORT_QA_PATH" \
   "$WEB_SMOKE_PATH" \
@@ -46,6 +51,7 @@ for path in \
   "$COMPACT_SMOKE_PATH" \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
+  "$AI_HELPER_PATH" \
   "$WIDGET_TEST_PATH" \
   "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
@@ -62,6 +68,8 @@ done
 
 python3 - \
   "$README_PATH" \
+  "$DOCS_README_PATH" \
+  "$AI_HELPER_WORKFLOW_PATH" \
   "$WEB_DONE_PATH" \
   "$EXPORT_QA_PATH" \
   "$WEB_SMOKE_PATH" \
@@ -77,6 +85,7 @@ python3 - \
   "$COMPACT_SMOKE_PATH" \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
+  "$AI_HELPER_PATH" \
   "$WIDGET_TEST_PATH" \
   "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
@@ -92,6 +101,8 @@ import sys
 (
     _,
     readme_raw,
+    docs_readme_raw,
+    ai_helper_workflow_raw,
     web_done_raw,
     export_qa_raw,
     web_smoke_raw,
@@ -107,6 +118,7 @@ import sys
     compact_smoke_raw,
     navigation_smoke_raw,
     import_smoke_raw,
+    ai_helper_raw,
     widget_test_raw,
     playback_export_feedback_test_raw,
     scene_route_sync_test_raw,
@@ -118,6 +130,8 @@ import sys
 ) = sys.argv
 
 readme_path = pathlib.Path(readme_raw)
+docs_readme_path = pathlib.Path(docs_readme_raw)
+ai_helper_workflow_path = pathlib.Path(ai_helper_workflow_raw)
 web_done_path = pathlib.Path(web_done_raw)
 export_qa_path = pathlib.Path(export_qa_raw)
 web_smoke_path = pathlib.Path(web_smoke_raw)
@@ -133,6 +147,7 @@ release_smoke_path = pathlib.Path(release_smoke_raw)
 compact_smoke_path = pathlib.Path(compact_smoke_raw)
 navigation_smoke_path = pathlib.Path(navigation_smoke_raw)
 import_smoke_path = pathlib.Path(import_smoke_raw)
+ai_helper_path = pathlib.Path(ai_helper_raw)
 widget_test_path = pathlib.Path(widget_test_raw)
 playback_export_feedback_test_path = pathlib.Path(playback_export_feedback_test_raw)
 scene_route_sync_test_path = pathlib.Path(scene_route_sync_test_raw)
@@ -143,6 +158,8 @@ repository_test_path = pathlib.Path(repository_test_raw)
 fixture_test_path = pathlib.Path(fixture_test_raw)
 
 readme = readme_path.read_text(encoding='utf-8')
+docs_readme = docs_readme_path.read_text(encoding='utf-8')
+ai_helper_workflow = ai_helper_workflow_path.read_text(encoding='utf-8')
 web_done = web_done_path.read_text(encoding='utf-8')
 export_qa = export_qa_path.read_text(encoding='utf-8')
 web_smoke = web_smoke_path.read_text(encoding='utf-8')
@@ -158,6 +175,7 @@ release_smoke = release_smoke_path.read_text(encoding='utf-8')
 compact_smoke = compact_smoke_path.read_text(encoding='utf-8')
 navigation_smoke = navigation_smoke_path.read_text(encoding='utf-8')
 import_smoke = import_smoke_path.read_text(encoding='utf-8')
+ai_helper = ai_helper_path.read_text(encoding='utf-8')
 widget_test = widget_test_path.read_text(encoding='utf-8')
 playback_export_feedback_test = playback_export_feedback_test_path.read_text(encoding='utf-8')
 scene_route_sync_test = scene_route_sync_test_path.read_text(encoding='utf-8')
@@ -184,8 +202,16 @@ checks = [
      'README common commands should mention ./tool/navigation_smoke.sh'),
     ('./tool/manual_beta_checklist.sh' in readme,
      'README common commands should mention ./tool/manual_beta_checklist.sh'),
+    ('./tool/ai_helper.sh doctor' in readme,
+     'README common commands should mention ./tool/ai_helper.sh doctor'),
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
      'README should mention the separate desktop_smoke gate'),
+    ('./tool/ai_helper.sh doctor' in docs_readme and '10-ai-helper-workflow.md' in docs_readme,
+     'docs/README.md should point helper users to ./tool/ai_helper.sh doctor and 10-ai-helper-workflow.md'),
+    ('./tool/ai_helper.sh doctor' in ai_helper_workflow,
+     'docs/10-ai-helper-workflow.md should document ./tool/ai_helper.sh doctor'),
+    ('HELPER_TIMEOUT_SECONDS' in ai_helper_workflow,
+     'docs/10-ai-helper-workflow.md should mention HELPER_TIMEOUT_SECONDS in the doctor preflight section'),
     (expected_sequence in web_done,
      'docs/05-web-done-checklist.md should describe the current beta handoff order including docs_handoff_smoke'),
     ('./tool/desktop_smoke.sh' in web_done,
@@ -242,6 +268,10 @@ checks = [
      'tool/navigation_smoke.sh should use the shared manual beta handoff helper'),
     ('./tool/manual_beta_checklist.sh' in demo_smoke,
      'tool/demo_smoke.sh should mention the shared manual beta checklist helper explicitly'),
+    ('./tool/ai_helper.sh doctor' in ai_helper and 'run_helper_doctor' in ai_helper,
+     'tool/ai_helper.sh should keep the doctor mode wired and documented'),
+    (re.search(r'case "\$mode" in\s+doctor\)', ai_helper, re.S) is not None,
+     'tool/ai_helper.sh should dispatch the doctor mode explicitly'),
     ('run: ./tool/beta_handoff.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
     ('desktop_smoke:' in workflow and 'run: ./tool/desktop_smoke.sh' in workflow,
