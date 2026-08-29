@@ -26,6 +26,7 @@ Examples:
   ./tool/ai_helper.sh doctor
   ./tool/ai_helper.sh review
   ./tool/ai_helper.sh review origin/main...HEAD
+  ./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md
   ./tool/ai_helper.sh ask "Review the playback export architecture and name the main risks."
 
 Notes:
@@ -91,6 +92,11 @@ EOF
 }
 
 list_untracked_files() {
+  if [[ $# -gt 0 ]]; then
+    git ls-files --others --exclude-standard -- "$@"
+    return
+  fi
+
   git ls-files --others --exclude-standard
 }
 
@@ -128,11 +134,21 @@ build_untracked_review_sections() {
 
 build_review_payload() {
   local diff_args=("$@")
+  local diff_base_args=()
+  local path_filters=()
   local diff_cmd=()
   local include_untracked=false
 
   if [[ ${#diff_args[@]} -gt 0 ]]; then
-    diff_cmd=(git diff --no-color --no-ext-diff "${diff_args[@]}")
+    if [[ "${diff_args[0]}" == "--" ]]; then
+      path_filters=("${diff_args[@]:1}")
+    else
+      diff_base_args=("${diff_args[@]}")
+    fi
+  fi
+
+  if [[ ${#diff_base_args[@]} -gt 0 ]]; then
+    diff_cmd=(git diff --no-color --no-ext-diff "${diff_base_args[@]}")
   elif ! git diff --cached --quiet; then
     diff_cmd=(git diff --no-color --no-ext-diff --cached)
   else
@@ -146,12 +162,16 @@ build_review_payload() {
 
   local tracked_changed_files=''
   if [[ ${#diff_cmd[@]} -gt 0 ]]; then
-    tracked_changed_files="$("${diff_cmd[@]}" --name-only)"
+    if [[ ${#path_filters[@]} -gt 0 ]]; then
+      tracked_changed_files="$("${diff_cmd[@]}" --name-only -- "${path_filters[@]}")"
+    else
+      tracked_changed_files="$("${diff_cmd[@]}" --name-only)"
+    fi
   fi
 
   local untracked_files=''
   if [[ "$include_untracked" == true ]]; then
-    untracked_files="$(list_untracked_files)"
+    untracked_files="$(list_untracked_files "${path_filters[@]}")"
   fi
 
   local changed_files
@@ -164,7 +184,11 @@ build_review_payload() {
 
   local diff_text=''
   if [[ -n "$tracked_changed_files" ]]; then
-    diff_text="$("${diff_cmd[@]}" --stat && printf '\n---PATCH---\n' && "${diff_cmd[@]}" --)"
+    if [[ ${#path_filters[@]} -gt 0 ]]; then
+      diff_text="$("${diff_cmd[@]}" --stat -- "${path_filters[@]}" && printf '\n---PATCH---\n' && "${diff_cmd[@]}" -- "${path_filters[@]}")"
+    else
+      diff_text="$("${diff_cmd[@]}" --stat && printf '\n---PATCH---\n' && "${diff_cmd[@]}" --)"
+    fi
   fi
 
   if [[ -n "$untracked_files" ]]; then

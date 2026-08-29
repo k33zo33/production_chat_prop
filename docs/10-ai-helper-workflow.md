@@ -38,6 +38,12 @@ Ako želiš review specifičnog raspona diffa:
 ./tool/ai_helper.sh review origin/main...HEAD
 ```
 
+Ako želiš review samo određenih fileova, ali uz isti default commit-kandidat base (`--cached` kad ima staged promjena, inače `HEAD` + untracked):
+
+```bash
+./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md
+```
+
 Očekivani workflow:
 1. napravi slice
 2. pokreni lokalnu verifikaciju
@@ -49,6 +55,7 @@ Očekivani workflow:
 Napomena:
 - Kad **nema staged promjena**, `review` automatski uključuje tracked working-tree diff **i untracked fileove**.
 - Kad **ima staged promjena**, default review ostaje fokusiran na staged diff kao commit kandidat.
+- Kad želiš samo dio tog default kandidata, koristi `review -- <paths...>` umjesto custom diff rangea.
 
 ### 2. Kad zapneš
 Za read-only pomoć ili drugi pogled koristi:
@@ -73,6 +80,7 @@ Primjeri:
 - Za untracked fileove skripta generira patch-style pregled (`git diff --no-color --no-ext-diff --no-index`) tako da review ne preskoči nove datoteke
 - Za binarne untracked fileove skripta preskače raw patch i zadržava samo stat sažetak da review ostane čitljiv
 - `doctor` daje brzi signal nedostaje li lokalni `gemini` binary prije nego što review padne tek na kraju slicea
+- `review -- <paths...>` sada filtrira isti default staged/HEAD review kandidat, umjesto da tiho promijeni diff base
 - Ako lokalni Gemini CLI vrati unsupported-client / unsupported-tier grešku, wrapper sada ispisuje jasan hint da treba popraviti lokalni auth/client setup umjesto generičkog faila
 
 ## Pravila odlučivanja
