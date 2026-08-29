@@ -112,6 +112,7 @@ Najčešće komande:
 ./tool/beta_handoff.sh
 ./tool/manual_beta_checklist.sh
 ./tool/ai_helper.sh doctor
+./tool/ai_helper.sh preview-ask "Summarize the main playback export risks."
 ./tool/ai_helper.sh preview-review -- tool/ai_helper.sh
 ./tool/ai_helper_smoke.sh
 ```
@@ -125,6 +126,7 @@ Napomene:
 - `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery i navigation/deep-link gate, a zatim poziva `./tool/manual_beta_checklist.sh` za uredan ručni handoff.
 - `./tool/manual_beta_checklist.sh` potvrđuje da su ručne QA reference i fixture prisutni te ispisuje standardni redoslijed browser/compact/export provjera.
 - `./tool/ai_helper.sh doctor` daje brzi preflight za lokalni Gemini helper setup prije `review` ili `ask`.
+- `./tool/ai_helper.sh preview-ask ...` ispisuje puni ask/analysis payload lokalno za debug helper prompta bez stvarnog Gemini poziva.
 - `./tool/ai_helper.sh preview-review ...` ispisuje puni review payload lokalno za debug diff/filter ponašanja bez stvarnog Gemini poziva.
 - `./tool/ai_helper_smoke.sh` provjerava helper wrapper parsing i fallback ponašanje u privremenom git repou, bez potrebe za dostupnim Gemini CLI backendom.
 - GitHub Actions vrti `./tool/ai_helper_smoke.sh` u zasebnom `helper_smoke` jobu kako helper workflow regresije ne bi čekale ručni lokalni check.

@@ -8,6 +8,7 @@ usage() {
   cat <<'EOF'
 Usage:
   ./tool/ai_helper.sh doctor
+  ./tool/ai_helper.sh preview-ask <question>
   ./tool/ai_helper.sh preview-review [git-diff-args...]
   ./tool/ai_helper.sh review [git-diff-args...]
   ./tool/ai_helper.sh ask <question>
@@ -15,6 +16,10 @@ Usage:
 Modes:
   doctor   Checks whether the local helper environment is ready before you rely
            on Gemini for read-only review or analysis.
+
+  preview-ask
+           Prints the generated ask/analysis payload locally without invoking
+           Gemini.
 
   preview-review
            Prints the generated review payload locally without invoking Gemini.
@@ -28,6 +33,7 @@ Modes:
 
 Examples:
   ./tool/ai_helper.sh doctor
+  ./tool/ai_helper.sh preview-ask "Summarize the main playback export risks."
   ./tool/ai_helper.sh preview-review -- tool/ai_helper.sh
   ./tool/ai_helper.sh review
   ./tool/ai_helper.sh review origin/main...HEAD
@@ -38,6 +44,7 @@ Examples:
 Notes:
 - Gemini runs in read-only mode.
 - Gemini uses: gemini -p '' --approval-mode plan --output-format text
+- preview-ask stays fully local and never invokes Gemini.
 - preview-review stays fully local and never invokes Gemini.
 - Output is written to stdout directly.
 EOF
@@ -259,6 +266,20 @@ $diff_text
 EOF
 }
 
+build_ask_payload() {
+  local question="$1"
+
+  local prompt=$'You are helping with a software project in read-only mode.\n\nRepository root:\n'
+  prompt+="$ROOT_DIR"
+  prompt+=$'\n\n'
+  prompt+="$(build_local_repo_context)"
+  prompt+=$'\n\nTask:\n'
+  prompt+="$question"
+  prompt+=$'\n\nRules:\n- Read-only analysis only.\n- Be concise and practical.\n- Prefer concrete recommendations over theory.\n- If something looks uncertain, say so plainly.\n- If the task mentions ignored local workflow files such as AGENTS.md or HEARTBEAT.md, use the inlined repo context above instead of trying to read those files from disk unless the prompt explicitly includes their contents.'
+
+  printf '%s' "$prompt"
+}
+
 run_gemini() {
   local prompt="$1"
   if ! require_bin gemini; then
@@ -312,6 +333,13 @@ case "$mode" in
   doctor)
     run_helper_doctor
     ;;
+  preview-ask)
+    if [[ $# -eq 0 ]]; then
+      echo "preview-ask mode requires a question" >&2
+      exit 1
+    fi
+    build_ask_payload "$*"
+    ;;
   preview-review)
     build_review_payload "$@"
     ;;
@@ -336,14 +364,7 @@ case "$mode" in
       echo "ask mode requires a question" >&2
       exit 1
     fi
-    question="$*"
-    prompt=$'You are helping with a software project in read-only mode.\n\nRepository root:\n'
-    prompt+="$ROOT_DIR"
-    prompt+=$'\n\n'
-    prompt+="$(build_local_repo_context)"
-    prompt+=$'\n\nTask:\n'
-    prompt+="$question"
-    prompt+=$'\n\nRules:\n- Read-only analysis only.\n- Be concise and practical.\n- Prefer concrete recommendations over theory.\n- If something looks uncertain, say so plainly.\n- If the task mentions ignored local workflow files such as AGENTS.md or HEARTBEAT.md, use the inlined repo context above instead of trying to read those files from disk unless the prompt explicitly includes their contents.'
+    prompt="$(build_ask_payload "$*")"
     printf '===== GEMINI CLI ANALYSIS =====\n'
     gemini_status=0
     run_gemini "$prompt" || gemini_status=$?

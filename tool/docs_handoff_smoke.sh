@@ -210,16 +210,20 @@ checks = [
      'README common commands should mention ./tool/manual_beta_checklist.sh'),
     ('./tool/ai_helper.sh doctor' in readme,
      'README common commands should mention ./tool/ai_helper.sh doctor'),
+    ('./tool/ai_helper.sh preview-ask "Summarize the main playback export risks."' in readme,
+     'README common commands should mention the preview-ask helper example'),
     ('./tool/ai_helper.sh preview-review -- tool/ai_helper.sh' in readme,
      'README common commands should mention the preview-review helper example'),
     ('./tool/ai_helper_smoke.sh' in readme,
      'README common commands should mention ./tool/ai_helper_smoke.sh'),
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
      'README should mention the separate desktop_smoke gate'),
-    ('./tool/ai_helper.sh doctor' in docs_readme and './tool/ai_helper_smoke.sh' in docs_readme and './tool/ai_helper.sh preview-review' in docs_readme and '10-ai-helper-workflow.md' in docs_readme,
-     'docs/README.md should point helper users to doctor, preview-review, ai_helper_smoke, and 10-ai-helper-workflow.md'),
+    ('./tool/ai_helper.sh doctor' in docs_readme and './tool/ai_helper_smoke.sh' in docs_readme and './tool/ai_helper.sh preview-ask' in docs_readme and './tool/ai_helper.sh preview-review' in docs_readme and '10-ai-helper-workflow.md' in docs_readme,
+     'docs/README.md should point helper users to doctor, preview-ask, preview-review, ai_helper_smoke, and 10-ai-helper-workflow.md'),
     ('./tool/ai_helper.sh doctor' in ai_helper_workflow,
      'docs/10-ai-helper-workflow.md should document ./tool/ai_helper.sh doctor'),
+    ('./tool/ai_helper.sh preview-ask "Pregledaj helper fallback rizike."' in ai_helper_workflow,
+     'docs/10-ai-helper-workflow.md should document the preview-ask helper example'),
     ('./tool/ai_helper.sh preview-review -- tool/ai_helper.sh' in ai_helper_workflow,
      'docs/10-ai-helper-workflow.md should document the preview-review helper example'),
     ('./tool/ai_helper_smoke.sh' in ai_helper_workflow,
@@ -294,17 +298,21 @@ checks = [
      'tool/ai_helper.sh usage should keep the path-filter review example documented'),
     ('./tool/ai_helper.sh review HEAD~1..HEAD -- tool/ai_helper.sh' in ai_helper,
      'tool/ai_helper.sh usage should keep the combined diff-range plus path-filter example documented'),
-    ('./tool/ai_helper.sh preview-review -- tool/ai_helper.sh' in ai_helper and
+    ('./tool/ai_helper.sh preview-ask "Summarize the main playback export risks."' in ai_helper and
+     'preview-ask stays fully local and never invokes Gemini.' in ai_helper and
+     './tool/ai_helper.sh preview-review -- tool/ai_helper.sh' in ai_helper and
      'preview-review stays fully local and never invokes Gemini.' in ai_helper,
-     'tool/ai_helper.sh should keep the preview-review mode documented'),
+     'tool/ai_helper.sh should keep the preview-ask and preview-review modes documented'),
     ('staged path-filter review reaches the Gemini invocation path' in ai_helper_smoke and
+     'preview-ask prints the local analysis payload without Gemini' in ai_helper_smoke and
      'preview-review prints the local review payload without Gemini' in ai_helper_smoke and
      'explicit untracked path filters stay reviewable even with staged changes' in ai_helper_smoke and
      'range-plus-path review reaches the Gemini invocation path' in ai_helper_smoke,
-     'tool/ai_helper_smoke.sh should keep covering preview-review, staged path-filter, untracked path-filter, and range-plus-path review behavior'),
+     'tool/ai_helper_smoke.sh should keep covering preview-ask, preview-review, staged path-filter, untracked path-filter, and range-plus-path review behavior'),
     (re.search(r'case "\$mode" in\s+doctor\)', ai_helper, re.S) is not None and
+     re.search(r'case "\$mode" in.*preview-ask\)', ai_helper, re.S) is not None and
      re.search(r'case "\$mode" in.*preview-review\)', ai_helper, re.S) is not None,
-     'tool/ai_helper.sh should dispatch the doctor and preview-review modes explicitly'),
+     'tool/ai_helper.sh should dispatch the doctor, preview-ask, and preview-review modes explicitly'),
     ('run: ./tool/beta_handoff.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
     ('helper_smoke:' in workflow and 'run: ./tool/ai_helper_smoke.sh' in workflow,

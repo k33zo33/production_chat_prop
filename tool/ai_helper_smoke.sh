@@ -85,6 +85,14 @@ assert_output_contains "Changed files:" "$preview_output" "preview-review path-f
 assert_output_contains "tracked.txt" "$preview_output" "preview-review path-filter"
 assert_output_contains "Diff:" "$preview_output" "preview-review path-filter"
 
+result="$(run_and_capture "$TMP_DIR/tool/ai_helper.sh" preview-ask "Summarize helper fallback risks.")"
+preview_ask_status="$(printf '%s\n' "$result" | head -n1)"
+preview_ask_output="$(printf '%s\n' "$result" | tail -n +2)"
+assert_status 0 "$preview_ask_status" "preview-ask"
+assert_output_contains "Repository root:" "$preview_ask_output" "preview-ask"
+assert_output_contains "Task:" "$preview_ask_output" "preview-ask"
+assert_output_contains "Summarize helper fallback risks." "$preview_ask_output" "preview-ask"
+
 result="$(run_and_capture "$TMP_DIR/tool/ai_helper.sh" preview-review -- untracked.txt)"
 preview_untracked_status="$(printf '%s\n' "$result" | head -n1)"
 preview_untracked_output="$(printf '%s\n' "$result" | tail -n +2)"
@@ -116,6 +124,7 @@ assert_output_contains "No diff detected for review." "$missing_path_output" "mi
 
 echo "[ai-helper-smoke] doctor path detects missing Gemini"
 echo "[ai-helper-smoke] staged path-filter review reaches the Gemini invocation path"
+echo "[ai-helper-smoke] preview-ask prints the local analysis payload without Gemini"
 echo "[ai-helper-smoke] preview-review prints the local review payload without Gemini"
 echo "[ai-helper-smoke] explicit untracked path filters stay reviewable even with staged changes"
 echo "[ai-helper-smoke] range-plus-path review reaches the Gemini invocation path"
