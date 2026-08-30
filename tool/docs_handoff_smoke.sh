@@ -967,6 +967,63 @@ for expected_line in \
   fi
 done
 
+verify_stub_dir="$(mktemp -d)"
+trap 'rm -rf "$verify_stub_dir"' EXIT
+
+mkdir -p "$verify_stub_dir/tool"
+cp "$VERIFY_PATH" "$verify_stub_dir/tool/verify.sh"
+cp "$SMOKE_COMMON_PATH" "$verify_stub_dir/tool/smoke_common.sh"
+chmod +x "$verify_stub_dir/tool/verify.sh" "$verify_stub_dir/tool/smoke_common.sh"
+
+cat > "$verify_stub_dir/tool/web_shell_smoke.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'web-shell-smoke|args=%s\n' "$*"
+EOF
+chmod +x "$verify_stub_dir/tool/web_shell_smoke.sh"
+
+cat > "$verify_stub_dir/tool/brand_neutrality_smoke.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'brand-neutrality-smoke|args=%s\n' "$*"
+EOF
+chmod +x "$verify_stub_dir/tool/brand_neutrality_smoke.sh"
+
+cat > "$verify_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$verify_stub_dir/flutter-stub.sh"
+
+verify_output="$(
+  cd "$verify_stub_dir" &&
+  SKIP_PUB_GET=1 SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$verify_stub_dir/flutter-stub.sh" ./tool/verify.sh
+)"
+
+for expected_line in \
+  "[verify] using flutter: $verify_stub_dir/flutter-stub.sh (version handled upstream)" \
+  "[verify] pub get skipped (already resolved upstream)" \
+  "[verify] analyze skipped (handled upstream)" \
+  "[verify] source web shell metadata" \
+  "web-shell-smoke|args=web" \
+  "[verify] source brand-neutrality" \
+  "brand-neutrality-smoke|args=lib web" \
+  "[verify] test" \
+  "flutter|args=test" \
+  "[verify] build web" \
+  "flutter|args=build web" \
+  "[verify] built web shell metadata" \
+  "web-shell-smoke|args=build/web" \
+  "[verify] built web brand-neutrality" \
+  "brand-neutrality-smoke|args=build/web" \
+  "[verify] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$verify_output"; then
+    echo "[docs-handoff-smoke] verify output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
