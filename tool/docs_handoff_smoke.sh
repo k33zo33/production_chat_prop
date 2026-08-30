@@ -917,6 +917,8 @@ for expected_line in \
   "[beta-handoff-smoke] stubbed beta_handoff order stays intact" \
   "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags" \
   "[beta-handoff-smoke] verify receives SKIP_PUB_GET=1 from beta_handoff" \
+  "[beta-handoff-smoke] built web follow-up labels stay surfaced" \
+  "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow pointers visible" \
   "[beta-handoff-smoke] done"; do
   if ! grep -Fqx -- "$expected_line" <<<"$beta_handoff_smoke_output"; then
     echo "[docs-handoff-smoke] beta handoff smoke output drifted: missing line: $expected_line" >&2

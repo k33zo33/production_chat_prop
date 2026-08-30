@@ -87,7 +87,11 @@ assert_contains() {
 assert_contains "[beta-handoff] docs/release instructions preflight" "$output" "stdout labels"
 assert_contains "[beta-handoff] helper workflow preflight" "$output" "stdout labels"
 assert_contains "[beta-handoff] full verification gate" "$output" "stdout labels"
+assert_contains "[beta-handoff] built web shell metadata check" "$output" "stdout labels"
+assert_contains "[beta-handoff] built web brand-neutrality check" "$output" "stdout labels"
 assert_contains "[beta-handoff] manual follow-up" "$output" "stdout labels"
+assert_contains "- ./tool/manual_beta_checklist.sh" "$output" "manual follow-up output"
+assert_contains "- docs/11-video-fallback-workflow.md" "$output" "manual follow-up output"
 assert_contains "[beta-handoff] done" "$output" "stdout labels"
 
 python3 - "$LOG_PATH" <<'PY'
@@ -126,4 +130,6 @@ PY
 echo "[beta-handoff-smoke] stubbed beta_handoff order stays intact"
 echo "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags"
 echo "[beta-handoff-smoke] verify receives SKIP_PUB_GET=1 from beta_handoff"
+echo "[beta-handoff-smoke] built web follow-up labels stay surfaced"
+echo "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow pointers visible"
 echo "[beta-handoff-smoke] done"
