@@ -924,6 +924,7 @@ beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
   "[beta-handoff-smoke] stubbed beta_handoff order stays intact" \
+  "[beta-handoff-smoke] all preflight stage labels stay surfaced" \
   "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags" \
   "[beta-handoff-smoke] verify receives SKIP_PUB_GET=1 from beta_handoff" \
   "[beta-handoff-smoke] built web follow-up labels stay surfaced" \

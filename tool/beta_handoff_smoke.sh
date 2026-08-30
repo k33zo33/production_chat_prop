@@ -86,6 +86,13 @@ assert_contains() {
 
 assert_contains "[beta-handoff] docs/release instructions preflight" "$output" "stdout labels"
 assert_contains "[beta-handoff] helper workflow preflight" "$output" "stdout labels"
+assert_contains "[beta-handoff] web shell metadata preflight" "$output" "stdout labels"
+assert_contains "[beta-handoff] brand-neutrality preflight" "$output" "stdout labels"
+assert_contains "[beta-handoff] demo flow preflight" "$output" "stdout labels"
+assert_contains "[beta-handoff] import/recovery preflight" "$output" "stdout labels"
+assert_contains "[beta-handoff] release preflight" "$output" "stdout labels"
+assert_contains "[beta-handoff] compact/mobile preflight" "$output" "stdout labels"
+assert_contains "[beta-handoff] navigation/deep-link preflight" "$output" "stdout labels"
 assert_contains "[beta-handoff] full verification gate" "$output" "stdout labels"
 assert_contains "[beta-handoff] built web shell metadata check" "$output" "stdout labels"
 assert_contains "[beta-handoff] built web brand-neutrality check" "$output" "stdout labels"
@@ -128,6 +135,7 @@ if lines != expected_prefix:
 PY
 
 echo "[beta-handoff-smoke] stubbed beta_handoff order stays intact"
+echo "[beta-handoff-smoke] all preflight stage labels stay surfaced"
 echo "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags"
 echo "[beta-handoff-smoke] verify receives SKIP_PUB_GET=1 from beta_handoff"
 echo "[beta-handoff-smoke] built web follow-up labels stay surfaced"
