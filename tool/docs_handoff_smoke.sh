@@ -346,6 +346,8 @@ checks = [
      'README "Najčešće komande" block should list each public tool exactly once: ' + ', '.join(duplicate_readme_block_markers)),
     (not duplicate_docs_workflow_markers,
      'docs/README.md "Developer workflow docs" section should list each public tool exactly once: ' + ', '.join(duplicate_docs_workflow_markers)),
+    (len(re.findall(r'^- Za helper/review rad:', docs_readme, re.M)) == 1,
+     'docs/README.md should keep exactly one canonical helper/review practical-usage bullet'),
     ('./tool/import_smoke.sh' in readme,
      'README common commands should mention ./tool/import_smoke.sh'),
     ('./tool/brand_neutrality_smoke.sh' in readme,
