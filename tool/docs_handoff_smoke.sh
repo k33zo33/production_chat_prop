@@ -22,6 +22,7 @@ RELEASE_SMOKE_PATH="$ROOT_DIR/tool/release_smoke.sh"
 COMPACT_SMOKE_PATH="$ROOT_DIR/tool/compact_smoke.sh"
 NAVIGATION_SMOKE_PATH="$ROOT_DIR/tool/navigation_smoke.sh"
 IMPORT_SMOKE_PATH="$ROOT_DIR/tool/import_smoke.sh"
+VERIFY_PATH="$ROOT_DIR/tool/verify.sh"
 AI_HELPER_PATH="$ROOT_DIR/tool/ai_helper.sh"
 AI_HELPER_SMOKE_PATH="$ROOT_DIR/tool/ai_helper_smoke.sh"
 WIDGET_TEST_PATH="$ROOT_DIR/test/widget_test.dart"
@@ -52,6 +53,7 @@ for path in \
   "$COMPACT_SMOKE_PATH" \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
+  "$VERIFY_PATH" \
   "$AI_HELPER_PATH" \
   "$AI_HELPER_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
@@ -87,6 +89,7 @@ python3 - \
   "$COMPACT_SMOKE_PATH" \
   "$NAVIGATION_SMOKE_PATH" \
   "$IMPORT_SMOKE_PATH" \
+  "$VERIFY_PATH" \
   "$AI_HELPER_PATH" \
   "$AI_HELPER_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
@@ -121,6 +124,7 @@ import sys
     compact_smoke_raw,
     navigation_smoke_raw,
     import_smoke_raw,
+    verify_raw,
     ai_helper_raw,
     ai_helper_smoke_raw,
     widget_test_raw,
@@ -151,6 +155,7 @@ release_smoke_path = pathlib.Path(release_smoke_raw)
 compact_smoke_path = pathlib.Path(compact_smoke_raw)
 navigation_smoke_path = pathlib.Path(navigation_smoke_raw)
 import_smoke_path = pathlib.Path(import_smoke_raw)
+verify_path = pathlib.Path(verify_raw)
 ai_helper_path = pathlib.Path(ai_helper_raw)
 ai_helper_smoke_path = pathlib.Path(ai_helper_smoke_raw)
 widget_test_path = pathlib.Path(widget_test_raw)
@@ -180,6 +185,7 @@ release_smoke = release_smoke_path.read_text(encoding='utf-8')
 compact_smoke = compact_smoke_path.read_text(encoding='utf-8')
 navigation_smoke = navigation_smoke_path.read_text(encoding='utf-8')
 import_smoke = import_smoke_path.read_text(encoding='utf-8')
+verify = verify_path.read_text(encoding='utf-8')
 ai_helper = ai_helper_path.read_text(encoding='utf-8')
 ai_helper_smoke = ai_helper_smoke_path.read_text(encoding='utf-8')
 widget_test = widget_test_path.read_text(encoding='utf-8')
@@ -252,6 +258,16 @@ checks = [
      'README should mention that release_smoke and compact_smoke fail on dedicated test-file coverage drift'),
     ('coverage-count drift' in web_done and 'release_smoke' in web_done and 'compact_smoke' in web_done,
      'docs/05-web-done-checklist.md should mention the focused coverage-drift guard behavior for release_smoke and compact_smoke'),
+    ('SMOKE_SKIP_VERSION=1' in beta_handoff and 'SMOKE_SKIP_ANALYZE=1' in beta_handoff and 'SKIP_PUB_GET=1 "$VERIFY_SCRIPT"' in beta_handoff,
+     'tool/beta_handoff.sh should keep the upstream skip flags that prevent duplicate Flutter banner/analyze/pub-get work'),
+    ('pub get skipped (already resolved upstream)' in verify,
+     'tool/verify.sh should keep the explicit upstream pub-get skip path used by beta_handoff'),
+    ('SMOKE_SKIP_VERSION=1' in smoke_common and 'SMOKE_SKIP_ANALYZE=1' in smoke_common,
+     'tool/smoke_common.sh comments should keep documenting the upstream skip-flag optimization'),
+    ('skip ponovljenog flutter bannera' in readme and 'skip dodatnog analyze' in readme and 'skip ponovnog `pub get`' in readme,
+     'README should mention that beta_handoff reuses the upstream Flutter banner/analyze/pub-get steps to stay faster'),
+    ('skip ponovljenog flutter bannera' in web_done and 'skip dodatnog analyze' in web_done and 'skip ponovnog `pub get`' in web_done,
+     'docs/05-web-done-checklist.md should mention the beta_handoff upstream skip optimization'),
     ('DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"' in beta_handoff,
      'tool/beta_handoff.sh must define the docs handoff smoke gate'),
     ('AI_HELPER_SMOKE_SCRIPT="./tool/ai_helper_smoke.sh"' in beta_handoff,
