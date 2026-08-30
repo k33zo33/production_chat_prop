@@ -189,6 +189,42 @@ for test_name in "${SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]}"; do
   fi
 done
 
+mobile_compact_polish_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$MOBILE_COMPACT_POLISH_TEST_FILE")
+if [[ "$mobile_compact_polish_test_count" -ne ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} ]]; then
+  echo "[compact-smoke] mobile compact polish coverage drifted: expected ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} registered tests, found $mobile_compact_polish_test_count in $MOBILE_COMPACT_POLISH_TEST_FILE" >&2
+  exit 1
+fi
+
+playback_empty_state_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$PLAYBACK_EMPTY_STATE_TEST_FILE")
+if [[ "$playback_empty_state_test_count" -ne ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} ]]; then
+  echo "[compact-smoke] playback empty-state coverage drifted: expected ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} registered tests, found $playback_empty_state_test_count in $PLAYBACK_EMPTY_STATE_TEST_FILE" >&2
+  exit 1
+fi
+
+recovery_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$RECOVERY_TEST_FILE")
+if [[ "$recovery_test_count" -ne ${#RECOVERY_TEST_NAMES[@]} ]]; then
+  echo "[compact-smoke] recovery coverage drifted: expected ${#RECOVERY_TEST_NAMES[@]} registered tests, found $recovery_test_count in $RECOVERY_TEST_FILE" >&2
+  exit 1
+fi
+
+focus_preview_autofollow_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE")
+if [[ "$focus_preview_autofollow_test_count" -ne ${#FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]} ]]; then
+  echo "[compact-smoke] focus preview auto-follow coverage drifted: expected ${#FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]} registered tests, found $focus_preview_autofollow_test_count in $FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE" >&2
+  exit 1
+fi
+
+focus_preview_short_height_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE")
+if [[ "$focus_preview_short_height_test_count" -ne ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} ]]; then
+  echo "[compact-smoke] focus preview short-height coverage drifted: expected ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} registered tests, found $focus_preview_short_height_test_count in $FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE" >&2
+  exit 1
+fi
+
+short_height_entry_states_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$SHORT_HEIGHT_ENTRY_STATES_TEST_FILE")
+if [[ "$short_height_entry_states_test_count" -ne ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} ]]; then
+  echo "[compact-smoke] short-height entry-state coverage drifted: expected ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} registered tests, found $short_height_entry_states_test_count in $SHORT_HEIGHT_ENTRY_STATES_TEST_FILE" >&2
+  exit 1
+fi
+
 TEST_PATTERN="$(printf '%s\n' "${TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 MOBILE_COMPACT_POLISH_TEST_PATTERN="$(printf '%s\n' "${MOBILE_COMPACT_POLISH_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 PLAYBACK_EMPTY_STATE_TEST_PATTERN="$(printf '%s\n' "${PLAYBACK_EMPTY_STATE_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"

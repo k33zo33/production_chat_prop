@@ -283,6 +283,84 @@ for test_name in "${TIMELINE_QA_MARKERS_TEST_NAMES[@]}"; do
   fi
 done
 
+export_qa_avatar_preview_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$EXPORT_QA_AVATAR_PREVIEW_TEST_FILE")
+if [[ "$export_qa_avatar_preview_test_count" -ne ${#EXPORT_QA_AVATAR_PREVIEW_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] export QA avatar preview coverage drifted: expected ${#EXPORT_QA_AVATAR_PREVIEW_TEST_NAMES[@]} registered tests, found $export_qa_avatar_preview_test_count in $EXPORT_QA_AVATAR_PREVIEW_TEST_FILE" >&2
+  exit 1
+fi
+
+focus_preview_autofollow_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE")
+if [[ "$focus_preview_autofollow_test_count" -ne ${#FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] focus preview auto-follow coverage drifted: expected ${#FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]} registered tests, found $focus_preview_autofollow_test_count in $FOCUS_PREVIEW_AUTOFOLLOW_TEST_FILE" >&2
+  exit 1
+fi
+
+focus_preview_chrome_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$FOCUS_PREVIEW_CHROME_TEST_FILE")
+if [[ "$focus_preview_chrome_test_count" -ne ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] focus preview chrome coverage drifted: expected ${#FOCUS_PREVIEW_CHROME_TEST_NAMES[@]} registered tests, found $focus_preview_chrome_test_count in $FOCUS_PREVIEW_CHROME_TEST_FILE" >&2
+  exit 1
+fi
+
+focus_preview_short_height_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE")
+if [[ "$focus_preview_short_height_test_count" -ne ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] focus preview short-height coverage drifted: expected ${#FOCUS_PREVIEW_SHORT_HEIGHT_TEST_NAMES[@]} registered tests, found $focus_preview_short_height_test_count in $FOCUS_PREVIEW_SHORT_HEIGHT_TEST_FILE" >&2
+  exit 1
+fi
+
+mobile_compact_polish_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$MOBILE_COMPACT_POLISH_TEST_FILE")
+if [[ "$mobile_compact_polish_test_count" -ne ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] mobile compact polish coverage drifted: expected ${#MOBILE_COMPACT_POLISH_TEST_NAMES[@]} registered tests, found $mobile_compact_polish_test_count in $MOBILE_COMPACT_POLISH_TEST_FILE" >&2
+  exit 1
+fi
+
+playback_empty_state_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$PLAYBACK_EMPTY_STATE_TEST_FILE")
+if [[ "$playback_empty_state_test_count" -ne ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] playback empty-state coverage drifted: expected ${#PLAYBACK_EMPTY_STATE_TEST_NAMES[@]} registered tests, found $playback_empty_state_test_count in $PLAYBACK_EMPTY_STATE_TEST_FILE" >&2
+  exit 1
+fi
+
+playback_export_feedback_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$PLAYBACK_EXPORT_FEEDBACK_TEST_FILE")
+if [[ "$playback_export_feedback_test_count" -ne ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] playback export feedback coverage drifted: expected ${#PLAYBACK_EXPORT_FEEDBACK_TEST_NAMES[@]} registered tests, found $playback_export_feedback_test_count in $PLAYBACK_EXPORT_FEEDBACK_TEST_FILE" >&2
+  exit 1
+fi
+
+portfolio_preflight_badge_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$PORTFOLIO_PREFLIGHT_BADGE_TEST_FILE")
+if [[ "$portfolio_preflight_badge_test_count" -ne ${#PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] portfolio pre-flight coverage drifted: expected ${#PORTFOLIO_PREFLIGHT_BADGE_TEST_NAMES[@]} registered tests, found $portfolio_preflight_badge_test_count in $PORTFOLIO_PREFLIGHT_BADGE_TEST_FILE" >&2
+  exit 1
+fi
+
+recovery_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$RECOVERY_TEST_FILE")
+if [[ "$recovery_test_count" -ne ${#RECOVERY_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] recovery coverage drifted: expected ${#RECOVERY_TEST_NAMES[@]} registered tests, found $recovery_test_count in $RECOVERY_TEST_FILE" >&2
+  exit 1
+fi
+
+scene_status_badge_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$SCENE_STATUS_BADGE_TEST_FILE")
+if [[ "$scene_status_badge_test_count" -ne ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] scene status badge coverage drifted: expected ${#SCENE_STATUS_BADGE_TEST_NAMES[@]} registered tests, found $scene_status_badge_test_count in $SCENE_STATUS_BADGE_TEST_FILE" >&2
+  exit 1
+fi
+
+scene_route_sync_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$SCENE_ROUTE_SYNC_TEST_FILE")
+if [[ "$scene_route_sync_test_count" -ne ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] scene route sync coverage drifted: expected ${#SCENE_ROUTE_SYNC_TEST_NAMES[@]} registered tests, found $scene_route_sync_test_count in $SCENE_ROUTE_SYNC_TEST_FILE" >&2
+  exit 1
+fi
+
+short_height_entry_states_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$SHORT_HEIGHT_ENTRY_STATES_TEST_FILE")
+if [[ "$short_height_entry_states_test_count" -ne ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] short-height entry-state coverage drifted: expected ${#SHORT_HEIGHT_ENTRY_STATES_TEST_NAMES[@]} registered tests, found $short_height_entry_states_test_count in $SHORT_HEIGHT_ENTRY_STATES_TEST_FILE" >&2
+  exit 1
+fi
+
+timeline_qa_markers_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(' "$TIMELINE_QA_MARKERS_TEST_FILE")
+if [[ "$timeline_qa_markers_test_count" -ne ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} ]]; then
+  echo "[release-smoke] timeline QA marker coverage drifted: expected ${#TIMELINE_QA_MARKERS_TEST_NAMES[@]} registered tests, found $timeline_qa_markers_test_count in $TIMELINE_QA_MARKERS_TEST_FILE" >&2
+  exit 1
+fi
+
 for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
   if [[ ! -f "$unit_test_file" ]]; then
     echo "[release-smoke] missing expected unit test file: $unit_test_file" >&2
