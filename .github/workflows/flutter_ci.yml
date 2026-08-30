@@ -14,6 +14,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  docs_handoff_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run docs handoff smoke gate
+        run: ./tool/docs_handoff_smoke.sh
+
   helper_smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -40,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     needs:
+      - docs_handoff_smoke
       - helper_smoke
       - beta_handoff_smoke
 
