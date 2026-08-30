@@ -967,6 +967,77 @@ for expected_line in \
   fi
 done
 
+desktop_docker_stub_dir="$(mktemp -d)"
+cat > "$desktop_docker_stub_dir/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'docker|args=%s\n' "$*"
+EOF
+chmod +x "$desktop_docker_stub_dir/docker"
+
+desktop_docker_output="$(
+  cd "$ROOT_DIR" &&
+  PATH="$desktop_docker_stub_dir:$PATH" "$ROOT_DIR/tool/desktop_docker.sh"
+)"
+
+if ! grep -Fqx -- 'docker|args=compose -f docker-compose.desktop.yml up --build' <<<"$desktop_docker_output"; then
+  echo "[docs-handoff-smoke] desktop docker output drifted: missing the expected docker compose invocation" >&2
+  rm -rf "$desktop_docker_stub_dir"
+  exit 1
+fi
+
+rm -rf "$desktop_docker_stub_dir"
+
+desktop_smoke_stub_dir="$(mktemp -d)"
+cat > "$desktop_smoke_stub_dir/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ge 7 && "$1" == "compose" && "$2" == "-f" && "$4" == "ps" && "$5" == "--services" && "$6" == "--status" && "$7" == "running" ]]; then
+  printf 'desktop\n'
+  exit 0
+fi
+
+if [[ "$#" -ge 6 && "$1" == "compose" && "$2" == "-f" && "$4" == "logs" && "$5" == "--tail=20" ]]; then
+  printf 'desktop-log|service=%s\n' "${6:-unknown}"
+  exit 0
+fi
+
+exit 0
+EOF
+chmod +x "$desktop_smoke_stub_dir/docker"
+
+cat > "$desktop_smoke_stub_dir/python3" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+chmod +x "$desktop_smoke_stub_dir/python3"
+
+desktop_smoke_output="$(
+  cd "$ROOT_DIR" &&
+  PATH="$desktop_smoke_stub_dir:$PATH" \
+    DESKTOP_SMOKE_MAX_ATTEMPTS=20 \
+    DESKTOP_SMOKE_SLEEP_SECONDS=0 \
+    "$ROOT_DIR/tool/desktop_smoke.sh"
+)"
+
+for expected_line in \
+  "[desktop-smoke] compose config" \
+  "[desktop-smoke] build + boot" \
+  "[desktop-smoke] wait for noVNC: http://localhost:6080/vnc.html?host=localhost&port=6080&autoconnect=true&resize=remote" \
+  "[desktop-smoke] noVNC responded on attempt 1/20" \
+  "desktop-log|service=desktop" \
+  "[desktop-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$desktop_smoke_output"; then
+    echo "[docs-handoff-smoke] desktop smoke output drifted: missing line: $expected_line" >&2
+    rm -rf "$desktop_smoke_stub_dir"
+    exit 1
+  fi
+done
+
+rm -rf "$desktop_smoke_stub_dir"
+
 verify_stub_dir="$(mktemp -d)"
 trap 'rm -rf "$verify_stub_dir"' EXIT
 
