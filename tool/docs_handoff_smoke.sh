@@ -1038,6 +1038,65 @@ done
 
 rm -rf "$desktop_smoke_stub_dir"
 
+desktop_smoke_failure_stub_dir="$(mktemp -d)"
+cat > "$desktop_smoke_failure_stub_dir/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ge 4 && "$1" == "compose" && "$2" == "-f" && "$4" == "ps" ]]; then
+  printf 'desktop-ps|args=%s\n' "$*"
+  exit 0
+fi
+
+if [[ "$#" -ge 4 && "$1" == "compose" && "$2" == "-f" && "$4" == "logs" ]]; then
+  printf 'desktop-logs|args=%s\n' "$*"
+  exit 0
+fi
+
+exit 0
+EOF
+chmod +x "$desktop_smoke_failure_stub_dir/docker"
+
+cat > "$desktop_smoke_failure_stub_dir/python3" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 1
+EOF
+chmod +x "$desktop_smoke_failure_stub_dir/python3"
+
+set +e
+desktop_smoke_failure_output="$(
+  cd "$ROOT_DIR" &&
+  PATH="$desktop_smoke_failure_stub_dir:$PATH" \
+    DESKTOP_SMOKE_MAX_ATTEMPTS=2 \
+    DESKTOP_SMOKE_SLEEP_SECONDS=0 \
+    "$ROOT_DIR/tool/desktop_smoke.sh" 2>&1
+)"
+desktop_smoke_failure_status=$?
+set -e
+
+if [[ "$desktop_smoke_failure_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] desktop smoke failure-path drifted: expected non-zero status when noVNC never responds" >&2
+  rm -rf "$desktop_smoke_failure_stub_dir"
+  exit 1
+fi
+
+for expected_line in \
+  "[desktop-smoke] compose config" \
+  "[desktop-smoke] build + boot" \
+  "[desktop-smoke] wait for noVNC: http://localhost:6080/vnc.html?host=localhost&port=6080&autoconnect=true&resize=remote" \
+  "[desktop-smoke] noVNC did not become ready in time" \
+  "desktop-ps|args=compose -f docker-compose.desktop.yml ps" \
+  "desktop-logs|args=compose -f docker-compose.desktop.yml logs --tail=80 desktop"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$desktop_smoke_failure_output"; then
+    echo "[docs-handoff-smoke] desktop smoke failure-path output drifted: missing line: $expected_line" >&2
+    rm -rf "$desktop_smoke_failure_stub_dir"
+    exit 1
+  fi
+done
+
+rm -rf "$desktop_smoke_failure_stub_dir"
+
 verify_stub_dir="$(mktemp -d)"
 trap 'rm -rf "$verify_stub_dir"' EXIT
 
