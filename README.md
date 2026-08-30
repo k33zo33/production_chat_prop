@@ -86,9 +86,9 @@ Kontejner expose-a i VNC port `5900` samo na `localhost`. Lokalni app podaci spr
 
 ## Quality Gate
 
-GitHub Actions i lokalni beta handoff koriste isti redoslijed za web release gate:
+GitHub Actions i lokalni beta handoff koriste isti redoslijed za glavni web release gate:
 
-`docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`
+`docs_handoff_smoke -> ai_helper_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`
 
 `./tool/beta_handoff.sh` dodatno vrti mali docs-sync preflight kako README, checklist i CI ne bi tiho odlutali iz stvarnog handoff reda.
 

@@ -60,7 +60,7 @@ These are not current blockers for the automated web gate, but are sensible next
 
 ## Recommended verification order
 
-1. Run `./tool/beta_handoff.sh` for the standard beta preflight order (`docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`)
+1. Run `./tool/beta_handoff.sh` for the standard beta preflight order (`docs_handoff_smoke -> ai_helper_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`)
 2. Run `./tool/manual_beta_checklist.sh` so the browser/export handoff starts from one standard manual order and fixture
 3. Run the quick browser pass from `08-web-smoke-checklist.md`
 4. Run the narrow-screen pass from `09-compact-smoke-checklist.md`
@@ -75,7 +75,7 @@ Run `./tool/manual_beta_checklist.sh`, then finish the three manual checklists (
 
 ## Latest verification snapshot
 
-- `./tool/beta_handoff.sh` passed end-to-end (`docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`)
+- `./tool/beta_handoff.sh` passed end-to-end (`docs_handoff_smoke -> ai_helper_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`)
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
 - video fallback export now has a dedicated handoff explainer so beta users know that `Export Video` currently emits a documented `.json` render package rather than a final encoded movie file
 - the tracked export QA fixture now includes an embedded avatar sample in the hero portrait scene, so manual browser export QA can confirm avatar retention in both PNG preview/export and fallback JSON payloads
@@ -84,7 +84,7 @@ Run `./tool/manual_beta_checklist.sh`, then finish the three manual checklists (
 - `./tool/compact_smoke.sh` passed for targeted compact/export regressions, including larger-text compact breakpoints on project list/editor/playback surfaces, narrow delete confirmations, long project-name/header clamping, short-landscape compact navigation/focus-preview flows, deep long-scene focus-preview auto-follow on phone-width layouts, short-height empty/recovery entry shells, project-list search/filter/sort controls, portfolio-readiness CTA flows, stale-link recovery paths, ultra-compact editor/playback footer stacking, and focus-preview chrome stacking at larger text
 - `./tool/navigation_smoke.sh` now catches scene deep-link sync, stale route query normalization, and recovery navigation regressions before the heavier full-suite verify step
 - `bash tool/release_smoke.sh` now covers empty-scene export disabling, larger-text compact breakpoint regressions, deep long-scene focus-preview auto-follow alongside focus-preview transport/keyboard flow plus compact/wide chrome stacking and timeline/preview-state continuity, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
-- GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `docs_handoff_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke` before uploading the web artifact
+- GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `docs_handoff_smoke -> ai_helper_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke` before uploading the web artifact
 - GitHub Actions now also runs `./tool/ai_helper_smoke.sh` as a separate `helper_smoke` job so helper workflow regressions surface even while Gemini CLI is unavailable locally
 - GitHub Actions now also runs `./tool/desktop_smoke.sh` as a separate `desktop_smoke` job so Docker desktop packaging/noVNC regressions surface before they become a beta handoff surprise
 - web shell metadata is now gated for both source `web/` assets and built `build/web` output, so title/manifest/icon regressions get caught before beta handoff

@@ -16,8 +16,9 @@ VERIFY_SCRIPT="./tool/verify.sh"
 WEB_SHELL_SMOKE_SCRIPT="./tool/web_shell_smoke.sh"
 DOCS_HANDOFF_SMOKE_SCRIPT="./tool/docs_handoff_smoke.sh"
 MANUAL_BETA_CHECKLIST_SCRIPT="./tool/manual_beta_checklist.sh"
+AI_HELPER_SMOKE_SCRIPT="./tool/ai_helper_smoke.sh"
 
-for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$NAVIGATION_SMOKE_SCRIPT" "$BRAND_NEUTRALITY_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT" "$MANUAL_BETA_CHECKLIST_SCRIPT"; do
+for script_path in "$DEMO_SMOKE_SCRIPT" "$IMPORT_SMOKE_SCRIPT" "$RELEASE_SMOKE_SCRIPT" "$COMPACT_SMOKE_SCRIPT" "$NAVIGATION_SMOKE_SCRIPT" "$BRAND_NEUTRALITY_SMOKE_SCRIPT" "$VERIFY_SCRIPT" "$WEB_SHELL_SMOKE_SCRIPT" "$DOCS_HANDOFF_SMOKE_SCRIPT" "$MANUAL_BETA_CHECKLIST_SCRIPT" "$AI_HELPER_SMOKE_SCRIPT"; do
   if [[ ! -f "$script_path" ]]; then
     echo "[beta-handoff] missing required script: $script_path" >&2
     exit 1
@@ -37,6 +38,9 @@ export SMOKE_SKIP_ANALYZE=1
 
 echo "[beta-handoff] docs/release instructions preflight"
 "$DOCS_HANDOFF_SMOKE_SCRIPT"
+
+echo "[beta-handoff] helper workflow preflight"
+"$AI_HELPER_SMOKE_SCRIPT"
 
 echo "[beta-handoff] web shell metadata preflight"
 "$WEB_SHELL_SMOKE_SCRIPT" web
