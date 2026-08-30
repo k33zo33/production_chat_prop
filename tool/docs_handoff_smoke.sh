@@ -12,6 +12,7 @@ EXPORT_QA_PATH="$ROOT_DIR/docs/04-export-qa-checklist.md"
 WEB_SMOKE_PATH="$ROOT_DIR/docs/08-web-smoke-checklist.md"
 COMPACT_SMOKE_DOC_PATH="$ROOT_DIR/docs/09-compact-smoke-checklist.md"
 VIDEO_WORKFLOW_PATH="$ROOT_DIR/docs/11-video-fallback-workflow.md"
+EXPORT_QA_FIXTURE_PATH="$ROOT_DIR/docs/fixtures/export-qa-project.json"
 WORKFLOW_PATH="$ROOT_DIR/.github/workflows/flutter_ci.yml"
 BETA_HANDOFF_PATH="$ROOT_DIR/tool/beta_handoff.sh"
 MANUAL_BETA_CHECKLIST_PATH="$ROOT_DIR/tool/manual_beta_checklist.sh"
@@ -44,6 +45,7 @@ for path in \
   "$WEB_SMOKE_PATH" \
   "$COMPACT_SMOKE_DOC_PATH" \
   "$VIDEO_WORKFLOW_PATH" \
+  "$EXPORT_QA_FIXTURE_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
   "$MANUAL_BETA_CHECKLIST_PATH" \
@@ -81,6 +83,7 @@ python3 - \
   "$WEB_SMOKE_PATH" \
   "$COMPACT_SMOKE_DOC_PATH" \
   "$VIDEO_WORKFLOW_PATH" \
+  "$EXPORT_QA_FIXTURE_PATH" \
   "$WORKFLOW_PATH" \
   "$BETA_HANDOFF_PATH" \
   "$MANUAL_BETA_CHECKLIST_PATH" \
@@ -117,6 +120,7 @@ import sys
     web_smoke_raw,
     compact_smoke_doc_raw,
     video_workflow_raw,
+    export_qa_fixture_raw,
     workflow_raw,
     beta_handoff_raw,
     manual_beta_checklist_raw,
@@ -149,6 +153,7 @@ export_qa_path = pathlib.Path(export_qa_raw)
 web_smoke_path = pathlib.Path(web_smoke_raw)
 compact_smoke_doc_path = pathlib.Path(compact_smoke_doc_raw)
 video_workflow_path = pathlib.Path(video_workflow_raw)
+export_qa_fixture_path = pathlib.Path(export_qa_fixture_raw)
 workflow_path = pathlib.Path(workflow_raw)
 beta_handoff_path = pathlib.Path(beta_handoff_raw)
 manual_beta_checklist_path = pathlib.Path(manual_beta_checklist_raw)
@@ -180,6 +185,7 @@ export_qa = export_qa_path.read_text(encoding='utf-8')
 web_smoke = web_smoke_path.read_text(encoding='utf-8')
 compact_smoke_doc = compact_smoke_doc_path.read_text(encoding='utf-8')
 video_workflow = video_workflow_path.read_text(encoding='utf-8')
+export_qa_fixture = export_qa_fixture_path.read_text(encoding='utf-8')
 workflow = workflow_path.read_text(encoding='utf-8')
 beta_handoff = beta_handoff_path.read_text(encoding='utf-8')
 manual_beta_checklist = manual_beta_checklist_path.read_text(encoding='utf-8')
@@ -382,6 +388,12 @@ actual_docs_workflow_lines = [
 ]
 
 checks = [
+    (video_workflow_path.is_file(),
+     'docs/11-video-fallback-workflow.md must exist because the manual beta handoff points users there'),
+    (export_qa_fixture_path.is_file(),
+     'docs/fixtures/export-qa-project.json must exist because the manual beta handoff uses it as the standard QA sample'),
+    (len(export_qa_fixture.strip()) > 0,
+     'docs/fixtures/export-qa-project.json must stay non-empty so the standard QA sample remains usable'),
     (expected_sequence in readme,
      'README quality gate sequence is missing ai_helper_smoke/docs_handoff_smoke/navigation_smoke or is out of date'),
     (set(public_tool_scripts) == set(docs_readme_tool_markers),
