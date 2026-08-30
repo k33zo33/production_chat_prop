@@ -35,6 +35,7 @@ This checklist reflects the current web MVP state after the automated beta hando
 - [x] `./tool/ai_helper_smoke.sh` keeps the Gemini helper wrapper parsing and fallback behavior covered without depending on a live Gemini backend
 - [x] `./tool/beta_handoff.sh`
 - [x] `./tool/beta_handoff_smoke.sh` keeps the beta handoff shell orchestration and upstream skip-flag wiring covered before the heavier Flutter gate
+- [x] GitHub Actions runs `./tool/beta_handoff_smoke.sh` as a standalone preflight before the full `beta_handoff` gate
 - [x] `./tool/desktop_smoke.sh` keeps the Docker desktop fallback path checked in CI as a separate gate
 - [x] Main widget flow stabilized on web
 
@@ -88,6 +89,7 @@ Run `./tool/manual_beta_checklist.sh`, then finish the three manual checklists (
 - `bash tool/release_smoke.sh` now covers empty-scene export disabling, larger-text compact breakpoint regressions, deep long-scene focus-preview auto-follow alongside focus-preview transport/keyboard flow plus compact/wide chrome stacking and timeline/preview-state continuity, export toggle feedback, aspect-ratio stability, and long-chat responsiveness as a faster pre-manual gate, not a replacement for the full verify/build step
 - `release_smoke` and `compact_smoke` now also fail on coverage-count drift for the dedicated focused test files they fully own, so targeted smoke coverage is less likely to erode quietly after test-file reshuffles
 - `./tool/beta_handoff.sh` now also keeps the aggregate path leaner by reusing one upstream Flutter banner + `pub get` + `analyze`, then relying on skip ponovljenog flutter bannera, skip dodatnog analyze, and skip ponovnog `pub get` in the downstream stack
+- GitHub Actions now also runs `./tool/beta_handoff_smoke.sh` as a separate `beta_handoff_smoke` job, and the main `beta_handoff` job explicitly waits for it so shell-level orchestration drift gets caught before the heavier Flutter gate
 - GitHub Actions now mirrors `./tool/beta_handoff.sh` so push/PR CI exercises `docs_handoff_smoke -> ai_helper_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke` before uploading the web artifact
 - GitHub Actions now also runs `./tool/ai_helper_smoke.sh` as a separate `helper_smoke` job, and the main `beta_handoff` job explicitly waits for it so CI ordering stays aligned with the local handoff
 - GitHub Actions now also runs `./tool/desktop_smoke.sh` as a separate `desktop_smoke` job so Docker desktop packaging/noVNC regressions surface before they become a beta handoff surprise

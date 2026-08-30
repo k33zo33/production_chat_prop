@@ -96,6 +96,8 @@ Uz to, GitHub Actions sada vrti i zaseban `desktop_smoke` job koji pokreće `./t
 
 GitHub Actions dodatno vrti i zaseban `helper_smoke` job koji pokreće `./tool/ai_helper_smoke.sh`, a `beta_handoff` sada eksplicitno ovisi o njemu kako bi CI redoslijed ostao usklađen s lokalnim handoffom.
 
+GitHub Actions sada vrti i zaseban `beta_handoff_smoke` job koji pokreće `./tool/beta_handoff_smoke.sh`, a puni `beta_handoff` gate čeka i njega kako bi orchestration redoslijed i skip-flag wiring bili pokriveni prije skupljeg Flutter stacka.
+
 Ako sve prođe, CI upload-a gotovi web build artefakt.
 
 Najčešće komande:
@@ -133,6 +135,7 @@ Napomene:
 - `./tool/ai_helper.sh preview-ask ...` ispisuje puni ask/analysis payload lokalno za debug helper prompta bez stvarnog Gemini poziva.
 - `./tool/ai_helper.sh preview-review ...` ispisuje puni review payload lokalno za debug diff/filter ponašanja bez stvarnog Gemini poziva.
 - `./tool/ai_helper_smoke.sh` provjerava helper wrapper parsing i fallback ponašanje u privremenom git repou, bez potrebe za dostupnim Gemini CLI backendom.
+- GitHub Actions vrti `./tool/beta_handoff_smoke.sh` u zasebnom `beta_handoff_smoke` jobu, a `beta_handoff` čeka i taj job prije glavnog web gate reda.
 - GitHub Actions vrti `./tool/ai_helper_smoke.sh` u zasebnom `helper_smoke` jobu, a `beta_handoff` čeka taj job prije glavnog web gate reda.
 - Za ručni compact/mobile i export pass koristi:
   - `docs/09-compact-smoke-checklist.md`

@@ -25,11 +25,23 @@ jobs:
       - name: Run AI helper smoke gate
         run: ./tool/ai_helper_smoke.sh
 
+  beta_handoff_smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run beta handoff shell smoke gate
+        run: ./tool/beta_handoff_smoke.sh
+
   beta_handoff:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     needs:
       - helper_smoke
+      - beta_handoff_smoke
 
     steps:
       - name: Check out repository
