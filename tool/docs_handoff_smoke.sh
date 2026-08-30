@@ -209,9 +209,72 @@ expected_sequence = (
     'built web_shell_smoke -> built brand_neutrality_smoke'
 )
 
+tool_dir = beta_handoff_path.parent
+public_tool_scripts = sorted(
+    path.name for path in tool_dir.glob('*.sh') if path.name != 'smoke_common.sh'
+)
+
+docs_readme_tool_markers = {
+    'ai_helper.sh': './tool/ai_helper.sh',
+    'ai_helper_smoke.sh': './tool/ai_helper_smoke.sh',
+    'beta_handoff.sh': './tool/beta_handoff.sh',
+    'beta_handoff_smoke.sh': './tool/beta_handoff_smoke.sh',
+    'brand_neutrality_smoke.sh': './tool/brand_neutrality_smoke.sh',
+    'compact_smoke.sh': './tool/compact_smoke.sh',
+    'demo_smoke.sh': './tool/demo_smoke.sh',
+    'desktop_docker.sh': './tool/desktop_docker.sh',
+    'desktop_smoke.sh': './tool/desktop_smoke.sh',
+    'docs_handoff_smoke.sh': './tool/docs_handoff_smoke.sh',
+    'import_smoke.sh': './tool/import_smoke.sh',
+    'manual_beta_checklist.sh': './tool/manual_beta_checklist.sh',
+    'navigation_smoke.sh': './tool/navigation_smoke.sh',
+    'release_smoke.sh': './tool/release_smoke.sh',
+    'verify.sh': './tool/verify.sh',
+    'web_shell_smoke.sh': './tool/web_shell_smoke.sh',
+}
+
+readme_command_markers = {
+    'ai_helper.sh': './tool/ai_helper.sh doctor',
+    'ai_helper_smoke.sh': './tool/ai_helper_smoke.sh',
+    'beta_handoff.sh': './tool/beta_handoff.sh',
+    'beta_handoff_smoke.sh': './tool/beta_handoff_smoke.sh',
+    'brand_neutrality_smoke.sh': './tool/brand_neutrality_smoke.sh',
+    'compact_smoke.sh': './tool/compact_smoke.sh',
+    'demo_smoke.sh': './tool/demo_smoke.sh',
+    'desktop_docker.sh': './tool/desktop_docker.sh',
+    'desktop_smoke.sh': './tool/desktop_smoke.sh',
+    'docs_handoff_smoke.sh': './tool/docs_handoff_smoke.sh',
+    'import_smoke.sh': './tool/import_smoke.sh',
+    'manual_beta_checklist.sh': './tool/manual_beta_checklist.sh',
+    'navigation_smoke.sh': './tool/navigation_smoke.sh',
+    'release_smoke.sh': './tool/release_smoke.sh',
+    'verify.sh': './tool/verify.sh',
+    'web_shell_smoke.sh': './tool/web_shell_smoke.sh web',
+}
+
+missing_docs_readme_markers = sorted(
+    script_name
+    for script_name in public_tool_scripts
+    if docs_readme_tool_markers.get(script_name) not in docs_readme
+)
+
+missing_readme_command_markers = sorted(
+    script_name
+    for script_name in public_tool_scripts
+    if readme_command_markers.get(script_name) not in readme
+)
+
 checks = [
     (expected_sequence in readme,
      'README quality gate sequence is missing ai_helper_smoke/docs_handoff_smoke/navigation_smoke or is out of date'),
+    (set(public_tool_scripts) == set(docs_readme_tool_markers),
+     'tool/docs_handoff_smoke.sh docs_readme_tool_markers must cover every public tool/*.sh script except smoke_common.sh'),
+    (set(public_tool_scripts) == set(readme_command_markers),
+     'tool/docs_handoff_smoke.sh readme_command_markers must cover every public tool/*.sh script except smoke_common.sh'),
+    (not missing_docs_readme_markers,
+     'docs/README.md is missing first-class tool entries for: ' + ', '.join(missing_docs_readme_markers)),
+    (not missing_readme_command_markers,
+     'README common commands are missing entries for: ' + ', '.join(missing_readme_command_markers)),
     ('./tool/import_smoke.sh' in readme,
      'README common commands should mention ./tool/import_smoke.sh'),
     ('./tool/brand_neutrality_smoke.sh' in readme,
