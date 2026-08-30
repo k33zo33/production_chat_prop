@@ -875,4 +875,23 @@ for expected_line in \
   fi
 done
 
+ai_helper_smoke_output="$("$AI_HELPER_SMOKE_PATH")"
+
+for expected_line in \
+  "[ai-helper-smoke] doctor path detects missing Gemini" \
+  "[ai-helper-smoke] staged path-filter review reaches the Gemini invocation path" \
+  "[ai-helper-smoke] preview-ask prints the local analysis payload without Gemini" \
+  "[ai-helper-smoke] ask with a real question reaches the Gemini invocation path" \
+  "[ai-helper-smoke] preview-ask and ask reject missing questions clearly" \
+  "[ai-helper-smoke] preview-review prints the local review payload without Gemini" \
+  "[ai-helper-smoke] explicit untracked path filters stay reviewable even with staged changes" \
+  "[ai-helper-smoke] range-plus-path review reaches the Gemini invocation path" \
+  "[ai-helper-smoke] missing-path review still fails fast with a clear no-diff signal" \
+  "[ai-helper-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$ai_helper_smoke_output"; then
+    echo "[docs-handoff-smoke] ai helper smoke output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
 echo "[docs-handoff-smoke] done"
