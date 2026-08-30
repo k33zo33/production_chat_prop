@@ -34,6 +34,7 @@ This checklist reflects the current web MVP state after the automated beta hando
 - [x] `./tool/import_smoke.sh` hardens JSON import, sanitizer, and persistence recovery paths
 - [x] `./tool/ai_helper_smoke.sh` keeps the Gemini helper wrapper parsing and fallback behavior covered without depending on a live Gemini backend
 - [x] `./tool/beta_handoff.sh`
+- [x] `./tool/beta_handoff_smoke.sh` keeps the beta handoff shell orchestration and upstream skip-flag wiring covered before the heavier Flutter gate
 - [x] `./tool/desktop_smoke.sh` keeps the Docker desktop fallback path checked in CI as a separate gate
 - [x] Main widget flow stabilized on web
 
@@ -76,6 +77,7 @@ Run `./tool/manual_beta_checklist.sh`, then finish the three manual checklists (
 ## Latest verification snapshot
 
 - `./tool/beta_handoff.sh` passed end-to-end (`docs_handoff_smoke -> ai_helper_smoke -> web_shell_smoke -> brand_neutrality_smoke -> demo_smoke -> import_smoke -> release_smoke -> compact_smoke -> navigation_smoke -> verify -> built web_shell_smoke -> built brand_neutrality_smoke`)
+- `./tool/beta_handoff_smoke.sh` now keeps the orchestration order and upstream skip wiring (`SMOKE_SKIP_VERSION`, `SMOKE_SKIP_ANALYZE`, `SKIP_PUB_GET`) covered without paying for a full Flutter run
 - `bash tool/verify.sh` passed (`flutter pub get`, `flutter analyze`, `flutter test`, `flutter build web`)
 - video fallback export now has a dedicated handoff explainer so beta users know that `Export Video` currently emits a documented `.json` render package rather than a final encoded movie file
 - the tracked export QA fixture now includes an embedded avatar sample in the hero portrait scene, so manual browser export QA can confirm avatar retention in both PNG preview/export and fallback JSON payloads

@@ -25,6 +25,7 @@ IMPORT_SMOKE_PATH="$ROOT_DIR/tool/import_smoke.sh"
 VERIFY_PATH="$ROOT_DIR/tool/verify.sh"
 AI_HELPER_PATH="$ROOT_DIR/tool/ai_helper.sh"
 AI_HELPER_SMOKE_PATH="$ROOT_DIR/tool/ai_helper_smoke.sh"
+BETA_HANDOFF_SMOKE_PATH="$ROOT_DIR/tool/beta_handoff_smoke.sh"
 WIDGET_TEST_PATH="$ROOT_DIR/test/widget_test.dart"
 PLAYBACK_EXPORT_FEEDBACK_TEST_PATH="$ROOT_DIR/test/widget/playback_export_feedback_test.dart"
 SCENE_ROUTE_SYNC_TEST_PATH="$ROOT_DIR/test/widget/scene_route_sync_test.dart"
@@ -56,6 +57,7 @@ for path in \
   "$VERIFY_PATH" \
   "$AI_HELPER_PATH" \
   "$AI_HELPER_SMOKE_PATH" \
+  "$BETA_HANDOFF_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
   "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
@@ -92,6 +94,7 @@ python3 - \
   "$VERIFY_PATH" \
   "$AI_HELPER_PATH" \
   "$AI_HELPER_SMOKE_PATH" \
+  "$BETA_HANDOFF_SMOKE_PATH" \
   "$WIDGET_TEST_PATH" \
   "$PLAYBACK_EXPORT_FEEDBACK_TEST_PATH" \
   "$SCENE_ROUTE_SYNC_TEST_PATH" \
@@ -127,6 +130,7 @@ import sys
     verify_raw,
     ai_helper_raw,
     ai_helper_smoke_raw,
+    beta_handoff_smoke_raw,
     widget_test_raw,
     playback_export_feedback_test_raw,
     scene_route_sync_test_raw,
@@ -158,6 +162,7 @@ import_smoke_path = pathlib.Path(import_smoke_raw)
 verify_path = pathlib.Path(verify_raw)
 ai_helper_path = pathlib.Path(ai_helper_raw)
 ai_helper_smoke_path = pathlib.Path(ai_helper_smoke_raw)
+beta_handoff_smoke_path = pathlib.Path(beta_handoff_smoke_raw)
 widget_test_path = pathlib.Path(widget_test_raw)
 playback_export_feedback_test_path = pathlib.Path(playback_export_feedback_test_raw)
 scene_route_sync_test_path = pathlib.Path(scene_route_sync_test_raw)
@@ -188,6 +193,7 @@ import_smoke = import_smoke_path.read_text(encoding='utf-8')
 verify = verify_path.read_text(encoding='utf-8')
 ai_helper = ai_helper_path.read_text(encoding='utf-8')
 ai_helper_smoke = ai_helper_smoke_path.read_text(encoding='utf-8')
+beta_handoff_smoke = beta_handoff_smoke_path.read_text(encoding='utf-8')
 widget_test = widget_test_path.read_text(encoding='utf-8')
 playback_export_feedback_test = playback_export_feedback_test_path.read_text(encoding='utf-8')
 scene_route_sync_test = scene_route_sync_test_path.read_text(encoding='utf-8')
@@ -222,10 +228,14 @@ checks = [
      'README common commands should mention the preview-review helper example'),
     ('./tool/ai_helper_smoke.sh' in readme,
      'README common commands should mention ./tool/ai_helper_smoke.sh'),
+    ('./tool/beta_handoff_smoke.sh' in readme,
+     'README common commands should mention ./tool/beta_handoff_smoke.sh'),
     ('desktop_smoke' in readme and './tool/desktop_smoke.sh' in readme,
      'README should mention the separate desktop_smoke gate'),
     ('./tool/ai_helper.sh doctor' in docs_readme and './tool/ai_helper_smoke.sh' in docs_readme and './tool/ai_helper.sh preview-ask' in docs_readme and './tool/ai_helper.sh preview-review' in docs_readme and '10-ai-helper-workflow.md' in docs_readme,
      'docs/README.md should point helper users to doctor, preview-ask, preview-review, ai_helper_smoke, and 10-ai-helper-workflow.md'),
+    ('./tool/beta_handoff_smoke.sh' in docs_readme,
+     'docs/README.md should point release-gate users to ./tool/beta_handoff_smoke.sh'),
     ('./tool/ai_helper.sh doctor' in ai_helper_workflow,
      'docs/10-ai-helper-workflow.md should document ./tool/ai_helper.sh doctor'),
     ('./tool/ai_helper.sh preview-ask "Pregledaj helper fallback rizike."' in ai_helper_workflow,
@@ -246,6 +256,8 @@ checks = [
      'docs/05-web-done-checklist.md should mention the desktop smoke gate'),
     ('./tool/ai_helper_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the AI helper smoke gate'),
+    ('./tool/beta_handoff_smoke.sh' in web_done,
+     'docs/05-web-done-checklist.md should mention the beta handoff shell smoke gate'),
     ('./tool/brand_neutrality_smoke.sh' in web_done,
      'docs/05-web-done-checklist.md should mention the brand-neutrality smoke gate'),
     ('navigation_smoke' in web_done and './tool/navigation_smoke.sh' in web_done,
@@ -264,6 +276,10 @@ checks = [
      'tool/verify.sh should keep the explicit upstream pub-get skip path used by beta_handoff'),
     ('SMOKE_SKIP_VERSION=1' in smoke_common and 'SMOKE_SKIP_ANALYZE=1' in smoke_common,
      'tool/smoke_common.sh comments should keep documenting the upstream skip-flag optimization'),
+    ('stubbed beta_handoff order stays intact' in beta_handoff_smoke and
+     'downstream smoke scripts inherit skip version/analyze flags' in beta_handoff_smoke and
+     'verify receives SKIP_PUB_GET=1 from beta_handoff' in beta_handoff_smoke,
+     'tool/beta_handoff_smoke.sh should keep validating beta_handoff order and skip-flag wiring'),
     ('skip ponovljenog flutter bannera' in readme and 'skip dodatnog analyze' in readme and 'skip ponovnog `pub get`' in readme,
      'README should mention that beta_handoff reuses the upstream Flutter banner/analyze/pub-get steps to stay faster'),
     ('skip ponovljenog flutter bannera' in web_done and 'skip dodatnog analyze' in web_done and 'skip ponovnog `pub get`' in web_done,

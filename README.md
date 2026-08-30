@@ -110,6 +110,7 @@ Najčešće komande:
 ./tool/desktop_smoke.sh
 ./tool/verify.sh
 ./tool/beta_handoff.sh
+./tool/beta_handoff_smoke.sh
 ./tool/manual_beta_checklist.sh
 ./tool/ai_helper.sh doctor
 ./tool/ai_helper.sh preview-ask "Summarize the main playback export risks."
@@ -126,6 +127,7 @@ Napomene:
 - `./tool/navigation_smoke.sh` drži scene deep-link sync, stale query normalizaciju i recovery navigaciju u brzom web preflightu prije punog verify koraka.
 - `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery i navigation/deep-link gate, a zatim poziva `./tool/manual_beta_checklist.sh` za uredan ručni handoff.
 - `./tool/beta_handoff.sh` ostaje i brži aggregate gate jer upstream odradi jedan Flutter banner + `pub get` + `analyze`, a niži smoke skriptovi koriste skip ponovljenog flutter bannera, skip dodatnog analyze i skip ponovnog `pub get` u `verify.sh`.
+- `./tool/beta_handoff_smoke.sh` daje brzi shell-level check da `beta_handoff.sh` zadrži isti redoslijed i skip-flag wiring čak i prije pravog Flutter runa.
 - `./tool/manual_beta_checklist.sh` potvrđuje da su ručne QA reference i fixture prisutni te ispisuje standardni redoslijed browser/compact/export provjera.
 - `./tool/ai_helper.sh doctor` daje brzi preflight za lokalni Gemini helper setup prije `review` ili `ask`.
 - `./tool/ai_helper.sh preview-ask ...` ispisuje puni ask/analysis payload lokalno za debug helper prompta bez stvarnog Gemini poziva.

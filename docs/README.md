@@ -21,6 +21,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - `05-vscode-setup-and-workflow.md` — editor/workstation workflow notes
 - `10-ai-helper-workflow.md` — Gemini read-only helper workflow, `doctor` preflight i lokalni `preview-ask` / `preview-review` debug path
 - `tool/ai_helper_smoke.sh` — mali lokalni smoke pass za helper wrapper parsing i fallback ponašanje
+- `tool/beta_handoff_smoke.sh` — brzi shell-level smoke za `beta_handoff.sh` orchestration redoslijed i skip-flag wiring bez pravog Flutter stacka
 - `production-chat-prop.code-workspace` — opcionalni VS Code workspace file
 
 ## Recommended reading order
@@ -34,6 +35,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - Za product odluke: kreni od `01` + `03`
 - Za arhitekturu i repo wiring: kreni od `02`
 - Za beta handoff/release provjeru: kreni od `05`, zatim pokreni `./tool/manual_beta_checklist.sh`, pa odradi `08`, `09`, `04`, `11`
+- Ako diraš `tool/beta_handoff.sh`, prvo pokreni `./tool/beta_handoff_smoke.sh` da provjeriš orchestration redoslijed i skip-flag wiring prije skupljeg Flutter gatea.
 - `release_smoke` i `compact_smoke` nisu samo name-check gateovi: dedicated focused test fileovi koje u potpunosti posjeduju sada failaju i na coverage drift, pa tiha erozija handoff zaštite teže prolazi.
 - Za helper/review workflow: kreni s `./tool/ai_helper.sh doctor`, za payload debug koristi `./tool/ai_helper.sh preview-ask ...` ili `./tool/ai_helper.sh preview-review ...`, a kad diraš wrapper pokreni i `./tool/ai_helper_smoke.sh`, zatim vidi `10-ai-helper-workflow.md`
 
