@@ -654,8 +654,12 @@ checks = [
      'recovery coverage drifted' in compact_smoke and
      'focus preview auto-follow coverage drifted' in compact_smoke and
      'focus preview short-height coverage drifted' in compact_smoke and
+     '"$SCENE_STATUS_BADGE_TEST_FILE"' in compact_smoke and
+     '"$FOCUS_PREVIEW_CHROME_TEST_FILE"' in compact_smoke and
+     '${SCENE_STATUS_BADGE_TEST_PATTERN}' in compact_smoke and
+     '${FOCUS_PREVIEW_CHROME_TEST_PATTERN}' in compact_smoke and
      'short-height entry-state coverage drifted' in compact_smoke,
-     'tool/compact_smoke.sh should keep the focused coverage-drift guards for dedicated test files'),
+     'tool/compact_smoke.sh should keep the focused coverage-drift guards for dedicated test files and keep scene-status/focus-preview-chrome support files wired into the batched compact run'),
     ('?sceneId=' in web_smoke and 'Ručno makni `?sceneId=...` iz URL-a dok si u editoru' in web_smoke and 'Ručno makni `?sceneId=...` iz playback URL-a' in web_smoke,
      'docs/08-web-smoke-checklist.md should spell out cleared scene-query spot-checks for editor and playback'),
     ('?sceneId=' in compact_smoke_doc and 'ručno makni query' in compact_smoke_doc and 'compact playback vrati aktivnu scenu' in compact_smoke_doc,
