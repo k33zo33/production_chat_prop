@@ -113,6 +113,7 @@ Najčešće komande:
 ./tool/navigation_smoke.sh
 ./tool/desktop_smoke.sh
 ./tool/verify.sh
+./tool/docs_handoff_smoke.sh
 ./tool/beta_handoff.sh
 ./tool/beta_handoff_smoke.sh
 ./tool/manual_beta_checklist.sh
