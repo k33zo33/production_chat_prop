@@ -1024,6 +1024,43 @@ for expected_line in \
   fi
 done
 
+import_stub_dir="$(mktemp -d)"
+cat > "$import_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$import_stub_dir/flutter-stub.sh"
+
+import_smoke_output="$(
+  cd "$ROOT_DIR" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$import_stub_dir/flutter-stub.sh" "$IMPORT_SMOKE_PATH"
+)"
+
+for expected_line in \
+  "[import-smoke] using flutter: $import_stub_dir/flutter-stub.sh (version handled upstream)" \
+  "[import-smoke] analyze skipped (handled upstream)" \
+  "[import-smoke] tests: 23 targeted import/widget/sanitizer/repository/fixture cases (batched)" \
+  "- Run ./tool/beta_handoff.sh for the full preflight sequence when you want the release-ready gate stack." \
+  "[import-smoke] manual follow-up" \
+  "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order." \
+  "- Keep one real browser import pass during that manual handoff for clipboard/file-picker behavior." \
+  "[import-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$import_smoke_output"; then
+    echo "[docs-handoff-smoke] import smoke output drifted: missing line: $expected_line" >&2
+    rm -rf "$import_stub_dir"
+    exit 1
+  fi
+done
+
+if ! grep -Fq -- 'flutter|args=test test/widget_test.dart test/unit/features/projects/presentation/controllers/projects_controller_test.dart test/unit/features/projects/data/services/project_sanitizer_test.dart test/unit/features/projects/data/repositories/local_project_repository_test.dart test/unit/features/projects/domain/export_qa_fixture_test.dart' <<<"$import_smoke_output"; then
+  echo "[docs-handoff-smoke] import smoke output drifted: missing the expected batched flutter test invocation" >&2
+  rm -rf "$import_stub_dir"
+  exit 1
+fi
+
+rm -rf "$import_stub_dir"
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
