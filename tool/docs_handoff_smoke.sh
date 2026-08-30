@@ -1061,6 +1061,43 @@ fi
 
 rm -rf "$import_stub_dir"
 
+navigation_stub_dir="$(mktemp -d)"
+cat > "$navigation_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$navigation_stub_dir/flutter-stub.sh"
+
+navigation_smoke_output="$(
+  cd "$ROOT_DIR" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$navigation_stub_dir/flutter-stub.sh" "$NAVIGATION_SMOKE_PATH"
+)"
+
+for expected_line in \
+  "[navigation-smoke] using flutter: $navigation_stub_dir/flutter-stub.sh (version handled upstream)" \
+  "[navigation-smoke] analyze skipped (handled upstream)" \
+  "[navigation-smoke] tests: 9 navigation widget + 8 route-sync + 3 recovery cases (batched)" \
+  "[navigation-smoke] manual follow-up" \
+  "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order." \
+  "- If this targeted pass is green, keep browser back/forward, deep-link, and cleared-query spot-checks in that helper and its linked docs." \
+  "- Then run ./tool/verify.sh before release or deploy decisions." \
+  "[navigation-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$navigation_smoke_output"; then
+    echo "[docs-handoff-smoke] navigation smoke output drifted: missing line: $expected_line" >&2
+    rm -rf "$navigation_stub_dir"
+    exit 1
+  fi
+done
+
+if ! grep -Fq -- 'flutter|args=test test/widget_test.dart test/widget/scene_route_sync_test.dart test/widget/project_not_found_recovery_test.dart' <<<"$navigation_smoke_output"; then
+  echo "[docs-handoff-smoke] navigation smoke output drifted: missing the expected batched flutter test invocation" >&2
+  rm -rf "$navigation_stub_dir"
+  exit 1
+fi
+
+rm -rf "$navigation_stub_dir"
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
