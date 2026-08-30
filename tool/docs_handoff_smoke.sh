@@ -1098,6 +1098,42 @@ fi
 
 rm -rf "$navigation_stub_dir"
 
+demo_stub_dir="$(mktemp -d)"
+cat > "$demo_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$demo_stub_dir/flutter-stub.sh"
+
+demo_smoke_output="$(
+  cd "$ROOT_DIR" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$demo_stub_dir/flutter-stub.sh" "$DEMO_SMOKE_PATH"
+)"
+
+for expected_line in \
+  "[demo-smoke] using flutter: $demo_stub_dir/flutter-stub.sh (version handled upstream)" \
+  "[demo-smoke] analyze skipped (handled upstream)" \
+  "[demo-smoke] tests: 21 targeted demo/import/export cases" \
+  "[demo-smoke] manual demo checklist" \
+  "1) Run app: $demo_stub_dir/flutter-stub.sh run -d web-server" \
+  "10) Then use the shared handoff helper: ./tool/manual_beta_checklist.sh" \
+  "[demo-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$demo_smoke_output"; then
+    echo "[docs-handoff-smoke] demo smoke output drifted: missing line: $expected_line" >&2
+    rm -rf "$demo_stub_dir"
+    exit 1
+  fi
+done
+
+if ! grep -Fq -- 'flutter|args=test test/widget_test.dart test/widget/playback_export_feedback_test.dart' <<<"$demo_smoke_output"; then
+  echo "[docs-handoff-smoke] demo smoke output drifted: missing the expected batched flutter test invocation" >&2
+  rm -rf "$demo_stub_dir"
+  exit 1
+fi
+
+rm -rf "$demo_stub_dir"
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
