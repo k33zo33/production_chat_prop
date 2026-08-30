@@ -20,6 +20,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - `04-codex-master-prompt.md` — historical prompt/bootstrap reference
 - `05-vscode-setup-and-workflow.md` — editor/workstation workflow notes
 - `10-ai-helper-workflow.md` — Gemini read-only helper workflow, `doctor` preflight i lokalni `preview-ask` / `preview-review` debug path
+- `tool/ai_helper.sh` — glavni Gemini read-only helper entrypoint za `doctor`, `review`, `ask`, `preview-ask` i `preview-review`
 - `tool/verify.sh` — puni Flutter quality gate (`pub get`, `analyze`, `test`, `build web`) s dodatnim source/build shell i brand-neutrality provjerama
 - `tool/beta_handoff.sh` — standardni aggregate beta preflight koji vrti docs/helper/web-shell/brand/demo/import/release/compact/navigation/verify redoslijed prije rucnog handoffa
 - `tool/demo_smoke.sh` — brzi demo-flow preflight za seedani showcase put kroz project list, editor i playback
@@ -47,6 +48,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - Za product odluke: kreni od `01` + `03`
 - Za arhitekturu i repo wiring: kreni od `02`
 - Za beta handoff/release provjeru: kreni od `05`, zatim pokreni `./tool/manual_beta_checklist.sh`, pa odradi `08`, `09`, `04`, `11`
+- Za helper/review rad: kreni s `./tool/ai_helper.sh doctor`, zatim koristi `./tool/ai_helper.sh review` ili `./tool/ai_helper.sh ask "..."`, a za lokalni payload debug `preview-ask` i `preview-review`.
 - Ako trebaju puni lokalni quality gate i build potvrda, pokreni `./tool/verify.sh`.
 - Ako zelis standardni aggregate beta redoslijed prije rucnih checklisti, pokreni `./tool/beta_handoff.sh`.
 - Ako diraš demo seed ili showcase flow, pokreni `./tool/demo_smoke.sh` prije skupljeg Flutter gatea.
