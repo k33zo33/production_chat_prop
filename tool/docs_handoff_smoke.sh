@@ -329,6 +329,27 @@ checks = [
      'GitHub Actions should keep invoking ./tool/desktop_smoke.sh in the desktop_smoke job'),
     ('docs/11-video-fallback-workflow.md' in release_smoke,
      'tool/release_smoke.sh manual follow-up should mention docs/11-video-fallback-workflow.md'),
+    ('export QA avatar preview coverage drifted' in release_smoke and
+     'focus preview auto-follow coverage drifted' in release_smoke and
+     'focus preview chrome coverage drifted' in release_smoke and
+     'focus preview short-height coverage drifted' in release_smoke and
+     'mobile compact polish coverage drifted' in release_smoke and
+     'playback empty-state coverage drifted' in release_smoke and
+     'playback export feedback coverage drifted' in release_smoke and
+     'portfolio pre-flight coverage drifted' in release_smoke and
+     'recovery coverage drifted' in release_smoke and
+     'scene status badge coverage drifted' in release_smoke and
+     'scene route sync coverage drifted' in release_smoke and
+     'short-height entry-state coverage drifted' in release_smoke and
+     'timeline QA marker coverage drifted' in release_smoke,
+     'tool/release_smoke.sh should keep the focused coverage-drift guards for dedicated test files'),
+    ('mobile compact polish coverage drifted' in compact_smoke and
+     'playback empty-state coverage drifted' in compact_smoke and
+     'recovery coverage drifted' in compact_smoke and
+     'focus preview auto-follow coverage drifted' in compact_smoke and
+     'focus preview short-height coverage drifted' in compact_smoke and
+     'short-height entry-state coverage drifted' in compact_smoke,
+     'tool/compact_smoke.sh should keep the focused coverage-drift guards for dedicated test files'),
     ('?sceneId=' in web_smoke and 'Ručno makni `?sceneId=...` iz URL-a dok si u editoru' in web_smoke and 'Ručno makni `?sceneId=...` iz playback URL-a' in web_smoke,
      'docs/08-web-smoke-checklist.md should spell out cleared scene-query spot-checks for editor and playback'),
     ('?sceneId=' in compact_smoke_doc and 'ručno makni query' in compact_smoke_doc and 'compact playback vrati aktivnu scenu' in compact_smoke_doc,
