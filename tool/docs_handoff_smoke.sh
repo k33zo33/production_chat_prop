@@ -853,4 +853,26 @@ print('[docs-handoff-smoke] smoke script test-name catalogs are in sync')
 print('[docs-handoff-smoke] compact smoke keeps the critical narrow-screen name/dialog regressions gated')
 PY
 
+manual_beta_output="$("$MANUAL_BETA_CHECKLIST_PATH")"
+
+for expected_line in \
+  "[manual-beta-checklist] automated baseline" \
+  "- Start from a green ./tool/beta_handoff.sh run." \
+  "- Keep docs/11-video-fallback-workflow.md open while validating Export Video behavior." \
+  "- Use docs/fixtures/export-qa-project.json as the standard import/export QA sample." \
+  "[manual-beta-checklist] manual pass order" \
+  "1) docs/08-web-smoke-checklist.md" \
+  "2) docs/09-compact-smoke-checklist.md" \
+  "3) docs/04-export-qa-checklist.md" \
+  "[manual-beta-checklist] run target" \
+  "- Use a local browser session from /home/server/flutter/bin/flutter run -d web-server" \
+  "- Repeat the compact pass around ~390px width and the ultra-compact checks around ~320px width" \
+  "- For stale-link spot checks, manually clear ?sceneId=... in editor/playback URLs and confirm the app restores a valid scene" \
+  "[manual-beta-checklist] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$manual_beta_output"; then
+    echo "[docs-handoff-smoke] manual beta checklist output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
 echo "[docs-handoff-smoke] done"
