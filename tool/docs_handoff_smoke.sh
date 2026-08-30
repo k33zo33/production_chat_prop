@@ -1024,6 +1024,43 @@ for expected_line in \
   fi
 done
 
+compact_stub_dir="$(mktemp -d)"
+cat > "$compact_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$compact_stub_dir/flutter-stub.sh"
+
+compact_smoke_output="$(
+  cd "$ROOT_DIR" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$compact_stub_dir/flutter-stub.sh" "$COMPACT_SMOKE_PATH"
+)"
+
+for expected_line in \
+  "[compact-smoke] using flutter: $compact_stub_dir/flutter-stub.sh (version handled upstream)" \
+  "[compact-smoke] analyze skipped (handled upstream)" \
+  "[compact-smoke] tests: 40 compact/export + 4 mobile polish + 3 playback empty-state + 2 scene-status + 2 focus-preview auto-follow + 5 recovery/layout + 2 focus-preview chrome + 1 focus-preview short-height + 4 short-height entry/recovery cases (batched)" \
+  "- If this targeted pass is green, run ./tool/verify.sh before release or deploy decisions." \
+  "[compact-smoke] manual follow-up" \
+  "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order." \
+  "- This compact pass now also covers dialog safe-area/keyboard behavior, larger-text compact breakpoints on project/editor/playback surfaces, short-landscape compact app-bar flows, ultra-compact editor/playback footer stacking, deep long-scene focus-preview auto-follow, focus-preview chrome stacking at larger text, short-height focus-preview chrome, short-height empty/recovery entry shells, compact scene-selector ergonomics, empty playback recovery actions, and the compact empty-scene status badge." \
+  "[compact-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$compact_smoke_output"; then
+    echo "[docs-handoff-smoke] compact smoke output drifted: missing line: $expected_line" >&2
+    rm -rf "$compact_stub_dir"
+    exit 1
+  fi
+done
+
+if ! grep -Fq -- 'flutter|args=test test/widget_test.dart test/widget/project_not_found_recovery_test.dart test/widget/mobile_compact_polish_test.dart test/widget/playback_empty_state_actions_test.dart test/widget/scene_status_badge_test.dart test/widget/focus_preview_autofollow_test.dart test/widget/focus_preview_chrome_test.dart test/widget/focus_preview_short_height_test.dart test/widget/short_height_entry_states_test.dart' <<<"$compact_smoke_output"; then
+  echo "[docs-handoff-smoke] compact smoke output drifted: missing the expected batched flutter test invocation" >&2
+  rm -rf "$compact_stub_dir"
+  exit 1
+fi
+
+rm -rf "$compact_stub_dir"
+
 import_stub_dir="$(mktemp -d)"
 cat > "$import_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
