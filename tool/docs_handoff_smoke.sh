@@ -922,6 +922,69 @@ if ! [[ -s "$EXPORT_QA_FIXTURE_PATH" ]]; then
   exit 1
 fi
 
+manual_beta_missing_stub_dir="$(mktemp -d)"
+mkdir -p "$manual_beta_missing_stub_dir/docs/fixtures" "$manual_beta_missing_stub_dir/tool"
+cp "$MANUAL_BETA_CHECKLIST_PATH" "$manual_beta_missing_stub_dir/tool/manual_beta_checklist.sh"
+touch "$manual_beta_missing_stub_dir/docs/09-compact-smoke-checklist.md"
+touch "$manual_beta_missing_stub_dir/docs/04-export-qa-checklist.md"
+touch "$manual_beta_missing_stub_dir/docs/11-video-fallback-workflow.md"
+printf '{}' > "$manual_beta_missing_stub_dir/docs/fixtures/export-qa-project.json"
+chmod +x "$manual_beta_missing_stub_dir/tool/manual_beta_checklist.sh"
+
+set +e
+manual_beta_missing_output="$(
+  cd "$manual_beta_missing_stub_dir" &&
+  ./tool/manual_beta_checklist.sh 2>&1
+)"
+manual_beta_missing_status=$?
+set -e
+
+if [[ "$manual_beta_missing_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] manual beta checklist missing-file path drifted: expected non-zero status" >&2
+  rm -rf "$manual_beta_missing_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- '[manual-beta-checklist] missing required handoff file: docs/08-web-smoke-checklist.md' <<<"$manual_beta_missing_output"; then
+  echo "[docs-handoff-smoke] manual beta checklist missing-file output drifted" >&2
+  rm -rf "$manual_beta_missing_stub_dir"
+  exit 1
+fi
+
+rm -rf "$manual_beta_missing_stub_dir"
+
+manual_beta_empty_fixture_stub_dir="$(mktemp -d)"
+mkdir -p "$manual_beta_empty_fixture_stub_dir/docs/fixtures" "$manual_beta_empty_fixture_stub_dir/tool"
+cp "$MANUAL_BETA_CHECKLIST_PATH" "$manual_beta_empty_fixture_stub_dir/tool/manual_beta_checklist.sh"
+touch "$manual_beta_empty_fixture_stub_dir/docs/08-web-smoke-checklist.md"
+touch "$manual_beta_empty_fixture_stub_dir/docs/09-compact-smoke-checklist.md"
+touch "$manual_beta_empty_fixture_stub_dir/docs/04-export-qa-checklist.md"
+touch "$manual_beta_empty_fixture_stub_dir/docs/11-video-fallback-workflow.md"
+: > "$manual_beta_empty_fixture_stub_dir/docs/fixtures/export-qa-project.json"
+chmod +x "$manual_beta_empty_fixture_stub_dir/tool/manual_beta_checklist.sh"
+
+set +e
+manual_beta_empty_fixture_output="$(
+  cd "$manual_beta_empty_fixture_stub_dir" &&
+  ./tool/manual_beta_checklist.sh 2>&1
+)"
+manual_beta_empty_fixture_status=$?
+set -e
+
+if [[ "$manual_beta_empty_fixture_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] manual beta checklist empty-fixture path drifted: expected non-zero status" >&2
+  rm -rf "$manual_beta_empty_fixture_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- '[manual-beta-checklist] export QA fixture is empty: docs/fixtures/export-qa-project.json' <<<"$manual_beta_empty_fixture_output"; then
+  echo "[docs-handoff-smoke] manual beta checklist empty-fixture output drifted" >&2
+  rm -rf "$manual_beta_empty_fixture_stub_dir"
+  exit 1
+fi
+
+rm -rf "$manual_beta_empty_fixture_stub_dir"
+
 ai_helper_smoke_output="$("$AI_HELPER_SMOKE_PATH")"
 
 for expected_line in \
