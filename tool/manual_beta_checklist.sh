@@ -22,6 +22,11 @@ for path in \
   fi
 done
 
+if [[ ! -s "$FIXTURE_PATH" ]]; then
+  echo "[manual-beta-checklist] export QA fixture is empty: $FIXTURE_PATH" >&2
+  exit 1
+fi
+
 echo "[manual-beta-checklist] automated baseline"
 echo "- Start from a green ./tool/beta_handoff.sh run."
 echo "- Keep $VIDEO_WORKFLOW_DOC open while validating Export Video behavior."

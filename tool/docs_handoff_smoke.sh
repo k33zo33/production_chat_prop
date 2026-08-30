@@ -887,6 +887,11 @@ for expected_line in \
   fi
 done
 
+if ! [[ -s "$EXPORT_QA_FIXTURE_PATH" ]]; then
+  echo "[docs-handoff-smoke] export QA fixture should remain non-empty for manual handoff: $EXPORT_QA_FIXTURE_PATH" >&2
+  exit 1
+fi
+
 ai_helper_smoke_output="$("$AI_HELPER_SMOKE_PATH")"
 
 for expected_line in \
