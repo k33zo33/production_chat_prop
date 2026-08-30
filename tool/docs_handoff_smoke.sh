@@ -941,6 +941,32 @@ for expected_line in \
   fi
 done
 
+doctor_output="$("$AI_HELPER_PATH" doctor 2>&1 || true)"
+
+for expected_line in \
+  "===== GEMINI CLI DOCTOR =====" \
+  "[ai-helper] repo: $ROOT_DIR" \
+  "[ai-helper] missing: gemini" \
+  "[ai-helper] doctor verdict: needs attention"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$doctor_output"; then
+    echo "[docs-handoff-smoke] ai helper doctor output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
+preview_ask_output="$("$AI_HELPER_PATH" preview-ask "Summarize helper fallback risks.")"
+
+for expected_line in \
+  "Repository root:" \
+  "$ROOT_DIR" \
+  "Task:" \
+  "Summarize helper fallback risks."; do
+  if ! grep -Fqx -- "$expected_line" <<<"$preview_ask_output"; then
+    echo "[docs-handoff-smoke] ai helper preview-ask output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
