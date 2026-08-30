@@ -233,6 +233,25 @@ docs_readme_tool_markers = {
     'web_shell_smoke.sh': './tool/web_shell_smoke.sh',
 }
 
+docs_workflow_section_markers = {
+    'ai_helper.sh': 'tool/ai_helper.sh',
+    'ai_helper_smoke.sh': 'tool/ai_helper_smoke.sh',
+    'beta_handoff.sh': 'tool/beta_handoff.sh',
+    'beta_handoff_smoke.sh': 'tool/beta_handoff_smoke.sh',
+    'brand_neutrality_smoke.sh': 'tool/brand_neutrality_smoke.sh',
+    'compact_smoke.sh': 'tool/compact_smoke.sh',
+    'demo_smoke.sh': 'tool/demo_smoke.sh',
+    'desktop_docker.sh': 'tool/desktop_docker.sh',
+    'desktop_smoke.sh': 'tool/desktop_smoke.sh',
+    'docs_handoff_smoke.sh': 'tool/docs_handoff_smoke.sh',
+    'import_smoke.sh': 'tool/import_smoke.sh',
+    'manual_beta_checklist.sh': 'tool/manual_beta_checklist.sh',
+    'navigation_smoke.sh': 'tool/navigation_smoke.sh',
+    'release_smoke.sh': 'tool/release_smoke.sh',
+    'verify.sh': 'tool/verify.sh',
+    'web_shell_smoke.sh': 'tool/web_shell_smoke.sh',
+}
+
 readme_command_markers = {
     'ai_helper.sh': './tool/ai_helper.sh doctor',
     'ai_helper_smoke.sh': './tool/ai_helper_smoke.sh',
@@ -264,17 +283,69 @@ missing_readme_command_markers = sorted(
     if readme_command_markers.get(script_name) not in readme
 )
 
+readme_command_block_match = re.search(
+    r'Najčešće komande:\s*```bash\n(?P<body>.*?)\n```',
+    readme,
+    re.S,
+)
+if readme_command_block_match is None:
+    raise SystemExit('[docs-handoff-smoke] README is missing the "Najčešće komande" bash block')
+readme_command_block = readme_command_block_match.group('body')
+
+docs_workflow_section_match = re.search(
+    r'## Developer workflow docs\n(?P<body>.*?)\n## Recommended reading order',
+    docs_readme,
+    re.S,
+)
+if docs_workflow_section_match is None:
+    raise SystemExit('[docs-handoff-smoke] docs/README.md is missing the "Developer workflow docs" section shape')
+docs_workflow_section = docs_workflow_section_match.group('body')
+
+missing_readme_block_markers = sorted(
+    script_name
+    for script_name in public_tool_scripts
+    if readme_command_markers[script_name] not in readme_command_block
+)
+
+missing_docs_workflow_markers = sorted(
+    script_name
+    for script_name in public_tool_scripts
+    if docs_workflow_section_markers[script_name] not in docs_workflow_section
+)
+
+duplicate_readme_block_markers = sorted(
+    script_name
+    for script_name in public_tool_scripts
+    if readme_command_block.count(readme_command_markers[script_name]) != 1
+)
+
+duplicate_docs_workflow_markers = sorted(
+    script_name
+    for script_name in public_tool_scripts
+    if docs_workflow_section.count(docs_workflow_section_markers[script_name]) != 1
+)
+
 checks = [
     (expected_sequence in readme,
      'README quality gate sequence is missing ai_helper_smoke/docs_handoff_smoke/navigation_smoke or is out of date'),
     (set(public_tool_scripts) == set(docs_readme_tool_markers),
      'tool/docs_handoff_smoke.sh docs_readme_tool_markers must cover every public tool/*.sh script except smoke_common.sh'),
+    (set(public_tool_scripts) == set(docs_workflow_section_markers),
+     'tool/docs_handoff_smoke.sh docs_workflow_section_markers must cover every public tool/*.sh script except smoke_common.sh'),
     (set(public_tool_scripts) == set(readme_command_markers),
      'tool/docs_handoff_smoke.sh readme_command_markers must cover every public tool/*.sh script except smoke_common.sh'),
     (not missing_docs_readme_markers,
      'docs/README.md is missing first-class tool entries for: ' + ', '.join(missing_docs_readme_markers)),
     (not missing_readme_command_markers,
      'README common commands are missing entries for: ' + ', '.join(missing_readme_command_markers)),
+    (not missing_readme_block_markers,
+     'README "Najčešće komande" block is missing entries for: ' + ', '.join(missing_readme_block_markers)),
+    (not missing_docs_workflow_markers,
+     'docs/README.md "Developer workflow docs" section is missing entries for: ' + ', '.join(missing_docs_workflow_markers)),
+    (not duplicate_readme_block_markers,
+     'README "Najčešće komande" block should list each public tool exactly once: ' + ', '.join(duplicate_readme_block_markers)),
+    (not duplicate_docs_workflow_markers,
+     'docs/README.md "Developer workflow docs" section should list each public tool exactly once: ' + ', '.join(duplicate_docs_workflow_markers)),
     ('./tool/import_smoke.sh' in readme,
      'README common commands should mention ./tool/import_smoke.sh'),
     ('./tool/brand_neutrality_smoke.sh' in readme,
