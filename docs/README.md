@@ -20,6 +20,9 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - `04-codex-master-prompt.md` — historical prompt/bootstrap reference
 - `05-vscode-setup-and-workflow.md` — editor/workstation workflow notes
 - `10-ai-helper-workflow.md` — Gemini read-only helper workflow, `doctor` preflight i lokalni `preview-ask` / `preview-review` debug path
+- `tool/demo_smoke.sh` — brzi demo-flow preflight za seedani showcase put kroz project list, editor i playback
+- `tool/release_smoke.sh` — fokusirani export/reliability/focus-preview preflight prije punog verify i rucnog browser passa
+- `tool/compact_smoke.sh` — fokusirani compact/mobile preflight za narrow layout, overflow akcije i export kontrole
 - `tool/import_smoke.sh` — brzi import/recovery/stale-state preflight za JSON handoff i project recovery tokove
 - `tool/brand_neutrality_smoke.sh` — sken user-facing copyja i build outputa za zabranjene reference na stvarne messaging brandove
 - `tool/navigation_smoke.sh` — brzi deep-link, stale-query i recovery navigation preflight prije skupljeg verify koraka
@@ -42,6 +45,9 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - Za product odluke: kreni od `01` + `03`
 - Za arhitekturu i repo wiring: kreni od `02`
 - Za beta handoff/release provjeru: kreni od `05`, zatim pokreni `./tool/manual_beta_checklist.sh`, pa odradi `08`, `09`, `04`, `11`
+- Ako diraš demo seed ili showcase flow, pokreni `./tool/demo_smoke.sh` prije skupljeg Flutter gatea.
+- Ako diraš export, playback reliability ili focus-preview ponasanje, pokreni `./tool/release_smoke.sh` prije punog verify i rucnog browser passa.
+- Ako diraš compact/mobile layout, overflow akcije ili narrow playback kontrole, pokreni `./tool/compact_smoke.sh` prije punog verify koraka.
 - Ako diraš import/export handoff, stale route recovery ili project JSON flow, pokreni `./tool/import_smoke.sh` prije skupljeg Flutter gatea.
 - Ako diraš user-facing copy, branding ili build output copy, pokreni `./tool/brand_neutrality_smoke.sh lib web`, a po potrebi i `./tool/brand_neutrality_smoke.sh build/web`.
 - Ako diraš scene routing, deep-link query ili recovery navigation ponašanje, pokreni `./tool/navigation_smoke.sh` prije punog verify koraka.
