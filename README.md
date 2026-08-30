@@ -111,6 +111,7 @@ Najčešće komande:
 ./tool/release_smoke.sh
 ./tool/compact_smoke.sh
 ./tool/navigation_smoke.sh
+./tool/desktop_docker.sh
 ./tool/desktop_smoke.sh
 ./tool/web_shell_smoke.sh web
 ./tool/verify.sh
@@ -131,6 +132,7 @@ Napomene:
 - `./tool/compact_smoke.sh` sada hvata i larger-text compact breakpoint regresije na project list/editor/playback površinama, short-landscape compact nav/focus-preview regresije te stale-link/missing-project recovery putanje, ne samo narrow layout i export kontrole.
 - `./tool/release_smoke.sh` i `./tool/compact_smoke.sh` sada failaju i kad dedicated focused test fileovi odu u coverage drift, pa tiha erozija smoke gatea nakon test reshufflea postaje teža.
 - `./tool/navigation_smoke.sh` drži scene deep-link sync, stale query normalizaciju i recovery navigaciju u brzom web preflightu prije punog verify koraka.
+- `./tool/desktop_docker.sh` pokrece lokalni Docker desktop/noVNC variant bez potrebe za host Flutter desktop toolchainom.
 - `./tool/web_shell_smoke.sh web` daje brzi source-web shell metadata/icon/brand-copy preflight, a `./tool/web_shell_smoke.sh build/web` provjerava isto i nad gotovim build outputom.
 - `./tool/beta_handoff.sh` vrti cijeli standardni redoslijed, uključujući import/recovery i navigation/deep-link gate, a zatim poziva `./tool/manual_beta_checklist.sh` za uredan ručni handoff.
 - `./tool/beta_handoff.sh` ostaje i brži aggregate gate jer upstream odradi jedan Flutter banner + `pub get` + `analyze`, a niži smoke skriptovi koriste skip ponovljenog flutter bannera, skip dodatnog analyze i skip ponovnog `pub get` u `verify.sh`.
