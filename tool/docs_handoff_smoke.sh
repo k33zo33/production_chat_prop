@@ -325,6 +325,62 @@ duplicate_docs_workflow_markers = sorted(
     if docs_workflow_section.count(docs_workflow_section_markers[script_name]) != 1
 )
 
+expected_readme_command_block_lines = [
+    readme_command_markers[script_name]
+    for script_name in (
+        'demo_smoke.sh',
+        'brand_neutrality_smoke.sh',
+        'import_smoke.sh',
+        'release_smoke.sh',
+        'compact_smoke.sh',
+        'navigation_smoke.sh',
+        'desktop_docker.sh',
+        'desktop_smoke.sh',
+        'web_shell_smoke.sh',
+        'verify.sh',
+        'docs_handoff_smoke.sh',
+        'beta_handoff.sh',
+        'beta_handoff_smoke.sh',
+        'manual_beta_checklist.sh',
+        'ai_helper.sh',
+        'ai_helper_smoke.sh',
+    )
+]
+
+actual_readme_command_block_lines = [
+    line.strip()
+    for line in readme_command_block.splitlines()
+    if line.strip() in expected_readme_command_block_lines
+]
+
+expected_docs_workflow_lines = [
+    docs_workflow_section_markers[script_name]
+    for script_name in (
+        'ai_helper.sh',
+        'verify.sh',
+        'beta_handoff.sh',
+        'demo_smoke.sh',
+        'release_smoke.sh',
+        'compact_smoke.sh',
+        'import_smoke.sh',
+        'brand_neutrality_smoke.sh',
+        'navigation_smoke.sh',
+        'desktop_docker.sh',
+        'manual_beta_checklist.sh',
+        'desktop_smoke.sh',
+        'web_shell_smoke.sh',
+        'docs_handoff_smoke.sh',
+        'ai_helper_smoke.sh',
+        'beta_handoff_smoke.sh',
+    )
+]
+
+actual_docs_workflow_lines = [
+    line.strip().split('`')[1]
+    for line in docs_workflow_section.splitlines()
+    if line.strip().startswith('- `tool/')
+]
+
 checks = [
     (expected_sequence in readme,
      'README quality gate sequence is missing ai_helper_smoke/docs_handoff_smoke/navigation_smoke or is out of date'),
@@ -346,6 +402,10 @@ checks = [
      'README "Najčešće komande" block should list each public tool exactly once: ' + ', '.join(duplicate_readme_block_markers)),
     (not duplicate_docs_workflow_markers,
      'docs/README.md "Developer workflow docs" section should list each public tool exactly once: ' + ', '.join(duplicate_docs_workflow_markers)),
+    (actual_readme_command_block_lines == expected_readme_command_block_lines,
+     'README "Najčešće komande" block should keep the curated public tool order'),
+    (actual_docs_workflow_lines == expected_docs_workflow_lines,
+     'docs/README.md "Developer workflow docs" section should keep the curated public tool order'),
     (len(re.findall(r'^- Za helper/review rad:', docs_readme, re.M)) == 1,
      'docs/README.md should keep exactly one canonical helper/review practical-usage bullet'),
     ('./tool/import_smoke.sh' in readme,
