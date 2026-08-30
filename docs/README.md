@@ -34,6 +34,7 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - Za product odluke: kreni od `01` + `03`
 - Za arhitekturu i repo wiring: kreni od `02`
 - Za beta handoff/release provjeru: kreni od `05`, zatim pokreni `./tool/manual_beta_checklist.sh`, pa odradi `08`, `09`, `04`, `11`
+- `release_smoke` i `compact_smoke` nisu samo name-check gateovi: dedicated focused test fileovi koje u potpunosti posjeduju sada failaju i na coverage drift, pa tiha erozija handoff zaštite teže prolazi.
 - Za helper/review workflow: kreni s `./tool/ai_helper.sh doctor`, za payload debug koristi `./tool/ai_helper.sh preview-ask ...` ili `./tool/ai_helper.sh preview-review ...`, a kad diraš wrapper pokreni i `./tool/ai_helper_smoke.sh`, zatim vidi `10-ai-helper-workflow.md`
 
 ## Notes
