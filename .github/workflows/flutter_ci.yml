@@ -28,6 +28,8 @@ jobs:
   beta_handoff:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    needs:
+      - helper_smoke
 
     steps:
       - name: Check out repository

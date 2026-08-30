@@ -323,6 +323,8 @@ checks = [
      'GitHub Actions should keep invoking ./tool/beta_handoff.sh'),
     ('helper_smoke:' in workflow and 'run: ./tool/ai_helper_smoke.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/ai_helper_smoke.sh in the helper_smoke job'),
+    (re.search(r'beta_handoff:\s*\n(?:.*\n)*?\s+needs:\s*\n\s+- helper_smoke', workflow) is not None,
+     'GitHub Actions beta_handoff job should explicitly depend on helper_smoke so CI ordering matches the documented handoff flow'),
     ('desktop_smoke:' in workflow and 'run: ./tool/desktop_smoke.sh' in workflow,
      'GitHub Actions should keep invoking ./tool/desktop_smoke.sh in the desktop_smoke job'),
     ('docs/11-video-fallback-workflow.md' in release_smoke,
