@@ -572,6 +572,15 @@ checks = [
      'tool/navigation_smoke.sh should use the shared manual beta handoff helper'),
     ('./tool/manual_beta_checklist.sh' in demo_smoke,
      'tool/demo_smoke.sh should mention the shared manual beta checklist helper explicitly'),
+    ('[desktop-smoke] compose config' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8') and
+     '[desktop-smoke] build + boot' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8') and
+     '[desktop-smoke] wait for noVNC:' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8') and
+     '[desktop-smoke] noVNC responded on attempt' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8') and
+     '[desktop-smoke] noVNC did not become ready in time' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8') and
+     'logs --tail=80 "$SERVICE_NAME"' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8'),
+     'tool/desktop_smoke.sh should keep its compose/noVNC progress labels and failure diagnostics'),
+    ('docker compose -f docker-compose.desktop.yml up --build' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8'),
+     'tool/desktop_docker.sh should stay pinned to docker-compose.desktop.yml up --build'),
     ('./tool/ai_helper.sh doctor' in ai_helper and 'run_helper_doctor' in ai_helper,
      'tool/ai_helper.sh should keep the doctor mode wired and documented'),
     ('./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md' in ai_helper,
