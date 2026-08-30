@@ -20,6 +20,9 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - `04-codex-master-prompt.md` — historical prompt/bootstrap reference
 - `05-vscode-setup-and-workflow.md` — editor/workstation workflow notes
 - `10-ai-helper-workflow.md` — Gemini read-only helper workflow, `doctor` preflight i lokalni `preview-ask` / `preview-review` debug path
+- `tool/import_smoke.sh` — brzi import/recovery/stale-state preflight za JSON handoff i project recovery tokove
+- `tool/brand_neutrality_smoke.sh` — sken user-facing copyja i build outputa za zabranjene reference na stvarne messaging brandove
+- `tool/navigation_smoke.sh` — brzi deep-link, stale-query i recovery navigation preflight prije skupljeg verify koraka
 - `tool/manual_beta_checklist.sh` — zajednicki rucni browser/compact/export handoff redoslijed s fixture i video-workflow podsjetnikom
 - `tool/desktop_smoke.sh` — zaseban Docker desktop packaging/noVNC smoke gate koji ne mijesa desktop fallback provjeru u glavni web handoff red
 - `tool/web_shell_smoke.sh` — brzi source/build web shell metadata, icon i brand-copy preflight za `web/` i `build/web`
@@ -39,6 +42,9 @@ Ovo je aktivni dokumentacijski indeks za trenutni `production_chat_prop` repo, n
 - Za product odluke: kreni od `01` + `03`
 - Za arhitekturu i repo wiring: kreni od `02`
 - Za beta handoff/release provjeru: kreni od `05`, zatim pokreni `./tool/manual_beta_checklist.sh`, pa odradi `08`, `09`, `04`, `11`
+- Ako diraš import/export handoff, stale route recovery ili project JSON flow, pokreni `./tool/import_smoke.sh` prije skupljeg Flutter gatea.
+- Ako diraš user-facing copy, branding ili build output copy, pokreni `./tool/brand_neutrality_smoke.sh lib web`, a po potrebi i `./tool/brand_neutrality_smoke.sh build/web`.
+- Ako diraš scene routing, deep-link query ili recovery navigation ponašanje, pokreni `./tool/navigation_smoke.sh` prije punog verify koraka.
 - Ako diraš Docker desktop fallback ili noVNC packaging flow, pokreni `./tool/desktop_smoke.sh` kao odvojeni gate umjesto da se oslanjaš samo na web handoff.
 - Ako diraš `web/`, manifest, favicon, title/meta copy ili built web shell output, pokreni `./tool/web_shell_smoke.sh web` i po potrebi `./tool/web_shell_smoke.sh build/web`.
 - Ako diraš handoff docs, CI redoslijed ili smoke gate wiring, prvo pokreni `./tool/docs_handoff_smoke.sh` da uhvati docs/checklist/workflow drift prije skupljeg Flutter gatea.
