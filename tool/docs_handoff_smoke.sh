@@ -632,6 +632,16 @@ checks = [
      'short-height entry-state coverage drifted' in release_smoke and
      'timeline QA marker coverage drifted' in release_smoke,
      'tool/release_smoke.sh should keep the focused coverage-drift guards for dedicated test files'),
+    ('test/unit/core/utils/export_file_name_test.dart' in release_smoke and
+     'test/unit/features/playback/data/services/screenshot_export_service_test.dart' in release_smoke and
+     'test/unit/features/playback/data/services/video_export_fallback_service_test.dart' in release_smoke and
+     'test/unit/features/playback/domain/playback_timeline_test.dart' in release_smoke and
+     'test/unit/features/projects/data/services/project_package_export_service_test.dart' in release_smoke and
+     'test/unit/features/projects/data/services/project_portfolio_export_service_test.dart' in release_smoke and
+     'test/unit/features/projects/domain/export_qa_fixture_test.dart' in release_smoke and
+     '[release-smoke] unit tests:' in release_smoke and
+     '"$FLUTTER_BIN" test "${UNIT_TEST_FILES[@]}"' in release_smoke,
+     'tool/release_smoke.sh should keep the dedicated export-payload and filename unit-test batch wired'),
     ('mobile compact polish coverage drifted' in compact_smoke and
      'playback empty-state coverage drifted' in compact_smoke and
      'recovery coverage drifted' in compact_smoke and
