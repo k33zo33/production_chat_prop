@@ -134,10 +134,129 @@ if lines != expected_prefix:
     )
 PY
 
+FAIL_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR" "$FAIL_DIR"' EXIT
+
+mkdir -p "$FAIL_DIR/tool"
+cp "$SOURCE_BETA_HANDOFF" "$FAIL_DIR/tool/beta_handoff.sh"
+cp "$SOURCE_SMOKE_COMMON" "$FAIL_DIR/tool/smoke_common.sh"
+chmod +x "$FAIL_DIR/tool/beta_handoff.sh" "$FAIL_DIR/tool/smoke_common.sh"
+
+FAIL_LOG_PATH="$FAIL_DIR/run.log"
+export FAIL_LOG_PATH
+
+make_fail_stub() {
+  local name="$1"
+
+  cat > "$FAIL_DIR/tool/$name" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+basename_name="$(basename "$0")"
+printf '%s|args=%s|SMOKE_SKIP_VERSION=%s|SMOKE_SKIP_ANALYZE=%s|SKIP_PUB_GET=%s\n' \
+  "$basename_name" \
+  "$*" \
+  "${SMOKE_SKIP_VERSION:-0}" \
+  "${SMOKE_SKIP_ANALYZE:-0}" \
+  "${SKIP_PUB_GET:-0}" >> "$FAIL_LOG_PATH"
+EOF
+
+  chmod +x "$FAIL_DIR/tool/$name"
+}
+
+for stub_name in \
+  demo_smoke.sh \
+  import_smoke.sh \
+  release_smoke.sh \
+  compact_smoke.sh \
+  navigation_smoke.sh \
+  brand_neutrality_smoke.sh \
+  verify.sh \
+  web_shell_smoke.sh \
+  manual_beta_checklist.sh \
+  ai_helper_smoke.sh; do
+  make_fail_stub "$stub_name"
+done
+
+cat > "$FAIL_DIR/tool/docs_handoff_smoke.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'docs_handoff_smoke.sh|args=%s|SMOKE_SKIP_VERSION=%s|SMOKE_SKIP_ANALYZE=%s|SKIP_PUB_GET=%s\n' \
+  "$*" \
+  "${SMOKE_SKIP_VERSION:-0}" \
+  "${SMOKE_SKIP_ANALYZE:-0}" \
+  "${SKIP_PUB_GET:-0}" >> "$FAIL_LOG_PATH"
+echo "[docs-handoff-smoke-stub] intentional failure" >&2
+exit 7
+EOF
+chmod +x "$FAIL_DIR/tool/docs_handoff_smoke.sh"
+
+cat > "$FAIL_DIR/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*" >> "$FAIL_LOG_PATH"
+case "${1:-}" in
+  --version)
+    echo "Flutter stub"
+    ;;
+  pub)
+    echo "pub get stub"
+    ;;
+  analyze)
+    echo "analyze stub"
+    ;;
+esac
+EOF
+chmod +x "$FAIL_DIR/flutter-stub.sh"
+
+set +e
+failure_output="$(
+  cd "$FAIL_DIR" &&
+  FLUTTER_BIN="$FAIL_DIR/flutter-stub.sh" ./tool/beta_handoff.sh 2>&1
+)"
+failure_status=$?
+set -e
+
+if [[ "$failure_status" -eq 0 ]]; then
+  echo "[beta-handoff-smoke] expected a non-zero status when docs_handoff_smoke fails" >&2
+  echo "$failure_output" >&2
+  exit 1
+fi
+
+assert_contains "[beta-handoff] docs/release instructions preflight" "$failure_output" "failure path output"
+assert_contains "[docs-handoff-smoke-stub] intentional failure" "$failure_output" "failure path output"
+
+if grep -Fq -- "[beta-handoff] helper workflow preflight" <<< "$failure_output"; then
+  echo "[beta-handoff-smoke] helper workflow should not start after docs_handoff_smoke fails" >&2
+  echo "$failure_output" >&2
+  exit 1
+fi
+
+python3 - "$FAIL_LOG_PATH" <<'PY'
+import pathlib
+import sys
+
+log_path = pathlib.Path(sys.argv[1])
+lines = [line.strip() for line in log_path.read_text(encoding='utf-8').splitlines() if line.strip()]
+
+expected_lines = [
+    'flutter|args=--version',
+    'flutter|args=pub get',
+    'flutter|args=analyze',
+    'docs_handoff_smoke.sh|args=|SMOKE_SKIP_VERSION=1|SMOKE_SKIP_ANALYZE=1|SKIP_PUB_GET=0',
+]
+
+if lines != expected_lines:
+    raise SystemExit(
+        '[beta-handoff-smoke] failure path should stop immediately after docs_handoff_smoke:\n'
+        + '\n'.join(lines)
+    )
+PY
+
 echo "[beta-handoff-smoke] stubbed beta_handoff order stays intact"
 echo "[beta-handoff-smoke] all preflight stage labels stay surfaced"
 echo "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags"
 echo "[beta-handoff-smoke] verify receives SKIP_PUB_GET=1 from beta_handoff"
 echo "[beta-handoff-smoke] built web follow-up labels stay surfaced"
 echo "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow pointers visible"
+echo "[beta-handoff-smoke] early stage failures stop later preflights and manual follow-up"
 echo "[beta-handoff-smoke] done"
