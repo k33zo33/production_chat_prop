@@ -368,6 +368,48 @@ for unit_test_file in "${UNIT_TEST_FILES[@]}"; do
   fi
 done
 
+export_file_name_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(|^[[:space:]]*test[[:space:]]*\(' "test/unit/core/utils/export_file_name_test.dart")
+if [[ "$export_file_name_test_count" -ne 5 ]]; then
+  echo "[release-smoke] export filename coverage drifted: expected 5 registered tests, found $export_file_name_test_count in test/unit/core/utils/export_file_name_test.dart" >&2
+  exit 1
+fi
+
+screenshot_export_service_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(|^[[:space:]]*test[[:space:]]*\(' "test/unit/features/playback/data/services/screenshot_export_service_test.dart")
+if [[ "$screenshot_export_service_test_count" -ne 10 ]]; then
+  echo "[release-smoke] screenshot export service coverage drifted: expected 10 registered tests, found $screenshot_export_service_test_count in test/unit/features/playback/data/services/screenshot_export_service_test.dart" >&2
+  exit 1
+fi
+
+video_export_fallback_service_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(|^[[:space:]]*test[[:space:]]*\(' "test/unit/features/playback/data/services/video_export_fallback_service_test.dart")
+if [[ "$video_export_fallback_service_test_count" -ne 7 ]]; then
+  echo "[release-smoke] video export fallback coverage drifted: expected 7 registered tests, found $video_export_fallback_service_test_count in test/unit/features/playback/data/services/video_export_fallback_service_test.dart" >&2
+  exit 1
+fi
+
+playback_timeline_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(|^[[:space:]]*test[[:space:]]*\(' "test/unit/features/playback/domain/playback_timeline_test.dart")
+if [[ "$playback_timeline_test_count" -ne 7 ]]; then
+  echo "[release-smoke] playback timeline coverage drifted: expected 7 registered tests, found $playback_timeline_test_count in test/unit/features/playback/domain/playback_timeline_test.dart" >&2
+  exit 1
+fi
+
+project_package_export_service_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(|^[[:space:]]*test[[:space:]]*\(' "test/unit/features/projects/data/services/project_package_export_service_test.dart")
+if [[ "$project_package_export_service_test_count" -ne 6 ]]; then
+  echo "[release-smoke] project package export coverage drifted: expected 6 registered tests, found $project_package_export_service_test_count in test/unit/features/projects/data/services/project_package_export_service_test.dart" >&2
+  exit 1
+fi
+
+project_portfolio_export_service_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(|^[[:space:]]*test[[:space:]]*\(' "test/unit/features/projects/data/services/project_portfolio_export_service_test.dart")
+if [[ "$project_portfolio_export_service_test_count" -ne 4 ]]; then
+  echo "[release-smoke] project portfolio export coverage drifted: expected 4 registered tests, found $project_portfolio_export_service_test_count in test/unit/features/projects/data/services/project_portfolio_export_service_test.dart" >&2
+  exit 1
+fi
+
+fixture_test_count=$(grep -Ec '^[[:space:]]*testWidgets?[[:space:]]*\(|^[[:space:]]*test[[:space:]]*\(' "test/unit/features/projects/domain/export_qa_fixture_test.dart")
+if [[ "$fixture_test_count" -ne 3 ]]; then
+  echo "[release-smoke] export QA fixture coverage drifted: expected 3 registered tests, found $fixture_test_count in test/unit/features/projects/domain/export_qa_fixture_test.dart" >&2
+  exit 1
+fi
+
 WIDGET_TEST_PATTERN="$(printf '%s\n' "${WIDGET_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 EXPORT_QA_AVATAR_PREVIEW_TEST_PATTERN="$(printf '%s\n' "${EXPORT_QA_AVATAR_PREVIEW_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"
 FOCUS_PREVIEW_AUTOFOLLOW_TEST_PATTERN="$(printf '%s\n' "${FOCUS_PREVIEW_AUTOFOLLOW_TEST_NAMES[@]}" | sed -e 's/[][(){}.^$*+?|\\-]/\\&/g' | paste -sd'|' -)"

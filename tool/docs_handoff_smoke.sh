@@ -639,9 +639,16 @@ checks = [
      'test/unit/features/projects/data/services/project_package_export_service_test.dart' in release_smoke and
      'test/unit/features/projects/data/services/project_portfolio_export_service_test.dart' in release_smoke and
      'test/unit/features/projects/domain/export_qa_fixture_test.dart' in release_smoke and
+     'export filename coverage drifted' in release_smoke and
+     'screenshot export service coverage drifted' in release_smoke and
+     'video export fallback coverage drifted' in release_smoke and
+     'playback timeline coverage drifted' in release_smoke and
+     'project package export coverage drifted' in release_smoke and
+     'project portfolio export coverage drifted' in release_smoke and
+     'export QA fixture coverage drifted' in release_smoke and
      '[release-smoke] unit tests:' in release_smoke and
      '"$FLUTTER_BIN" test "${UNIT_TEST_FILES[@]}"' in release_smoke,
-     'tool/release_smoke.sh should keep the dedicated export-payload and filename unit-test batch wired'),
+     'tool/release_smoke.sh should keep the dedicated export-payload and filename unit-test batch wired with explicit coverage-drift guards'),
     ('mobile compact polish coverage drifted' in compact_smoke and
      'playback empty-state coverage drifted' in compact_smoke and
      'recovery coverage drifted' in compact_smoke and
