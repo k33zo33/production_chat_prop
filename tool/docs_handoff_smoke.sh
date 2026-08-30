@@ -1134,6 +1134,51 @@ fi
 
 rm -rf "$demo_stub_dir"
 
+release_stub_dir="$(mktemp -d)"
+cat > "$release_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$release_stub_dir/flutter-stub.sh"
+
+release_smoke_output="$(
+  cd "$ROOT_DIR" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$release_stub_dir/flutter-stub.sh" "$RELEASE_SMOKE_PATH"
+)"
+
+for expected_line in \
+  "[release-smoke] using flutter: $release_stub_dir/flutter-stub.sh (version handled upstream)" \
+  "[release-smoke] analyze skipped (handled upstream)" \
+  "[release-smoke] widget tests: 32 widget + 1 export-QA avatar preview + 2 focus-preview auto-follow + 4 focus-preview chrome + 1 focus-preview short-height + 4 mobile polish + 3 playback empty-state + 7 export feedback + 3 portfolio pre-flight + 5 recovery + 5 scene-status badge + 12 route-sync + 4 short-height entry/recovery + 1 timeline-QA marker cases" \
+  "[release-smoke] unit tests: 7 export payload and filename cases (batched)" \
+  "- This is a fast preflight, not a replacement for ./tool/verify.sh." \
+  "[release-smoke] manual follow-up" \
+  "- Then run ./tool/manual_beta_checklist.sh for the shared browser/compact/export handoff order." \
+  "- Spot-check the wide-layout Focus Preview transport overlay in a browser so cue/seek/scrub behavior still matches the main preview." \
+  "- Keep docs/11-video-fallback-workflow.md with the handoff so downstream render users know Export Video emits a documented .json package." \
+  "[release-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$release_smoke_output"; then
+    echo "[docs-handoff-smoke] release smoke output drifted: missing line: $expected_line" >&2
+    rm -rf "$release_stub_dir"
+    exit 1
+  fi
+done
+
+if ! grep -Fq -- 'flutter|args=test test/widget_test.dart test/widget/export_qa_avatar_preview_test.dart test/widget/focus_preview_autofollow_test.dart test/widget/focus_preview_chrome_test.dart test/widget/focus_preview_short_height_test.dart test/widget/mobile_compact_polish_test.dart test/widget/playback_empty_state_actions_test.dart test/widget/playback_export_feedback_test.dart test/widget/portfolio_preflight_badge_test.dart test/widget/project_not_found_recovery_test.dart test/widget/scene_status_badge_test.dart test/widget/scene_route_sync_test.dart test/widget/short_height_entry_states_test.dart test/widget/timeline_qa_markers_test.dart' <<<"$release_smoke_output"; then
+  echo "[docs-handoff-smoke] release smoke output drifted: missing the expected batched widget-test invocation" >&2
+  rm -rf "$release_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fq -- 'flutter|args=test test/unit/core/utils/export_file_name_test.dart test/unit/features/playback/data/services/screenshot_export_service_test.dart test/unit/features/playback/data/services/video_export_fallback_service_test.dart test/unit/features/playback/domain/playback_timeline_test.dart test/unit/features/projects/data/services/project_package_export_service_test.dart test/unit/features/projects/data/services/project_portfolio_export_service_test.dart test/unit/features/projects/domain/export_qa_fixture_test.dart' <<<"$release_smoke_output"; then
+  echo "[docs-handoff-smoke] release smoke output drifted: missing the expected batched unit-test invocation" >&2
+  rm -rf "$release_stub_dir"
+  exit 1
+fi
+
+rm -rf "$release_stub_dir"
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
