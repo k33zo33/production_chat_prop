@@ -922,4 +922,20 @@ for expected_line in \
   fi
 done
 
+brand_smoke_output="$("$BRAND_SMOKE_PATH" lib web)"
+
+if ! grep -Eq '^\[brand-neutrality-smoke\] validated [0-9]+ text files across: lib, web$' <<<"$brand_smoke_output"; then
+  echo "[docs-handoff-smoke] brand-neutrality smoke output drifted: missing validated-count line for lib/web targets" >&2
+  exit 1
+fi
+
+for expected_line in \
+  "[brand-neutrality-smoke] no forbidden messaging-brand copy found in scanned app surfaces" \
+  "[brand-neutrality-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$brand_smoke_output"; then
+    echo "[docs-handoff-smoke] brand-neutrality smoke output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
 echo "[docs-handoff-smoke] done"
