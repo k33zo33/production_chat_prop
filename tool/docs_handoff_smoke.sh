@@ -907,4 +907,19 @@ for expected_line in \
   fi
 done
 
+web_shell_smoke_output="$("$ROOT_DIR/tool/web_shell_smoke.sh" web)"
+
+for expected_line in \
+  "[web-shell-smoke] validated shell metadata in $ROOT_DIR/web" \
+  "[web-shell-smoke] title: Production Chat Prop" \
+  "[web-shell-smoke] short_name: Chat Prop" \
+  "[web-shell-smoke] theme: #155EEF" \
+  "[web-shell-smoke] icons: 4" \
+  "[web-shell-smoke] done"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$web_shell_smoke_output"; then
+    echo "[docs-handoff-smoke] web shell smoke output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
 echo "[docs-handoff-smoke] done"
