@@ -1292,6 +1292,49 @@ fi
 
 rm -rf "$import_stub_dir"
 
+import_missing_file_stub_dir="$(mktemp -d)"
+mkdir -p "$import_missing_file_stub_dir/tool" \
+  "$import_missing_file_stub_dir/test/unit/features/projects/presentation/controllers" \
+  "$import_missing_file_stub_dir/test/unit/features/projects/data/services" \
+  "$import_missing_file_stub_dir/test/unit/features/projects/data/repositories" \
+  "$import_missing_file_stub_dir/test/unit/features/projects/domain"
+cp "$IMPORT_SMOKE_PATH" "$import_missing_file_stub_dir/tool/import_smoke.sh"
+cp "$SMOKE_COMMON_PATH" "$import_missing_file_stub_dir/tool/smoke_common.sh"
+touch "$import_missing_file_stub_dir/test/unit/features/projects/presentation/controllers/projects_controller_test.dart"
+touch "$import_missing_file_stub_dir/test/unit/features/projects/data/services/project_sanitizer_test.dart"
+touch "$import_missing_file_stub_dir/test/unit/features/projects/data/repositories/local_project_repository_test.dart"
+touch "$import_missing_file_stub_dir/test/unit/features/projects/domain/export_qa_fixture_test.dart"
+chmod +x "$import_missing_file_stub_dir/tool/import_smoke.sh" "$import_missing_file_stub_dir/tool/smoke_common.sh"
+
+cat > "$import_missing_file_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$import_missing_file_stub_dir/flutter-stub.sh"
+
+set +e
+import_missing_file_output="$(
+  cd "$import_missing_file_stub_dir" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$import_missing_file_stub_dir/flutter-stub.sh" ./tool/import_smoke.sh 2>&1
+)"
+import_missing_file_status=$?
+set -e
+
+if [[ "$import_missing_file_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] import smoke missing-file path drifted: expected non-zero status" >&2
+  rm -rf "$import_missing_file_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- '[import-smoke] missing expected test file: test/widget_test.dart' <<<"$import_missing_file_output"; then
+  echo "[docs-handoff-smoke] import smoke missing-file output drifted" >&2
+  rm -rf "$import_missing_file_stub_dir"
+  exit 1
+fi
+
+rm -rf "$import_missing_file_stub_dir"
+
 navigation_stub_dir="$(mktemp -d)"
 cat > "$navigation_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
