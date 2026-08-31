@@ -1006,6 +1006,24 @@ for expected_line in \
   fi
 done
 
+ai_helper_smoke_missing_helper_stub_dir="$(mktemp -d)"
+mkdir -p "$ai_helper_smoke_missing_helper_stub_dir/tool"
+cp "$AI_HELPER_SMOKE_PATH" "$ai_helper_smoke_missing_helper_stub_dir/tool/ai_helper_smoke.sh"
+chmod +x "$ai_helper_smoke_missing_helper_stub_dir/tool/ai_helper_smoke.sh"
+
+ai_helper_smoke_missing_helper_output="$(
+  cd "$ai_helper_smoke_missing_helper_stub_dir" &&
+  ./tool/ai_helper_smoke.sh 2>&1 || true
+)"
+
+if ! grep -Fqx -- "[ai-helper-smoke] missing required helper script: $ai_helper_smoke_missing_helper_stub_dir/tool/ai_helper.sh" <<<"$ai_helper_smoke_missing_helper_output"; then
+  echo "[docs-handoff-smoke] ai helper smoke missing-helper output drifted" >&2
+  rm -rf "$ai_helper_smoke_missing_helper_stub_dir"
+  exit 1
+fi
+
+rm -rf "$ai_helper_smoke_missing_helper_stub_dir"
+
 doctor_output="$("$AI_HELPER_PATH" doctor 2>&1 || true)"
 
 for expected_line in \

@@ -4,6 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_HELPER="$ROOT_DIR/tool/ai_helper.sh"
 
+if [[ ! -f "$SOURCE_HELPER" ]]; then
+  echo "[ai-helper-smoke] missing required helper script: $SOURCE_HELPER" >&2
+  exit 1
+fi
+
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
