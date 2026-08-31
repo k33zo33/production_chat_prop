@@ -2379,6 +2379,27 @@ fi
 
 rm -rf "$beta_handoff_smoke_missing_source_stub_dir"
 
+beta_handoff_smoke_missing_shared_source_stub_dir="$(mktemp -d)"
+mkdir -p "$beta_handoff_smoke_missing_shared_source_stub_dir/tool"
+cp "$BETA_HANDOFF_SMOKE_PATH" "$beta_handoff_smoke_missing_shared_source_stub_dir/tool/beta_handoff_smoke.sh"
+cp "$ROOT_DIR/tool/beta_handoff.sh" "$beta_handoff_smoke_missing_shared_source_stub_dir/tool/beta_handoff.sh"
+chmod +x \
+  "$beta_handoff_smoke_missing_shared_source_stub_dir/tool/beta_handoff_smoke.sh" \
+  "$beta_handoff_smoke_missing_shared_source_stub_dir/tool/beta_handoff.sh"
+
+beta_handoff_smoke_missing_shared_source_output="$(
+  cd "$beta_handoff_smoke_missing_shared_source_stub_dir" &&
+  ./tool/beta_handoff_smoke.sh 2>&1 || true
+)"
+
+if ! grep -Fqx -- "[beta-handoff-smoke] missing source script: $beta_handoff_smoke_missing_shared_source_stub_dir/tool/smoke_common.sh" <<<"$beta_handoff_smoke_missing_shared_source_output"; then
+  echo "[docs-handoff-smoke] beta handoff smoke missing shared-source output drifted" >&2
+  rm -rf "$beta_handoff_smoke_missing_shared_source_stub_dir"
+  exit 1
+fi
+
+rm -rf "$beta_handoff_smoke_missing_shared_source_stub_dir"
+
 set +e
 beta_handoff_smoke_missing_python_output="$(
   PYTHON_BIN=missing-python "$BETA_HANDOFF_SMOKE_PATH" 2>&1
