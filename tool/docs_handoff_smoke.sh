@@ -1075,6 +1075,36 @@ done
 
 rm -rf "$ai_helper_preview_review_stub_dir"
 
+ai_helper_preview_review_untracked_stub_dir="$(mktemp -d)"
+mkdir -p "$ai_helper_preview_review_untracked_stub_dir/tool"
+cp "$AI_HELPER_PATH" "$ai_helper_preview_review_untracked_stub_dir/tool/ai_helper.sh"
+chmod +x "$ai_helper_preview_review_untracked_stub_dir/tool/ai_helper.sh"
+
+preview_review_untracked_output="$(
+  cd "$ai_helper_preview_review_untracked_stub_dir" &&
+  git init -q &&
+  git config user.name "docs-handoff-smoke" &&
+  git config user.email "docs-handoff-smoke@example.com" &&
+  printf 'seed\n' > tracked.txt &&
+  git add tracked.txt &&
+  git commit -q -m "seed" &&
+  printf 'fresh untracked helper review target\n' > untracked.txt &&
+  ./tool/ai_helper.sh preview-review -- untracked.txt
+)"
+
+for expected_line in \
+  "---UNTRACKED FILES---" \
+  "untracked.txt" \
+  "---PATCH---"; do
+  if ! grep -Fqx -- "$expected_line" <<<"$preview_review_untracked_output"; then
+    echo "[docs-handoff-smoke] ai helper preview-review untracked output drifted: missing line: $expected_line" >&2
+    rm -rf "$ai_helper_preview_review_untracked_stub_dir"
+    exit 1
+  fi
+done
+
+rm -rf "$ai_helper_preview_review_untracked_stub_dir"
+
 desktop_docker_stub_dir="$(mktemp -d)"
 cat > "$desktop_docker_stub_dir/docker" <<'EOF'
 #!/usr/bin/env bash
