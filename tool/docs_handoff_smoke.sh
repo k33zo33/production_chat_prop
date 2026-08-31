@@ -1032,6 +1032,19 @@ for expected_line in \
   fi
 done
 
+ask_output="$("$AI_HELPER_PATH" ask "Summarize helper fallback risks." 2>&1 || true)"
+
+for expected_line in \
+  "===== GEMINI CLI ANALYSIS =====" \
+  "Missing required binary: gemini" \
+  "Gemini CLI unavailable; skipping Gemini helper pass." \
+  "[ai-helper] Gemini helper unavailable."; do
+  if ! grep -Fqx -- "$expected_line" <<<"$ask_output"; then
+    echo "[docs-handoff-smoke] ai helper ask output drifted: missing line: $expected_line" >&2
+    exit 1
+  fi
+done
+
 desktop_docker_stub_dir="$(mktemp -d)"
 cat > "$desktop_docker_stub_dir/docker" <<'EOF'
 #!/usr/bin/env bash
