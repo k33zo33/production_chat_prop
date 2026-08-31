@@ -1754,4 +1754,38 @@ for expected_line in \
   fi
 done
 
+brand_smoke_failure_stub_dir="$(mktemp -d)"
+mkdir -p "$brand_smoke_failure_stub_dir/tool" "$brand_smoke_failure_stub_dir/lib"
+cp "$BRAND_SMOKE_PATH" "$brand_smoke_failure_stub_dir/tool/brand_neutrality_smoke.sh"
+printf "const kBad = 'WhatsApp look';\n" > "$brand_smoke_failure_stub_dir/lib/bad_copy.dart"
+chmod +x "$brand_smoke_failure_stub_dir/tool/brand_neutrality_smoke.sh"
+
+set +e
+brand_smoke_failure_output="$(
+  cd "$brand_smoke_failure_stub_dir" &&
+  ./tool/brand_neutrality_smoke.sh lib 2>&1
+)"
+brand_smoke_failure_status=$?
+set -e
+
+if [[ "$brand_smoke_failure_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] brand-neutrality smoke failure path drifted: expected non-zero status" >&2
+  rm -rf "$brand_smoke_failure_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fq -- "[brand-neutrality-smoke] brand-safe copy check failed:" <<<"$brand_smoke_failure_output"; then
+  echo "[docs-handoff-smoke] brand-neutrality smoke failure output drifted: missing failure header" >&2
+  rm -rf "$brand_smoke_failure_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fq -- "lib/bad_copy.dart:1: string literal contains forbidden brand 'WhatsApp'" <<<"$brand_smoke_failure_output"; then
+  echo "[docs-handoff-smoke] brand-neutrality smoke failure output drifted: missing offending file summary" >&2
+  rm -rf "$brand_smoke_failure_stub_dir"
+  exit 1
+fi
+
+rm -rf "$brand_smoke_failure_stub_dir"
+
 echo "[docs-handoff-smoke] done"
