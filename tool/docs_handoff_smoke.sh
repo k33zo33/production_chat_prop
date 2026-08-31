@@ -1739,6 +1739,24 @@ fi
 
 rm -rf "$compact_missing_smoke_common_stub_dir"
 
+set +e
+compact_missing_flutter_output="$(
+  cd "$ROOT_DIR" &&
+  FLUTTER_BIN=missing-flutter SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 "$COMPACT_SMOKE_PATH" 2>&1
+)"
+compact_missing_flutter_status=$?
+set -e
+
+if [[ "$compact_missing_flutter_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] compact smoke missing-flutter path drifted: expected non-zero status" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- "[compact-smoke] missing required binary: missing-flutter" <<<"$compact_missing_flutter_output"; then
+  echo "[docs-handoff-smoke] compact smoke missing-flutter output drifted" >&2
+  exit 1
+fi
+
 import_stub_dir="$(mktemp -d)"
 cat > "$import_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
