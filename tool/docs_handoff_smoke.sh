@@ -1704,6 +1704,41 @@ fi
 
 rm -rf "$import_missing_file_stub_dir"
 
+import_missing_smoke_common_stub_dir="$(mktemp -d)"
+mkdir -p "$import_missing_smoke_common_stub_dir/tool"
+cp "$IMPORT_SMOKE_PATH" "$import_missing_smoke_common_stub_dir/tool/import_smoke.sh"
+chmod +x "$import_missing_smoke_common_stub_dir/tool/import_smoke.sh"
+
+cat > "$import_missing_smoke_common_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] import smoke missing-smoke-common path should fail before invoking flutter" >&2
+exit 99
+EOF
+chmod +x "$import_missing_smoke_common_stub_dir/flutter-stub.sh"
+
+set +e
+import_missing_smoke_common_output="$(
+  cd "$import_missing_smoke_common_stub_dir" &&
+  FLUTTER_BIN="$import_missing_smoke_common_stub_dir/flutter-stub.sh" ./tool/import_smoke.sh 2>&1
+)"
+import_missing_smoke_common_status=$?
+set -e
+
+if [[ "$import_missing_smoke_common_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] import smoke missing-smoke-common path drifted: expected non-zero status" >&2
+  rm -rf "$import_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[import-smoke] missing required script: $import_missing_smoke_common_stub_dir/tool/smoke_common.sh" <<<"$import_missing_smoke_common_output"; then
+  echo "[docs-handoff-smoke] import smoke missing-smoke-common output drifted" >&2
+  rm -rf "$import_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+rm -rf "$import_missing_smoke_common_stub_dir"
+
 navigation_stub_dir="$(mktemp -d)"
 cat > "$navigation_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
