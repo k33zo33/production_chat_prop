@@ -1066,6 +1066,30 @@ if ! grep -Fqx -- "Unknown mode: nope" <<<"$unknown_mode_output"; then
   exit 1
 fi
 
+ai_helper_missing_path_stub_dir="$(mktemp -d)"
+mkdir -p "$ai_helper_missing_path_stub_dir/tool"
+cp "$AI_HELPER_PATH" "$ai_helper_missing_path_stub_dir/tool/ai_helper.sh"
+chmod +x "$ai_helper_missing_path_stub_dir/tool/ai_helper.sh"
+
+missing_path_output="$(
+  cd "$ai_helper_missing_path_stub_dir" &&
+  git init -q &&
+  git config user.name "docs-handoff-smoke" &&
+  git config user.email "docs-handoff-smoke@example.com" &&
+  printf 'seed\n' > tracked.txt &&
+  git add tracked.txt &&
+  git commit -q -m "seed" &&
+  ./tool/ai_helper.sh review -- missing.txt 2>&1 || true
+)"
+
+if ! grep -Fqx -- "No diff detected for review." <<<"$missing_path_output"; then
+  echo "[docs-handoff-smoke] ai helper missing-path review output drifted" >&2
+  rm -rf "$ai_helper_missing_path_stub_dir"
+  exit 1
+fi
+
+rm -rf "$ai_helper_missing_path_stub_dir"
+
 ai_helper_preview_review_stub_dir="$(mktemp -d)"
 mkdir -p "$ai_helper_preview_review_stub_dir/tool"
 cp "$AI_HELPER_PATH" "$ai_helper_preview_review_stub_dir/tool/ai_helper.sh"
