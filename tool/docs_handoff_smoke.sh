@@ -2448,8 +2448,20 @@ for expected_line in \
   fi
 done
 
-web_shell_missing_manifest_stub_dir="$(mktemp -d)"
-cat > "$web_shell_missing_manifest_stub_dir/index.html" <<'EOF'
+web_shell_missing_file_stub_dir="$(mktemp -d)"
+
+web_shell_required_files=(
+  "$web_shell_missing_file_stub_dir/index.html"
+  "$web_shell_missing_file_stub_dir/manifest.json"
+  "$web_shell_missing_file_stub_dir/favicon.png"
+)
+
+for missing_file in "${web_shell_required_files[@]}"; do
+  rm -rf "$web_shell_missing_file_stub_dir"
+  mkdir -p "$web_shell_missing_file_stub_dir"
+
+  if [[ "$missing_file" != "$web_shell_missing_file_stub_dir/index.html" ]]; then
+    cat > "$web_shell_missing_file_stub_dir/index.html" <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -2458,26 +2470,38 @@ cat > "$web_shell_missing_manifest_stub_dir/index.html" <<'EOF'
   <body></body>
 </html>
 EOF
-: > "$web_shell_missing_manifest_stub_dir/favicon.png"
+  fi
 
-set +e
-web_shell_missing_manifest_output="$("$ROOT_DIR/tool/web_shell_smoke.sh" "$web_shell_missing_manifest_stub_dir" 2>&1)"
-web_shell_missing_manifest_status=$?
-set -e
+  if [[ "$missing_file" != "$web_shell_missing_file_stub_dir/manifest.json" ]]; then
+    cat > "$web_shell_missing_file_stub_dir/manifest.json" <<'EOF'
+{}
+EOF
+  fi
 
-if [[ "$web_shell_missing_manifest_status" -eq 0 ]]; then
-  echo "[docs-handoff-smoke] web shell smoke missing-manifest path drifted: expected non-zero status" >&2
-  rm -rf "$web_shell_missing_manifest_stub_dir"
-  exit 1
-fi
+  if [[ "$missing_file" != "$web_shell_missing_file_stub_dir/favicon.png" ]]; then
+    : > "$web_shell_missing_file_stub_dir/favicon.png"
+  fi
 
-if ! grep -Fqx -- "[web-shell-smoke] missing manifest.json: $web_shell_missing_manifest_stub_dir/manifest.json" <<<"$web_shell_missing_manifest_output"; then
-  echo "[docs-handoff-smoke] web shell smoke missing-manifest output drifted" >&2
-  rm -rf "$web_shell_missing_manifest_stub_dir"
-  exit 1
-fi
+  set +e
+  web_shell_missing_file_output="$("$ROOT_DIR/tool/web_shell_smoke.sh" "$web_shell_missing_file_stub_dir" 2>&1)"
+  web_shell_missing_file_status=$?
+  set -e
 
-rm -rf "$web_shell_missing_manifest_stub_dir"
+  if [[ "$web_shell_missing_file_status" -eq 0 ]]; then
+    echo "[docs-handoff-smoke] web shell smoke missing-file path drifted: expected non-zero status for $missing_file" >&2
+    rm -rf "$web_shell_missing_file_stub_dir"
+    exit 1
+  fi
+
+  expected_missing_file_line="[web-shell-smoke] missing $(basename "$missing_file"): $missing_file"
+  if ! grep -Fqx -- "$expected_missing_file_line" <<<"$web_shell_missing_file_output"; then
+    echo "[docs-handoff-smoke] web shell smoke missing-file output drifted for $missing_file" >&2
+    rm -rf "$web_shell_missing_file_stub_dir"
+    exit 1
+  fi
+done
+
+rm -rf "$web_shell_missing_file_stub_dir"
 
 web_shell_missing_python_stub_dir="$(mktemp -d)"
 mkdir -p "$web_shell_missing_python_stub_dir"
