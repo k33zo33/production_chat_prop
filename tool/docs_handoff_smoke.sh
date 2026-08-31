@@ -1255,6 +1255,49 @@ fi
 
 rm -rf "$compact_stub_dir"
 
+compact_missing_file_stub_dir="$(mktemp -d)"
+mkdir -p "$compact_missing_file_stub_dir/tool" "$compact_missing_file_stub_dir/test/widget"
+cp "$COMPACT_SMOKE_PATH" "$compact_missing_file_stub_dir/tool/compact_smoke.sh"
+cp "$SMOKE_COMMON_PATH" "$compact_missing_file_stub_dir/tool/smoke_common.sh"
+touch "$compact_missing_file_stub_dir/test/widget/project_not_found_recovery_test.dart"
+touch "$compact_missing_file_stub_dir/test/widget/mobile_compact_polish_test.dart"
+touch "$compact_missing_file_stub_dir/test/widget/playback_empty_state_actions_test.dart"
+touch "$compact_missing_file_stub_dir/test/widget/scene_status_badge_test.dart"
+touch "$compact_missing_file_stub_dir/test/widget/focus_preview_autofollow_test.dart"
+touch "$compact_missing_file_stub_dir/test/widget/focus_preview_chrome_test.dart"
+touch "$compact_missing_file_stub_dir/test/widget/focus_preview_short_height_test.dart"
+touch "$compact_missing_file_stub_dir/test/widget/short_height_entry_states_test.dart"
+chmod +x "$compact_missing_file_stub_dir/tool/compact_smoke.sh" "$compact_missing_file_stub_dir/tool/smoke_common.sh"
+
+cat > "$compact_missing_file_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$compact_missing_file_stub_dir/flutter-stub.sh"
+
+set +e
+compact_missing_file_output="$(
+  cd "$compact_missing_file_stub_dir" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$compact_missing_file_stub_dir/flutter-stub.sh" ./tool/compact_smoke.sh 2>&1
+)"
+compact_missing_file_status=$?
+set -e
+
+if [[ "$compact_missing_file_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] compact smoke missing-file path drifted: expected non-zero status" >&2
+  rm -rf "$compact_missing_file_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- '[compact-smoke] missing expected test file: test/widget_test.dart' <<<"$compact_missing_file_output"; then
+  echo "[docs-handoff-smoke] compact smoke missing-file output drifted" >&2
+  rm -rf "$compact_missing_file_stub_dir"
+  exit 1
+fi
+
+rm -rf "$compact_missing_file_stub_dir"
+
 import_stub_dir="$(mktemp -d)"
 cat > "$import_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
