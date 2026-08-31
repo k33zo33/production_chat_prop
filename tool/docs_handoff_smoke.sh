@@ -581,8 +581,10 @@ checks = [
      '[desktop-smoke] noVNC did not become ready in time' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8') and
      'logs --tail=80 "$SERVICE_NAME"' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8'),
      'tool/desktop_smoke.sh should keep its compose/noVNC progress labels and failure diagnostics'),
-    ('docker compose -f docker-compose.desktop.yml up --build' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8'),
-     'tool/desktop_docker.sh should stay pinned to docker-compose.desktop.yml up --build'),
+    ('DESKTOP_SMOKE_COMPOSE_FILE' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8') and
+     '[desktop-docker] missing compose file:' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8') and
+     'docker compose -f "$COMPOSE_FILE" up --build' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8'),
+     'tool/desktop_docker.sh should keep the compose override, missing-file guard, and docker compose launch'),
     ('./tool/ai_helper.sh doctor' in ai_helper and 'run_helper_doctor' in ai_helper,
      'tool/ai_helper.sh should keep the doctor mode wired and documented'),
     ('./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md' in ai_helper,
@@ -1189,6 +1191,39 @@ fi
 
 rm -rf "$desktop_docker_stub_dir"
 
+desktop_docker_missing_compose_stub_dir="$(mktemp -d)"
+cat > "$desktop_docker_missing_compose_stub_dir/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] desktop docker missing-compose path should fail before invoking docker" >&2
+exit 99
+EOF
+chmod +x "$desktop_docker_missing_compose_stub_dir/docker"
+
+set +e
+desktop_docker_missing_compose_output="$(
+  cd "$ROOT_DIR" &&
+  PATH="$desktop_docker_missing_compose_stub_dir:$PATH" \
+    DESKTOP_SMOKE_COMPOSE_FILE=missing-desktop-compose.yml \
+    "$ROOT_DIR/tool/desktop_docker.sh" 2>&1
+)"
+desktop_docker_missing_compose_status=$?
+set -e
+
+if [[ "$desktop_docker_missing_compose_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] desktop docker missing-compose path drifted: expected non-zero status" >&2
+  rm -rf "$desktop_docker_missing_compose_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[desktop-docker] missing compose file: $ROOT_DIR/missing-desktop-compose.yml" <<<"$desktop_docker_missing_compose_output"; then
+  echo "[docs-handoff-smoke] desktop docker missing-compose output drifted" >&2
+  rm -rf "$desktop_docker_missing_compose_stub_dir"
+  exit 1
+fi
+
+rm -rf "$desktop_docker_missing_compose_stub_dir"
+
 desktop_smoke_stub_dir="$(mktemp -d)"
 cat > "$desktop_smoke_stub_dir/docker" <<'EOF'
 #!/usr/bin/env bash
@@ -1238,6 +1273,47 @@ for expected_line in \
 done
 
 rm -rf "$desktop_smoke_stub_dir"
+
+desktop_smoke_missing_compose_stub_dir="$(mktemp -d)"
+cat > "$desktop_smoke_missing_compose_stub_dir/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] desktop smoke missing-compose path should fail before invoking docker" >&2
+exit 99
+EOF
+chmod +x "$desktop_smoke_missing_compose_stub_dir/docker"
+
+cat > "$desktop_smoke_missing_compose_stub_dir/python3" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] desktop smoke missing-compose path should fail before invoking python3" >&2
+exit 99
+EOF
+chmod +x "$desktop_smoke_missing_compose_stub_dir/python3"
+
+set +e
+desktop_smoke_missing_compose_output="$(
+  cd "$ROOT_DIR" &&
+  PATH="$desktop_smoke_missing_compose_stub_dir:$PATH" \
+    DESKTOP_SMOKE_COMPOSE_FILE=missing-desktop-compose.yml \
+    "$ROOT_DIR/tool/desktop_smoke.sh" 2>&1
+)"
+desktop_smoke_missing_compose_status=$?
+set -e
+
+if [[ "$desktop_smoke_missing_compose_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] desktop smoke missing-compose path drifted: expected non-zero status" >&2
+  rm -rf "$desktop_smoke_missing_compose_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[desktop-smoke] missing compose file: $ROOT_DIR/missing-desktop-compose.yml" <<<"$desktop_smoke_missing_compose_output"; then
+  echo "[docs-handoff-smoke] desktop smoke missing-compose output drifted" >&2
+  rm -rf "$desktop_smoke_missing_compose_stub_dir"
+  exit 1
+fi
+
+rm -rf "$desktop_smoke_missing_compose_stub_dir"
 
 desktop_smoke_failure_stub_dir="$(mktemp -d)"
 cat > "$desktop_smoke_failure_stub_dir/docker" <<'EOF'

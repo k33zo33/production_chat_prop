@@ -5,6 +5,17 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 COMPOSE_FILE="${DESKTOP_SMOKE_COMPOSE_FILE:-docker-compose.desktop.yml}"
+if [[ "$COMPOSE_FILE" = /* ]]; then
+  COMPOSE_PATH="$COMPOSE_FILE"
+else
+  COMPOSE_PATH="$ROOT_DIR/$COMPOSE_FILE"
+fi
+
+if [[ ! -f "$COMPOSE_PATH" ]]; then
+  echo "[desktop-smoke] missing compose file: $COMPOSE_PATH" >&2
+  exit 1
+fi
+
 NOVNC_PORT="${NOVNC_PORT:-6080}"
 NOVNC_PATH="${DESKTOP_SMOKE_PATH:-/vnc.html?host=localhost&port=${NOVNC_PORT}&autoconnect=true&resize=remote}"
 NOVNC_URL="${DESKTOP_SMOKE_URL:-http://localhost:${NOVNC_PORT}${NOVNC_PATH}}"
