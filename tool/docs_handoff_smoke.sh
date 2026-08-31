@@ -2153,7 +2153,6 @@ demo_missing_file_stub_dir="$(mktemp -d)"
 mkdir -p "$demo_missing_file_stub_dir/tool" "$demo_missing_file_stub_dir/test/widget"
 cp "$DEMO_SMOKE_PATH" "$demo_missing_file_stub_dir/tool/demo_smoke.sh"
 cp "$SMOKE_COMMON_PATH" "$demo_missing_file_stub_dir/tool/smoke_common.sh"
-touch "$demo_missing_file_stub_dir/test/widget/playback_export_feedback_test.dart"
 chmod +x "$demo_missing_file_stub_dir/tool/demo_smoke.sh" "$demo_missing_file_stub_dir/tool/smoke_common.sh"
 
 cat > "$demo_missing_file_stub_dir/flutter-stub.sh" <<'EOF'
@@ -2163,25 +2162,43 @@ printf 'flutter|args=%s\n' "$*"
 EOF
 chmod +x "$demo_missing_file_stub_dir/flutter-stub.sh"
 
-set +e
-demo_missing_file_output="$(
-  cd "$demo_missing_file_stub_dir" &&
-  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$demo_missing_file_stub_dir/flutter-stub.sh" ./tool/demo_smoke.sh 2>&1
-)"
-demo_missing_file_status=$?
-set -e
+demo_required_files=(
+  "$demo_missing_file_stub_dir/test/widget_test.dart"
+  "$demo_missing_file_stub_dir/test/widget/playback_export_feedback_test.dart"
+)
 
-if [[ "$demo_missing_file_status" -eq 0 ]]; then
-  echo "[docs-handoff-smoke] demo smoke missing-file path drifted: expected non-zero status" >&2
-  rm -rf "$demo_missing_file_stub_dir"
-  exit 1
-fi
+for missing_file in "${demo_required_files[@]}"; do
+  rm -rf "$demo_missing_file_stub_dir/test"
+  mkdir -p "$demo_missing_file_stub_dir/test/widget"
 
-if ! grep -Fqx -- '[demo-smoke] missing expected test file: test/widget_test.dart' <<<"$demo_missing_file_output"; then
-  echo "[docs-handoff-smoke] demo smoke missing-file output drifted" >&2
-  rm -rf "$demo_missing_file_stub_dir"
-  exit 1
-fi
+  for present_file in "${demo_required_files[@]}"; do
+    if [[ "$present_file" == "$missing_file" ]]; then
+      continue
+    fi
+    cp "$ROOT_DIR/${present_file#$demo_missing_file_stub_dir/}" "$present_file"
+  done
+
+  set +e
+  demo_missing_file_output="$(
+    cd "$demo_missing_file_stub_dir" &&
+    SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$demo_missing_file_stub_dir/flutter-stub.sh" ./tool/demo_smoke.sh 2>&1
+  )"
+  demo_missing_file_status=$?
+  set -e
+
+  if [[ "$demo_missing_file_status" -eq 0 ]]; then
+    echo "[docs-handoff-smoke] demo smoke missing-file path drifted: expected non-zero status for $missing_file" >&2
+    rm -rf "$demo_missing_file_stub_dir"
+    exit 1
+  fi
+
+  expected_missing_line="[demo-smoke] missing expected test file: ${missing_file#$demo_missing_file_stub_dir/}"
+  if ! grep -Fqx -- "$expected_missing_line" <<<"$demo_missing_file_output"; then
+    echo "[docs-handoff-smoke] demo smoke missing-file output drifted for $missing_file" >&2
+    rm -rf "$demo_missing_file_stub_dir"
+    exit 1
+  fi
+done
 
 rm -rf "$demo_missing_file_stub_dir"
 
