@@ -1218,6 +1218,48 @@ for expected_line in \
   fi
 done
 
+verify_missing_script_stub_dir="$(mktemp -d)"
+mkdir -p "$verify_missing_script_stub_dir/tool"
+cp "$VERIFY_PATH" "$verify_missing_script_stub_dir/tool/verify.sh"
+cp "$SMOKE_COMMON_PATH" "$verify_missing_script_stub_dir/tool/smoke_common.sh"
+chmod +x "$verify_missing_script_stub_dir/tool/verify.sh" "$verify_missing_script_stub_dir/tool/smoke_common.sh"
+
+cat > "$verify_missing_script_stub_dir/tool/web_shell_smoke.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'web-shell-smoke|args=%s\n' "$*"
+EOF
+chmod +x "$verify_missing_script_stub_dir/tool/web_shell_smoke.sh"
+
+cat > "$verify_missing_script_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$verify_missing_script_stub_dir/flutter-stub.sh"
+
+set +e
+verify_missing_script_output="$(
+  cd "$verify_missing_script_stub_dir" &&
+  SKIP_PUB_GET=1 SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$verify_missing_script_stub_dir/flutter-stub.sh" ./tool/verify.sh 2>&1
+)"
+verify_missing_script_status=$?
+set -e
+
+if [[ "$verify_missing_script_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] verify missing-script path drifted: expected non-zero status" >&2
+  rm -rf "$verify_missing_script_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[verify] missing required script: $verify_missing_script_stub_dir/tool/brand_neutrality_smoke.sh" <<<"$verify_missing_script_output"; then
+  echo "[docs-handoff-smoke] verify missing-script output drifted" >&2
+  rm -rf "$verify_missing_script_stub_dir"
+  exit 1
+fi
+
+rm -rf "$verify_missing_script_stub_dir"
+
 compact_stub_dir="$(mktemp -d)"
 cat > "$compact_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
