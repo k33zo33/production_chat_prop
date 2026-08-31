@@ -2180,6 +2180,65 @@ fi
 
 rm -rf "$web_shell_missing_manifest_stub_dir"
 
+web_shell_missing_python_stub_dir="$(mktemp -d)"
+mkdir -p "$web_shell_missing_python_stub_dir"
+cat > "$web_shell_missing_python_stub_dir/index.html" <<'EOF'
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Production Chat Prop</title>
+    <meta name="apple-mobile-web-app-title" content="Production Chat Prop" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Production-safe conversation mockup tool."
+    />
+    <meta name="theme-color" content="#155EEF" />
+    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
+  </head>
+  <body></body>
+</html>
+EOF
+cat > "$web_shell_missing_python_stub_dir/manifest.json" <<'EOF'
+{
+  "name": "Production Chat Prop",
+  "short_name": "Chat Prop",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#155EEF",
+  "icons": [
+    { "src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png" }
+  ]
+}
+EOF
+mkdir -p "$web_shell_missing_python_stub_dir/icons"
+: > "$web_shell_missing_python_stub_dir/icons/Icon-192.png"
+: > "$web_shell_missing_python_stub_dir/favicon.png"
+
+set +e
+web_shell_missing_python_output="$(
+  PYTHON_BIN=missing-python "$ROOT_DIR/tool/web_shell_smoke.sh" "$web_shell_missing_python_stub_dir" 2>&1
+)"
+web_shell_missing_python_status=$?
+set -e
+
+if [[ "$web_shell_missing_python_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] web shell smoke missing-python path drifted: expected non-zero status" >&2
+  rm -rf "$web_shell_missing_python_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[web-shell-smoke] missing required binary: missing-python" <<<"$web_shell_missing_python_output"; then
+  echo "[docs-handoff-smoke] web shell smoke missing-python output drifted" >&2
+  rm -rf "$web_shell_missing_python_stub_dir"
+  exit 1
+fi
+
+rm -rf "$web_shell_missing_python_stub_dir"
+
 brand_smoke_output="$("$BRAND_SMOKE_PATH" lib web)"
 
 if ! grep -Eq '^\[brand-neutrality-smoke\] validated [0-9]+ text files across: lib, web$' <<<"$brand_smoke_output"; then

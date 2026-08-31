@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_INPUT="${1:-web}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 if [[ "$TARGET_INPUT" = /* ]]; then
   TARGET_DIR="$TARGET_INPUT"
@@ -29,7 +30,12 @@ if [[ ! -f "$FAVICON_PATH" ]]; then
   exit 1
 fi
 
-python3 - "$TARGET_DIR" "$INDEX_PATH" "$MANIFEST_PATH" <<'PY'
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "[web-shell-smoke] missing required binary: $PYTHON_BIN" >&2
+  exit 1
+fi
+
+"$PYTHON_BIN" - "$TARGET_DIR" "$INDEX_PATH" "$MANIFEST_PATH" <<'PY'
 import json
 import pathlib
 import re
