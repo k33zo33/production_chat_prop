@@ -1707,6 +1707,37 @@ for expected_line in \
   fi
 done
 
+web_shell_missing_manifest_stub_dir="$(mktemp -d)"
+cat > "$web_shell_missing_manifest_stub_dir/index.html" <<'EOF'
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Production Chat Prop</title>
+  </head>
+  <body></body>
+</html>
+EOF
+: > "$web_shell_missing_manifest_stub_dir/favicon.png"
+
+set +e
+web_shell_missing_manifest_output="$("$ROOT_DIR/tool/web_shell_smoke.sh" "$web_shell_missing_manifest_stub_dir" 2>&1)"
+web_shell_missing_manifest_status=$?
+set -e
+
+if [[ "$web_shell_missing_manifest_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] web shell smoke missing-manifest path drifted: expected non-zero status" >&2
+  rm -rf "$web_shell_missing_manifest_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[web-shell-smoke] missing manifest.json: $web_shell_missing_manifest_stub_dir/manifest.json" <<<"$web_shell_missing_manifest_output"; then
+  echo "[docs-handoff-smoke] web shell smoke missing-manifest output drifted" >&2
+  rm -rf "$web_shell_missing_manifest_stub_dir"
+  exit 1
+fi
+
+rm -rf "$web_shell_missing_manifest_stub_dir"
+
 brand_smoke_output="$("$BRAND_SMOKE_PATH" lib web)"
 
 if ! grep -Eq '^\[brand-neutrality-smoke\] validated [0-9]+ text files across: lib, web$' <<<"$brand_smoke_output"; then
