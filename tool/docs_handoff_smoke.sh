@@ -2302,6 +2302,24 @@ if ! grep -Fqx -- "[release-smoke] missing required binary: missing-flutter" <<<
   exit 1
 fi
 
+set +e
+beta_handoff_missing_flutter_output="$(
+  cd "$ROOT_DIR" &&
+  FLUTTER_BIN=missing-flutter ./tool/beta_handoff.sh 2>&1
+)"
+beta_handoff_missing_flutter_status=$?
+set -e
+
+if [[ "$beta_handoff_missing_flutter_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] beta handoff missing-flutter path drifted: expected non-zero status" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- "[beta-handoff] missing required binary: missing-flutter" <<<"$beta_handoff_missing_flutter_output"; then
+  echo "[docs-handoff-smoke] beta handoff missing-flutter output drifted" >&2
+  exit 1
+fi
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
