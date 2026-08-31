@@ -2167,6 +2167,23 @@ fi
 
 rm -rf "$beta_handoff_smoke_missing_source_stub_dir"
 
+set +e
+beta_handoff_smoke_missing_python_output="$(
+  PYTHON_BIN=missing-python "$BETA_HANDOFF_SMOKE_PATH" 2>&1
+)"
+beta_handoff_smoke_missing_python_status=$?
+set -e
+
+if [[ "$beta_handoff_smoke_missing_python_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] beta handoff smoke missing-python path drifted: expected non-zero status" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- '[beta-handoff-smoke] missing required binary: missing-python' <<<"$beta_handoff_smoke_missing_python_output"; then
+  echo "[docs-handoff-smoke] beta handoff smoke missing-python output drifted" >&2
+  exit 1
+fi
+
 web_shell_smoke_output="$("$ROOT_DIR/tool/web_shell_smoke.sh" web)"
 
 for expected_line in \

@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_BETA_HANDOFF="$ROOT_DIR/tool/beta_handoff.sh"
 SOURCE_SMOKE_COMMON="$ROOT_DIR/tool/smoke_common.sh"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 if [[ ! -f "$SOURCE_BETA_HANDOFF" ]]; then
   echo "[beta-handoff-smoke] missing source script: $SOURCE_BETA_HANDOFF" >&2
@@ -12,6 +13,11 @@ fi
 
 if [[ ! -f "$SOURCE_SMOKE_COMMON" ]]; then
   echo "[beta-handoff-smoke] missing source script: $SOURCE_SMOKE_COMMON" >&2
+  exit 1
+fi
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "[beta-handoff-smoke] missing required binary: $PYTHON_BIN" >&2
   exit 1
 fi
 
@@ -111,7 +117,7 @@ assert_contains "- ./tool/manual_beta_checklist.sh" "$output" "manual follow-up 
 assert_contains "- docs/11-video-fallback-workflow.md" "$output" "manual follow-up output"
 assert_contains "[beta-handoff] done" "$output" "stdout labels"
 
-python3 - "$LOG_PATH" <<'PY'
+"$PYTHON_BIN" - "$LOG_PATH" <<'PY'
 import pathlib
 import sys
 
@@ -241,7 +247,7 @@ if grep -Fq -- "[beta-handoff] helper workflow preflight" <<< "$failure_output";
   exit 1
 fi
 
-python3 - "$FAIL_LOG_PATH" <<'PY'
+"$PYTHON_BIN" - "$FAIL_LOG_PATH" <<'PY'
 import pathlib
 import sys
 
