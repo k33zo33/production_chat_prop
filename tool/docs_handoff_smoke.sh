@@ -2255,6 +2255,31 @@ for expected_line in \
   fi
 done
 
+brand_smoke_missing_python_stub_dir="$(mktemp -d)"
+mkdir -p "$brand_smoke_missing_python_stub_dir/lib"
+printf "const kGood = 'Production Chat Prop';\n" > "$brand_smoke_missing_python_stub_dir/lib/good_copy.dart"
+
+set +e
+brand_smoke_missing_python_output="$(
+  PYTHON_BIN=missing-python "$BRAND_SMOKE_PATH" "$brand_smoke_missing_python_stub_dir/lib" 2>&1
+)"
+brand_smoke_missing_python_status=$?
+set -e
+
+if [[ "$brand_smoke_missing_python_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] brand-neutrality smoke missing-python path drifted: expected non-zero status" >&2
+  rm -rf "$brand_smoke_missing_python_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[brand-neutrality-smoke] missing required binary: missing-python" <<<"$brand_smoke_missing_python_output"; then
+  echo "[docs-handoff-smoke] brand-neutrality smoke missing-python output drifted" >&2
+  rm -rf "$brand_smoke_missing_python_stub_dir"
+  exit 1
+fi
+
+rm -rf "$brand_smoke_missing_python_stub_dir"
+
 brand_smoke_failure_stub_dir="$(mktemp -d)"
 mkdir -p "$brand_smoke_failure_stub_dir/tool" "$brand_smoke_failure_stub_dir/lib"
 cp "$BRAND_SMOKE_PATH" "$brand_smoke_failure_stub_dir/tool/brand_neutrality_smoke.sh"

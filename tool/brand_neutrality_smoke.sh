@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 if [[ "$#" -gt 0 ]]; then
   TARGETS=("$@")
@@ -10,7 +11,12 @@ else
   TARGETS=("lib" "web")
 fi
 
-python3 - "$ROOT_DIR" "${TARGETS[@]}" <<'PY'
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "[brand-neutrality-smoke] missing required binary: $PYTHON_BIN" >&2
+  exit 1
+fi
+
+"$PYTHON_BIN" - "$ROOT_DIR" "${TARGETS[@]}" <<'PY'
 import pathlib
 import re
 import sys
