@@ -1032,6 +1032,13 @@ for expected_line in \
   fi
 done
 
+preview_ask_missing_output="$("$AI_HELPER_PATH" preview-ask 2>&1 || true)"
+
+if ! grep -Fqx -- "preview-ask mode requires a question" <<<"$preview_ask_missing_output"; then
+  echo "[docs-handoff-smoke] ai helper preview-ask missing-question output drifted" >&2
+  exit 1
+fi
+
 ask_output="$("$AI_HELPER_PATH" ask "Summarize helper fallback risks." 2>&1 || true)"
 
 for expected_line in \
@@ -1044,6 +1051,13 @@ for expected_line in \
     exit 1
   fi
 done
+
+ask_missing_output="$("$AI_HELPER_PATH" ask 2>&1 || true)"
+
+if ! grep -Fqx -- "ask mode requires a question" <<<"$ask_missing_output"; then
+  echo "[docs-handoff-smoke] ai helper ask missing-question output drifted" >&2
+  exit 1
+fi
 
 ai_helper_preview_review_stub_dir="$(mktemp -d)"
 mkdir -p "$ai_helper_preview_review_stub_dir/tool"
