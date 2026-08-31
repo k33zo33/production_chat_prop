@@ -252,6 +252,41 @@ if lines != expected_lines:
     )
 PY
 
+MISSING_SCRIPT_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR" "$FAIL_DIR" "$MISSING_SCRIPT_DIR"' EXIT
+
+mkdir -p "$MISSING_SCRIPT_DIR/tool"
+cp "$SOURCE_BETA_HANDOFF" "$MISSING_SCRIPT_DIR/tool/beta_handoff.sh"
+cp "$SOURCE_SMOKE_COMMON" "$MISSING_SCRIPT_DIR/tool/smoke_common.sh"
+chmod +x "$MISSING_SCRIPT_DIR/tool/beta_handoff.sh" "$MISSING_SCRIPT_DIR/tool/smoke_common.sh"
+
+cat > "$MISSING_SCRIPT_DIR/tool/import_smoke.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 0
+EOF
+chmod +x "$MISSING_SCRIPT_DIR/tool/import_smoke.sh"
+
+set +e
+missing_script_output="$(
+  cd "$MISSING_SCRIPT_DIR" &&
+  ./tool/beta_handoff.sh 2>&1
+)"
+missing_script_status=$?
+set -e
+
+if [[ "$missing_script_status" -eq 0 ]]; then
+  echo "[beta-handoff-smoke] expected a non-zero status when a required script is missing" >&2
+  echo "$missing_script_output" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- '[beta-handoff] missing required script: ./tool/demo_smoke.sh' <<<"$missing_script_output"; then
+  echo "[beta-handoff-smoke] missing-script guard output drifted" >&2
+  echo "$missing_script_output" >&2
+  exit 1
+fi
+
 echo "[beta-handoff-smoke] stubbed beta_handoff order stays intact"
 echo "[beta-handoff-smoke] all preflight stage labels stay surfaced"
 echo "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags"
@@ -259,4 +294,5 @@ echo "[beta-handoff-smoke] verify receives SKIP_PUB_GET=1 from beta_handoff"
 echo "[beta-handoff-smoke] built web follow-up labels stay surfaced"
 echo "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow pointers visible"
 echo "[beta-handoff-smoke] early stage failures stop later preflights and manual follow-up"
+echo "[beta-handoff-smoke] missing required scripts fail before startup work begins"
 echo "[beta-handoff-smoke] done"
