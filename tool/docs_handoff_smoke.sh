@@ -1981,6 +1981,24 @@ fi
 
 rm -rf "$navigation_missing_smoke_common_stub_dir"
 
+set +e
+navigation_missing_flutter_output="$(
+  cd "$ROOT_DIR" &&
+  FLUTTER_BIN=missing-flutter SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 "$NAVIGATION_SMOKE_PATH" 2>&1
+)"
+navigation_missing_flutter_status=$?
+set -e
+
+if [[ "$navigation_missing_flutter_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] navigation smoke missing-flutter path drifted: expected non-zero status" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- "[navigation-smoke] missing required binary: missing-flutter" <<<"$navigation_missing_flutter_output"; then
+  echo "[docs-handoff-smoke] navigation smoke missing-flutter output drifted" >&2
+  exit 1
+fi
+
 demo_stub_dir="$(mktemp -d)"
 cat > "$demo_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
