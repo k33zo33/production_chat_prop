@@ -1526,6 +1526,68 @@ fi
 
 rm -rf "$release_stub_dir"
 
+release_missing_file_stub_dir="$(mktemp -d)"
+mkdir -p \
+  "$release_missing_file_stub_dir/tool" \
+  "$release_missing_file_stub_dir/test/widget" \
+  "$release_missing_file_stub_dir/test/unit/core/utils" \
+  "$release_missing_file_stub_dir/test/unit/features/playback/data/services" \
+  "$release_missing_file_stub_dir/test/unit/features/playback/domain" \
+  "$release_missing_file_stub_dir/test/unit/features/projects/data/services" \
+  "$release_missing_file_stub_dir/test/unit/features/projects/domain"
+cp "$RELEASE_SMOKE_PATH" "$release_missing_file_stub_dir/tool/release_smoke.sh"
+cp "$SMOKE_COMMON_PATH" "$release_missing_file_stub_dir/tool/smoke_common.sh"
+touch "$release_missing_file_stub_dir/test/widget/export_qa_avatar_preview_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/focus_preview_autofollow_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/focus_preview_chrome_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/focus_preview_short_height_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/mobile_compact_polish_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/playback_empty_state_actions_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/playback_export_feedback_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/portfolio_preflight_badge_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/project_not_found_recovery_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/scene_status_badge_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/scene_route_sync_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/short_height_entry_states_test.dart"
+touch "$release_missing_file_stub_dir/test/widget/timeline_qa_markers_test.dart"
+touch "$release_missing_file_stub_dir/test/unit/core/utils/export_file_name_test.dart"
+touch "$release_missing_file_stub_dir/test/unit/features/playback/data/services/screenshot_export_service_test.dart"
+touch "$release_missing_file_stub_dir/test/unit/features/playback/data/services/video_export_fallback_service_test.dart"
+touch "$release_missing_file_stub_dir/test/unit/features/playback/domain/playback_timeline_test.dart"
+touch "$release_missing_file_stub_dir/test/unit/features/projects/data/services/project_package_export_service_test.dart"
+touch "$release_missing_file_stub_dir/test/unit/features/projects/data/services/project_portfolio_export_service_test.dart"
+touch "$release_missing_file_stub_dir/test/unit/features/projects/domain/export_qa_fixture_test.dart"
+chmod +x "$release_missing_file_stub_dir/tool/release_smoke.sh" "$release_missing_file_stub_dir/tool/smoke_common.sh"
+
+cat > "$release_missing_file_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'flutter|args=%s\n' "$*"
+EOF
+chmod +x "$release_missing_file_stub_dir/flutter-stub.sh"
+
+set +e
+release_missing_file_output="$(
+  cd "$release_missing_file_stub_dir" &&
+  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$release_missing_file_stub_dir/flutter-stub.sh" ./tool/release_smoke.sh 2>&1
+)"
+release_missing_file_status=$?
+set -e
+
+if [[ "$release_missing_file_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] release smoke missing-file path drifted: expected non-zero status" >&2
+  rm -rf "$release_missing_file_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- '[release-smoke] missing expected test file: test/widget_test.dart' <<<"$release_missing_file_output"; then
+  echo "[docs-handoff-smoke] release smoke missing-file output drifted" >&2
+  rm -rf "$release_missing_file_stub_dir"
+  exit 1
+fi
+
+rm -rf "$release_missing_file_stub_dir"
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
