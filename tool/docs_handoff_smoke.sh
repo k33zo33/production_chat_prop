@@ -1813,6 +1813,41 @@ fi
 
 rm -rf "$navigation_missing_file_stub_dir"
 
+navigation_missing_smoke_common_stub_dir="$(mktemp -d)"
+mkdir -p "$navigation_missing_smoke_common_stub_dir/tool"
+cp "$NAVIGATION_SMOKE_PATH" "$navigation_missing_smoke_common_stub_dir/tool/navigation_smoke.sh"
+chmod +x "$navigation_missing_smoke_common_stub_dir/tool/navigation_smoke.sh"
+
+cat > "$navigation_missing_smoke_common_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] navigation smoke missing-smoke-common path should fail before invoking flutter" >&2
+exit 99
+EOF
+chmod +x "$navigation_missing_smoke_common_stub_dir/flutter-stub.sh"
+
+set +e
+navigation_missing_smoke_common_output="$(
+  cd "$navigation_missing_smoke_common_stub_dir" &&
+  FLUTTER_BIN="$navigation_missing_smoke_common_stub_dir/flutter-stub.sh" ./tool/navigation_smoke.sh 2>&1
+)"
+navigation_missing_smoke_common_status=$?
+set -e
+
+if [[ "$navigation_missing_smoke_common_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] navigation smoke missing-smoke-common path drifted: expected non-zero status" >&2
+  rm -rf "$navigation_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[navigation-smoke] missing required script: $navigation_missing_smoke_common_stub_dir/tool/smoke_common.sh" <<<"$navigation_missing_smoke_common_output"; then
+  echo "[docs-handoff-smoke] navigation smoke missing-smoke-common output drifted" >&2
+  rm -rf "$navigation_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+rm -rf "$navigation_missing_smoke_common_stub_dir"
+
 demo_stub_dir="$(mktemp -d)"
 cat > "$demo_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
