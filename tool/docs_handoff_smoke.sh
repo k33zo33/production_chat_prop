@@ -1316,6 +1316,39 @@ fi
 
 rm -rf "$desktop_smoke_missing_compose_stub_dir"
 
+desktop_smoke_missing_python_stub_dir="$(mktemp -d)"
+cat > "$desktop_smoke_missing_python_stub_dir/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] desktop smoke missing-python path should fail before invoking docker" >&2
+exit 99
+EOF
+chmod +x "$desktop_smoke_missing_python_stub_dir/docker"
+
+set +e
+desktop_smoke_missing_python_output="$(
+  cd "$ROOT_DIR" &&
+  PATH="$desktop_smoke_missing_python_stub_dir:$PATH" \
+    PYTHON_BIN=missing-python \
+    "$ROOT_DIR/tool/desktop_smoke.sh" 2>&1
+)"
+desktop_smoke_missing_python_status=$?
+set -e
+
+if [[ "$desktop_smoke_missing_python_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] desktop smoke missing-python path drifted: expected non-zero status" >&2
+  rm -rf "$desktop_smoke_missing_python_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[desktop-smoke] missing required binary: missing-python" <<<"$desktop_smoke_missing_python_output"; then
+  echo "[docs-handoff-smoke] desktop smoke missing-python output drifted" >&2
+  rm -rf "$desktop_smoke_missing_python_stub_dir"
+  exit 1
+fi
+
+rm -rf "$desktop_smoke_missing_python_stub_dir"
+
 desktop_smoke_failure_stub_dir="$(mktemp -d)"
 cat > "$desktop_smoke_failure_stub_dir/docker" <<'EOF'
 #!/usr/bin/env bash

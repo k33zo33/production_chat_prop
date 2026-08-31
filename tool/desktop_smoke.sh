@@ -22,6 +22,12 @@ NOVNC_URL="${DESKTOP_SMOKE_URL:-http://localhost:${NOVNC_PORT}${NOVNC_PATH}}"
 MAX_ATTEMPTS="${DESKTOP_SMOKE_MAX_ATTEMPTS:-20}"
 SLEEP_SECONDS="${DESKTOP_SMOKE_SLEEP_SECONDS:-2}"
 SERVICE_NAME="${DESKTOP_SMOKE_SERVICE:-desktop}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "[desktop-smoke] missing required binary: $PYTHON_BIN" >&2
+  exit 1
+fi
 
 cleanup() {
   docker compose -f "$COMPOSE_FILE" down >/dev/null 2>&1 || true
@@ -36,7 +42,7 @@ docker compose -f "$COMPOSE_FILE" up --build -d
 
 echo "[desktop-smoke] wait for noVNC: $NOVNC_URL"
 for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
-  if python3 - "$NOVNC_URL" <<'PY'
+  if "$PYTHON_BIN" - "$NOVNC_URL" <<'PY'
 import sys
 import urllib.request
 
