@@ -2027,8 +2027,6 @@ navigation_missing_file_stub_dir="$(mktemp -d)"
 mkdir -p "$navigation_missing_file_stub_dir/tool" "$navigation_missing_file_stub_dir/test/widget"
 cp "$NAVIGATION_SMOKE_PATH" "$navigation_missing_file_stub_dir/tool/navigation_smoke.sh"
 cp "$SMOKE_COMMON_PATH" "$navigation_missing_file_stub_dir/tool/smoke_common.sh"
-touch "$navigation_missing_file_stub_dir/test/widget/scene_route_sync_test.dart"
-touch "$navigation_missing_file_stub_dir/test/widget/project_not_found_recovery_test.dart"
 chmod +x "$navigation_missing_file_stub_dir/tool/navigation_smoke.sh" "$navigation_missing_file_stub_dir/tool/smoke_common.sh"
 
 cat > "$navigation_missing_file_stub_dir/flutter-stub.sh" <<'EOF'
@@ -2038,25 +2036,44 @@ printf 'flutter|args=%s\n' "$*"
 EOF
 chmod +x "$navigation_missing_file_stub_dir/flutter-stub.sh"
 
-set +e
-navigation_missing_file_output="$(
-  cd "$navigation_missing_file_stub_dir" &&
-  SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$navigation_missing_file_stub_dir/flutter-stub.sh" ./tool/navigation_smoke.sh 2>&1
-)"
-navigation_missing_file_status=$?
-set -e
+navigation_required_files=(
+  "$navigation_missing_file_stub_dir/test/widget_test.dart"
+  "$navigation_missing_file_stub_dir/test/widget/scene_route_sync_test.dart"
+  "$navigation_missing_file_stub_dir/test/widget/project_not_found_recovery_test.dart"
+)
 
-if [[ "$navigation_missing_file_status" -eq 0 ]]; then
-  echo "[docs-handoff-smoke] navigation smoke missing-file path drifted: expected non-zero status" >&2
-  rm -rf "$navigation_missing_file_stub_dir"
-  exit 1
-fi
+for missing_file in "${navigation_required_files[@]}"; do
+  rm -rf "$navigation_missing_file_stub_dir/test"
+  mkdir -p "$navigation_missing_file_stub_dir/test/widget"
 
-if ! grep -Fqx -- '[navigation-smoke] missing expected test file: test/widget_test.dart' <<<"$navigation_missing_file_output"; then
-  echo "[docs-handoff-smoke] navigation smoke missing-file output drifted" >&2
-  rm -rf "$navigation_missing_file_stub_dir"
-  exit 1
-fi
+  for present_file in "${navigation_required_files[@]}"; do
+    if [[ "$present_file" == "$missing_file" ]]; then
+      continue
+    fi
+    cp "$ROOT_DIR/${present_file#$navigation_missing_file_stub_dir/}" "$present_file"
+  done
+
+  set +e
+  navigation_missing_file_output="$(
+    cd "$navigation_missing_file_stub_dir" &&
+    SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN="$navigation_missing_file_stub_dir/flutter-stub.sh" ./tool/navigation_smoke.sh 2>&1
+  )"
+  navigation_missing_file_status=$?
+  set -e
+
+  if [[ "$navigation_missing_file_status" -eq 0 ]]; then
+    echo "[docs-handoff-smoke] navigation smoke missing-file path drifted: expected non-zero status for $missing_file" >&2
+    rm -rf "$navigation_missing_file_stub_dir"
+    exit 1
+  fi
+
+  expected_missing_line="[navigation-smoke] missing expected test file: ${missing_file#$navigation_missing_file_stub_dir/}"
+  if ! grep -Fqx -- "$expected_missing_line" <<<"$navigation_missing_file_output"; then
+    echo "[docs-handoff-smoke] navigation smoke missing-file output drifted for $missing_file" >&2
+    rm -rf "$navigation_missing_file_stub_dir"
+    exit 1
+  fi
+done
 
 rm -rf "$navigation_missing_file_stub_dir"
 
