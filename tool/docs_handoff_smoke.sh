@@ -1854,6 +1854,24 @@ fi
 
 rm -rf "$import_missing_smoke_common_stub_dir"
 
+set +e
+import_missing_flutter_output="$(
+  cd "$ROOT_DIR" &&
+  FLUTTER_BIN=missing-flutter SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 "$IMPORT_SMOKE_PATH" 2>&1
+)"
+import_missing_flutter_status=$?
+set -e
+
+if [[ "$import_missing_flutter_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] import smoke missing-flutter path drifted: expected non-zero status" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- "[import-smoke] missing required binary: missing-flutter" <<<"$import_missing_flutter_output"; then
+  echo "[docs-handoff-smoke] import smoke missing-flutter output drifted" >&2
+  exit 1
+fi
+
 navigation_stub_dir="$(mktemp -d)"
 cat > "$navigation_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
