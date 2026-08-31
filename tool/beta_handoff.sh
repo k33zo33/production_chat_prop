@@ -5,7 +5,14 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 export FLUTTER_BIN="${FLUTTER_BIN:-/home/server/flutter/bin/flutter}"
-source "$ROOT_DIR/tool/smoke_common.sh"
+SMOKE_COMMON_SCRIPT="$ROOT_DIR/tool/smoke_common.sh"
+
+if [[ ! -f "$SMOKE_COMMON_SCRIPT" ]]; then
+  echo "[beta-handoff] missing required script: $SMOKE_COMMON_SCRIPT" >&2
+  exit 1
+fi
+
+source "$SMOKE_COMMON_SCRIPT"
 DEMO_SMOKE_SCRIPT="./tool/demo_smoke.sh"
 IMPORT_SMOKE_SCRIPT="./tool/import_smoke.sh"
 RELEASE_SMOKE_SCRIPT="./tool/release_smoke.sh"

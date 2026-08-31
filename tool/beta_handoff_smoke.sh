@@ -297,6 +297,41 @@ if ! grep -Fqx -- '[beta-handoff] missing required script: ./tool/demo_smoke.sh'
   exit 1
 fi
 
+MISSING_SHARED_HELPER_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR" "$FAIL_DIR" "$MISSING_SCRIPT_DIR" "$MISSING_SHARED_HELPER_DIR"' EXIT
+
+mkdir -p "$MISSING_SHARED_HELPER_DIR/tool"
+cp "$SOURCE_BETA_HANDOFF" "$MISSING_SHARED_HELPER_DIR/tool/beta_handoff.sh"
+chmod +x "$MISSING_SHARED_HELPER_DIR/tool/beta_handoff.sh"
+
+cat > "$MISSING_SHARED_HELPER_DIR/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[beta-handoff-smoke] missing-smoke-common path should fail before invoking flutter" >&2
+exit 99
+EOF
+chmod +x "$MISSING_SHARED_HELPER_DIR/flutter-stub.sh"
+
+set +e
+missing_shared_helper_output="$(
+  cd "$MISSING_SHARED_HELPER_DIR" &&
+  FLUTTER_BIN="$MISSING_SHARED_HELPER_DIR/flutter-stub.sh" ./tool/beta_handoff.sh 2>&1
+)"
+missing_shared_helper_status=$?
+set -e
+
+if [[ "$missing_shared_helper_status" -eq 0 ]]; then
+  echo "[beta-handoff-smoke] expected a non-zero status when smoke_common.sh is missing" >&2
+  echo "$missing_shared_helper_output" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- "[beta-handoff] missing required script: $MISSING_SHARED_HELPER_DIR/tool/smoke_common.sh" <<<"$missing_shared_helper_output"; then
+  echo "[beta-handoff-smoke] missing shared-helper guard output drifted" >&2
+  echo "$missing_shared_helper_output" >&2
+  exit 1
+fi
+
 echo "[beta-handoff-smoke] stubbed beta_handoff order stays intact"
 echo "[beta-handoff-smoke] all preflight stage labels stay surfaced"
 echo "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags"
@@ -305,4 +340,5 @@ echo "[beta-handoff-smoke] built web follow-up labels stay surfaced"
 echo "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow pointers visible"
 echo "[beta-handoff-smoke] early stage failures stop later preflights and manual follow-up"
 echo "[beta-handoff-smoke] missing required scripts fail before startup work begins"
+echo "[beta-handoff-smoke] missing smoke_common.sh fails before startup work begins"
 echo "[beta-handoff-smoke] done"
