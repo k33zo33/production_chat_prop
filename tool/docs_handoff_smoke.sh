@@ -1828,6 +1828,24 @@ for expected_line in \
   fi
 done
 
+beta_handoff_smoke_missing_source_stub_dir="$(mktemp -d)"
+mkdir -p "$beta_handoff_smoke_missing_source_stub_dir/tool"
+cp "$BETA_HANDOFF_SMOKE_PATH" "$beta_handoff_smoke_missing_source_stub_dir/tool/beta_handoff_smoke.sh"
+chmod +x "$beta_handoff_smoke_missing_source_stub_dir/tool/beta_handoff_smoke.sh"
+
+beta_handoff_smoke_missing_source_output="$(
+  cd "$beta_handoff_smoke_missing_source_stub_dir" &&
+  ./tool/beta_handoff_smoke.sh 2>&1 || true
+)"
+
+if ! grep -Fqx -- "[beta-handoff-smoke] missing source script: $beta_handoff_smoke_missing_source_stub_dir/tool/beta_handoff.sh" <<<"$beta_handoff_smoke_missing_source_output"; then
+  echo "[docs-handoff-smoke] beta handoff smoke missing-source output drifted" >&2
+  rm -rf "$beta_handoff_smoke_missing_source_stub_dir"
+  exit 1
+fi
+
+rm -rf "$beta_handoff_smoke_missing_source_stub_dir"
+
 web_shell_smoke_output="$("$ROOT_DIR/tool/web_shell_smoke.sh" web)"
 
 for expected_line in \

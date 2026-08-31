@@ -5,6 +5,16 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_BETA_HANDOFF="$ROOT_DIR/tool/beta_handoff.sh"
 SOURCE_SMOKE_COMMON="$ROOT_DIR/tool/smoke_common.sh"
 
+if [[ ! -f "$SOURCE_BETA_HANDOFF" ]]; then
+  echo "[beta-handoff-smoke] missing source script: $SOURCE_BETA_HANDOFF" >&2
+  exit 1
+fi
+
+if [[ ! -f "$SOURCE_SMOKE_COMMON" ]]; then
+  echo "[beta-handoff-smoke] missing source script: $SOURCE_SMOKE_COMMON" >&2
+  exit 1
+fi
+
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
