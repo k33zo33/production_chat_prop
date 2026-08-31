@@ -2266,6 +2266,24 @@ fi
 
 rm -rf "$release_missing_smoke_common_stub_dir"
 
+set +e
+release_missing_flutter_output="$(
+  cd "$ROOT_DIR" &&
+  FLUTTER_BIN=missing-flutter SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 "$RELEASE_SMOKE_PATH" 2>&1
+)"
+release_missing_flutter_status=$?
+set -e
+
+if [[ "$release_missing_flutter_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] release smoke missing-flutter path drifted: expected non-zero status" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- "[release-smoke] missing required binary: missing-flutter" <<<"$release_missing_flutter_output"; then
+  echo "[docs-handoff-smoke] release smoke missing-flutter output drifted" >&2
+  exit 1
+fi
+
 beta_handoff_smoke_output="$("$BETA_HANDOFF_SMOKE_PATH")"
 
 for expected_line in \
