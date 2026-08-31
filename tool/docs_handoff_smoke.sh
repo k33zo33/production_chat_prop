@@ -1059,6 +1059,13 @@ if ! grep -Fqx -- "ask mode requires a question" <<<"$ask_missing_output"; then
   exit 1
 fi
 
+unknown_mode_output="$("$AI_HELPER_PATH" nope 2>&1 || true)"
+
+if ! grep -Fqx -- "Unknown mode: nope" <<<"$unknown_mode_output"; then
+  echo "[docs-handoff-smoke] ai helper unknown-mode output drifted" >&2
+  exit 1
+fi
+
 ai_helper_preview_review_stub_dir="$(mktemp -d)"
 mkdir -p "$ai_helper_preview_review_stub_dir/tool"
 cp "$AI_HELPER_PATH" "$ai_helper_preview_review_stub_dir/tool/ai_helper.sh"
