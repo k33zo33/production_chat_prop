@@ -1,0 +1,55 @@
+name: Flutter CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  docs_handoff_smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docs handoff smoke
+        run: ./tool/docs_handoff_smoke.sh
+
+  helper_smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: AI helper smoke
+        run: ./tool/ai_helper_smoke.sh
+
+  beta_handoff_smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Beta handoff smoke
+        run: ./tool/beta_handoff_smoke.sh
+
+  beta_handoff:
+    runs-on: ubuntu-latest
+    needs:
+      - docs_handoff_smoke
+      - helper_smoke
+      - beta_handoff_smoke
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Beta handoff
+        run: ./tool/beta_handoff.sh
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-web
+          path: build/web
+
+  desktop_smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Desktop smoke
+        run: ./tool/desktop_smoke.sh

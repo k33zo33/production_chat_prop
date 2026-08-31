@@ -1589,6 +1589,41 @@ fi
 
 rm -rf "$compact_missing_file_stub_dir"
 
+compact_missing_smoke_common_stub_dir="$(mktemp -d)"
+mkdir -p "$compact_missing_smoke_common_stub_dir/tool"
+cp "$COMPACT_SMOKE_PATH" "$compact_missing_smoke_common_stub_dir/tool/compact_smoke.sh"
+chmod +x "$compact_missing_smoke_common_stub_dir/tool/compact_smoke.sh"
+
+cat > "$compact_missing_smoke_common_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] compact smoke missing-smoke-common path should fail before invoking flutter" >&2
+exit 99
+EOF
+chmod +x "$compact_missing_smoke_common_stub_dir/flutter-stub.sh"
+
+set +e
+compact_missing_smoke_common_output="$(
+  cd "$compact_missing_smoke_common_stub_dir" &&
+  FLUTTER_BIN="$compact_missing_smoke_common_stub_dir/flutter-stub.sh" ./tool/compact_smoke.sh 2>&1
+)"
+compact_missing_smoke_common_status=$?
+set -e
+
+if [[ "$compact_missing_smoke_common_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] compact smoke missing-smoke-common path drifted: expected non-zero status" >&2
+  rm -rf "$compact_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[compact-smoke] missing required script: $compact_missing_smoke_common_stub_dir/tool/smoke_common.sh" <<<"$compact_missing_smoke_common_output"; then
+  echo "[docs-handoff-smoke] compact smoke missing-smoke-common output drifted" >&2
+  rm -rf "$compact_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+rm -rf "$compact_missing_smoke_common_stub_dir"
+
 import_stub_dir="$(mktemp -d)"
 cat > "$import_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
