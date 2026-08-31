@@ -943,31 +943,53 @@ fi
 manual_beta_missing_stub_dir="$(mktemp -d)"
 mkdir -p "$manual_beta_missing_stub_dir/docs/fixtures" "$manual_beta_missing_stub_dir/tool"
 cp "$MANUAL_BETA_CHECKLIST_PATH" "$manual_beta_missing_stub_dir/tool/manual_beta_checklist.sh"
-touch "$manual_beta_missing_stub_dir/docs/09-compact-smoke-checklist.md"
-touch "$manual_beta_missing_stub_dir/docs/04-export-qa-checklist.md"
-touch "$manual_beta_missing_stub_dir/docs/11-video-fallback-workflow.md"
-printf '{}' > "$manual_beta_missing_stub_dir/docs/fixtures/export-qa-project.json"
 chmod +x "$manual_beta_missing_stub_dir/tool/manual_beta_checklist.sh"
 
-set +e
-manual_beta_missing_output="$(
-  cd "$manual_beta_missing_stub_dir" &&
-  ./tool/manual_beta_checklist.sh 2>&1
-)"
-manual_beta_missing_status=$?
-set -e
+manual_beta_required_files=(
+  "$manual_beta_missing_stub_dir/docs/08-web-smoke-checklist.md"
+  "$manual_beta_missing_stub_dir/docs/09-compact-smoke-checklist.md"
+  "$manual_beta_missing_stub_dir/docs/04-export-qa-checklist.md"
+  "$manual_beta_missing_stub_dir/docs/11-video-fallback-workflow.md"
+  "$manual_beta_missing_stub_dir/docs/fixtures/export-qa-project.json"
+)
 
-if [[ "$manual_beta_missing_status" -eq 0 ]]; then
-  echo "[docs-handoff-smoke] manual beta checklist missing-file path drifted: expected non-zero status" >&2
-  rm -rf "$manual_beta_missing_stub_dir"
-  exit 1
-fi
+for missing_file in "${manual_beta_required_files[@]}"; do
+  rm -rf "$manual_beta_missing_stub_dir/docs"
+  mkdir -p "$manual_beta_missing_stub_dir/docs/fixtures"
 
-if ! grep -Fqx -- '[manual-beta-checklist] missing required handoff file: docs/08-web-smoke-checklist.md' <<<"$manual_beta_missing_output"; then
-  echo "[docs-handoff-smoke] manual beta checklist missing-file output drifted" >&2
-  rm -rf "$manual_beta_missing_stub_dir"
-  exit 1
-fi
+  for present_file in "${manual_beta_required_files[@]}"; do
+    if [[ "$present_file" == "$missing_file" ]]; then
+      continue
+    fi
+
+    if [[ "$present_file" == *".json" ]]; then
+      printf '{}' > "$present_file"
+    else
+      touch "$present_file"
+    fi
+  done
+
+  set +e
+  manual_beta_missing_output="$(
+    cd "$manual_beta_missing_stub_dir" &&
+    ./tool/manual_beta_checklist.sh 2>&1
+  )"
+  manual_beta_missing_status=$?
+  set -e
+
+  if [[ "$manual_beta_missing_status" -eq 0 ]]; then
+    echo "[docs-handoff-smoke] manual beta checklist missing-file path drifted: expected non-zero status for $missing_file" >&2
+    rm -rf "$manual_beta_missing_stub_dir"
+    exit 1
+  fi
+
+  expected_missing_line="[manual-beta-checklist] missing required handoff file: ${missing_file#$manual_beta_missing_stub_dir/}"
+  if ! grep -Fqx -- "$expected_missing_line" <<<"$manual_beta_missing_output"; then
+    echo "[docs-handoff-smoke] manual beta checklist missing-file output drifted for $missing_file" >&2
+    rm -rf "$manual_beta_missing_stub_dir"
+    exit 1
+  fi
+done
 
 rm -rf "$manual_beta_missing_stub_dir"
 
