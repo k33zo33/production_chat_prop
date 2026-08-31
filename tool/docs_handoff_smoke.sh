@@ -1920,6 +1920,41 @@ fi
 
 rm -rf "$demo_missing_file_stub_dir"
 
+demo_missing_smoke_common_stub_dir="$(mktemp -d)"
+mkdir -p "$demo_missing_smoke_common_stub_dir/tool"
+cp "$DEMO_SMOKE_PATH" "$demo_missing_smoke_common_stub_dir/tool/demo_smoke.sh"
+chmod +x "$demo_missing_smoke_common_stub_dir/tool/demo_smoke.sh"
+
+cat > "$demo_missing_smoke_common_stub_dir/flutter-stub.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] demo smoke missing-smoke-common path should fail before invoking flutter" >&2
+exit 99
+EOF
+chmod +x "$demo_missing_smoke_common_stub_dir/flutter-stub.sh"
+
+set +e
+demo_missing_smoke_common_output="$(
+  cd "$demo_missing_smoke_common_stub_dir" &&
+  FLUTTER_BIN="$demo_missing_smoke_common_stub_dir/flutter-stub.sh" ./tool/demo_smoke.sh 2>&1
+)"
+demo_missing_smoke_common_status=$?
+set -e
+
+if [[ "$demo_missing_smoke_common_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] demo smoke missing-smoke-common path drifted: expected non-zero status" >&2
+  rm -rf "$demo_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[demo-smoke] missing required script: $demo_missing_smoke_common_stub_dir/tool/smoke_common.sh" <<<"$demo_missing_smoke_common_output"; then
+  echo "[docs-handoff-smoke] demo smoke missing-smoke-common output drifted" >&2
+  rm -rf "$demo_missing_smoke_common_stub_dir"
+  exit 1
+fi
+
+rm -rf "$demo_missing_smoke_common_stub_dir"
+
 release_stub_dir="$(mktemp -d)"
 cat > "$release_stub_dir/flutter-stub.sh" <<'EOF'
 #!/usr/bin/env bash
