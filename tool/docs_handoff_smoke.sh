@@ -589,9 +589,10 @@ checks = [
      'logs --tail=80 "$SERVICE_NAME"' in pathlib.Path(tool_dir / 'desktop_smoke.sh').read_text(encoding='utf-8'),
      'tool/desktop_smoke.sh should keep its compose/noVNC progress labels and failure diagnostics'),
     ('DESKTOP_SMOKE_COMPOSE_FILE' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8') and
+     'DOCKER_BIN="${DOCKER_BIN:-docker}"' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8') and
      '[desktop-docker] missing compose file:' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8') and
-     'docker compose -f "$COMPOSE_FILE" up --build' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8'),
-     'tool/desktop_docker.sh should keep the compose override, missing-file guard, and docker compose launch'),
+     '"$DOCKER_BIN" compose -f "$COMPOSE_FILE" up --build' in pathlib.Path(tool_dir / 'desktop_docker.sh').read_text(encoding='utf-8'),
+     'tool/desktop_docker.sh should keep the compose override, missing-file guard, docker override, and compose launch'),
     ('./tool/ai_helper.sh doctor' in ai_helper and 'run_helper_doctor' in ai_helper,
      'tool/ai_helper.sh should keep the doctor mode wired and documented'),
     ('./tool/ai_helper.sh review -- tool/ai_helper.sh docs/10-ai-helper-workflow.md' in ai_helper,
@@ -1231,6 +1232,24 @@ fi
 
 rm -rf "$desktop_docker_missing_compose_stub_dir"
 
+set +e
+desktop_docker_missing_binary_output="$(
+  cd "$ROOT_DIR" &&
+  DOCKER_BIN=missing-docker "$ROOT_DIR/tool/desktop_docker.sh" 2>&1
+)"
+desktop_docker_missing_binary_status=$?
+set -e
+
+if [[ "$desktop_docker_missing_binary_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] desktop docker missing-binary path drifted: expected non-zero status" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- "[desktop-docker] missing required binary: missing-docker" <<<"$desktop_docker_missing_binary_output"; then
+  echo "[docs-handoff-smoke] desktop docker missing-binary output drifted" >&2
+  exit 1
+fi
+
 desktop_smoke_stub_dir="$(mktemp -d)"
 cat > "$desktop_smoke_stub_dir/docker" <<'EOF'
 #!/usr/bin/env bash
@@ -1354,6 +1373,39 @@ if ! grep -Fqx -- "[desktop-smoke] missing required binary: missing-python" <<<"
 fi
 
 rm -rf "$desktop_smoke_missing_python_stub_dir"
+
+desktop_smoke_missing_docker_stub_dir="$(mktemp -d)"
+cat > "$desktop_smoke_missing_docker_stub_dir/python3" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+echo "[docs-handoff-smoke] desktop smoke missing-docker path should fail before invoking python" >&2
+exit 99
+EOF
+chmod +x "$desktop_smoke_missing_docker_stub_dir/python3"
+
+set +e
+desktop_smoke_missing_docker_output="$(
+  cd "$ROOT_DIR" &&
+  PATH="$desktop_smoke_missing_docker_stub_dir:$PATH" \
+    DOCKER_BIN=missing-docker \
+    "$ROOT_DIR/tool/desktop_smoke.sh" 2>&1
+)"
+desktop_smoke_missing_docker_status=$?
+set -e
+
+if [[ "$desktop_smoke_missing_docker_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] desktop smoke missing-docker path drifted: expected non-zero status" >&2
+  rm -rf "$desktop_smoke_missing_docker_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[desktop-smoke] missing required binary: missing-docker" <<<"$desktop_smoke_missing_docker_output"; then
+  echo "[docs-handoff-smoke] desktop smoke missing-docker output drifted" >&2
+  rm -rf "$desktop_smoke_missing_docker_stub_dir"
+  exit 1
+fi
+
+rm -rf "$desktop_smoke_missing_docker_stub_dir"
 
 desktop_smoke_failure_stub_dir="$(mktemp -d)"
 cat > "$desktop_smoke_failure_stub_dir/docker" <<'EOF'

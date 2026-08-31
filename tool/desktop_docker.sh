@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 COMPOSE_FILE="${DESKTOP_SMOKE_COMPOSE_FILE:-docker-compose.desktop.yml}"
+DOCKER_BIN="${DOCKER_BIN:-docker}"
 if [[ "$COMPOSE_FILE" = /* ]]; then
   COMPOSE_PATH="$COMPOSE_FILE"
 else
@@ -16,4 +17,9 @@ if [[ ! -f "$COMPOSE_PATH" ]]; then
   exit 1
 fi
 
-docker compose -f "$COMPOSE_FILE" up --build
+if ! command -v "$DOCKER_BIN" >/dev/null 2>&1; then
+  echo "[desktop-docker] missing required binary: $DOCKER_BIN" >&2
+  exit 1
+fi
+
+"$DOCKER_BIN" compose -f "$COMPOSE_FILE" up --build

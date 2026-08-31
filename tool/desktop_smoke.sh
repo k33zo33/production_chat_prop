@@ -23,22 +23,28 @@ MAX_ATTEMPTS="${DESKTOP_SMOKE_MAX_ATTEMPTS:-20}"
 SLEEP_SECONDS="${DESKTOP_SMOKE_SLEEP_SECONDS:-2}"
 SERVICE_NAME="${DESKTOP_SMOKE_SERVICE:-desktop}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
+DOCKER_BIN="${DOCKER_BIN:-docker}"
 
 if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   echo "[desktop-smoke] missing required binary: $PYTHON_BIN" >&2
   exit 1
 fi
 
+if ! command -v "$DOCKER_BIN" >/dev/null 2>&1; then
+  echo "[desktop-smoke] missing required binary: $DOCKER_BIN" >&2
+  exit 1
+fi
+
 cleanup() {
-  docker compose -f "$COMPOSE_FILE" down >/dev/null 2>&1 || true
+  "$DOCKER_BIN" compose -f "$COMPOSE_FILE" down >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
 echo "[desktop-smoke] compose config"
-docker compose -f "$COMPOSE_FILE" config >/dev/null
+"$DOCKER_BIN" compose -f "$COMPOSE_FILE" config >/dev/null
 
 echo "[desktop-smoke] build + boot"
-docker compose -f "$COMPOSE_FILE" up --build -d
+"$DOCKER_BIN" compose -f "$COMPOSE_FILE" up --build -d
 
 echo "[desktop-smoke] wait for noVNC: $NOVNC_URL"
 for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
@@ -58,14 +64,14 @@ except Exception:
 PY
   then
     echo "[desktop-smoke] noVNC responded on attempt ${attempt}/${MAX_ATTEMPTS}"
-    if ! docker compose -f "$COMPOSE_FILE" ps --services --status running | grep -Fxq "$SERVICE_NAME"; then
+    if ! "$DOCKER_BIN" compose -f "$COMPOSE_FILE" ps --services --status running | grep -Fxq "$SERVICE_NAME"; then
       echo "[desktop-smoke] service is not running after noVNC became reachable" >&2
-      docker compose -f "$COMPOSE_FILE" ps >&2 || true
-      docker compose -f "$COMPOSE_FILE" logs --tail=80 "$SERVICE_NAME" >&2 || true
+      "$DOCKER_BIN" compose -f "$COMPOSE_FILE" ps >&2 || true
+      "$DOCKER_BIN" compose -f "$COMPOSE_FILE" logs --tail=80 "$SERVICE_NAME" >&2 || true
       exit 1
     fi
 
-    docker compose -f "$COMPOSE_FILE" logs --tail=20 "$SERVICE_NAME"
+    "$DOCKER_BIN" compose -f "$COMPOSE_FILE" logs --tail=20 "$SERVICE_NAME"
     echo "[desktop-smoke] done"
     exit 0
   fi
@@ -74,6 +80,6 @@ PY
 done
 
 echo "[desktop-smoke] noVNC did not become ready in time" >&2
-docker compose -f "$COMPOSE_FILE" ps >&2 || true
-docker compose -f "$COMPOSE_FILE" logs --tail=80 "$SERVICE_NAME" >&2 || true
+"$DOCKER_BIN" compose -f "$COMPOSE_FILE" ps >&2 || true
+"$DOCKER_BIN" compose -f "$COMPOSE_FILE" logs --tail=80 "$SERVICE_NAME" >&2 || true
 exit 1
