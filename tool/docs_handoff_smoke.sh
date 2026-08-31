@@ -522,6 +522,9 @@ checks = [
      'tool/verify.sh should keep the explicit upstream pub-get skip path used by beta_handoff'),
     ('SMOKE_SKIP_VERSION=1' in smoke_common and 'SMOKE_SKIP_ANALYZE=1' in smoke_common,
      'tool/smoke_common.sh comments should keep documenting the upstream skip-flag optimization'),
+    ('smoke_require_binary' in smoke_common and
+     'missing required binary:' in smoke_common,
+     'tool/smoke_common.sh should keep the shared binary-startup guard for Flutter-backed smoke scripts'),
     ('stubbed beta_handoff order stays intact' in beta_handoff_smoke and
      'downstream smoke scripts inherit skip version/analyze flags' in beta_handoff_smoke and
      'verify receives SKIP_PUB_GET=1 from beta_handoff' in beta_handoff_smoke and
@@ -1599,6 +1602,26 @@ if ! grep -Fqx -- "[verify] missing required script: $verify_missing_smoke_commo
 fi
 
 rm -rf "$verify_missing_smoke_common_stub_dir"
+
+set +e
+verify_missing_flutter_output="$(
+  cd "$verify_stub_dir" &&
+  SKIP_PUB_GET=1 SMOKE_SKIP_VERSION=1 SMOKE_SKIP_ANALYZE=1 FLUTTER_BIN=missing-flutter ./tool/verify.sh 2>&1
+)"
+verify_missing_flutter_status=$?
+set -e
+
+if [[ "$verify_missing_flutter_status" -eq 0 ]]; then
+  echo "[docs-handoff-smoke] verify missing-flutter path drifted: expected non-zero status" >&2
+  rm -rf "$verify_stub_dir"
+  exit 1
+fi
+
+if ! grep -Fqx -- "[verify] missing required binary: missing-flutter" <<<"$verify_missing_flutter_output"; then
+  echo "[docs-handoff-smoke] verify missing-flutter output drifted" >&2
+  rm -rf "$verify_stub_dir"
+  exit 1
+fi
 
 compact_stub_dir="$(mktemp -d)"
 cat > "$compact_stub_dir/flutter-stub.sh" <<'EOF'

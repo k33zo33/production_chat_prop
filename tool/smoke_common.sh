@@ -7,9 +7,21 @@
 # SMOKE_SKIP_VERSION=1 and/or SMOKE_SKIP_ANALYZE=1 after handling those steps
 # once upstream to keep the full gate stack faster and less repetitive.
 
+smoke_require_binary() {
+  local label="$1"
+  local binary_path="$2"
+
+  if ! command -v "$binary_path" >/dev/null 2>&1; then
+    echo "[$label] missing required binary: $binary_path" >&2
+    exit 1
+  fi
+}
+
 smoke_print_flutter_banner() {
   local label="$1"
   local flutter_bin="$2"
+
+  smoke_require_binary "$label" "$flutter_bin"
 
   if [[ "${SMOKE_SKIP_VERSION:-0}" == "1" ]]; then
     echo "[$label] using flutter: $flutter_bin (version handled upstream)"
@@ -23,6 +35,8 @@ smoke_print_flutter_banner() {
 smoke_run_analyze() {
   local label="$1"
   local flutter_bin="$2"
+
+  smoke_require_binary "$label" "$flutter_bin"
 
   if [[ "${SMOKE_SKIP_ANALYZE:-0}" == "1" ]]; then
     echo "[$label] analyze skipped (handled upstream)"
