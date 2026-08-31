@@ -276,32 +276,59 @@ cp "$SOURCE_BETA_HANDOFF" "$MISSING_SCRIPT_DIR/tool/beta_handoff.sh"
 cp "$SOURCE_SMOKE_COMMON" "$MISSING_SCRIPT_DIR/tool/smoke_common.sh"
 chmod +x "$MISSING_SCRIPT_DIR/tool/beta_handoff.sh" "$MISSING_SCRIPT_DIR/tool/smoke_common.sh"
 
-cat > "$MISSING_SCRIPT_DIR/tool/import_smoke.sh" <<'EOF'
+required_scripts=(
+  ./tool/demo_smoke.sh
+  ./tool/import_smoke.sh
+  ./tool/release_smoke.sh
+  ./tool/compact_smoke.sh
+  ./tool/navigation_smoke.sh
+  ./tool/brand_neutrality_smoke.sh
+  ./tool/verify.sh
+  ./tool/web_shell_smoke.sh
+  ./tool/docs_handoff_smoke.sh
+  ./tool/manual_beta_checklist.sh
+  ./tool/ai_helper_smoke.sh
+)
+
+for required_script in "${required_scripts[@]}"; do
+  rm -f "$MISSING_SCRIPT_DIR"/tool/*.sh
+  cp "$SOURCE_BETA_HANDOFF" "$MISSING_SCRIPT_DIR/tool/beta_handoff.sh"
+  cp "$SOURCE_SMOKE_COMMON" "$MISSING_SCRIPT_DIR/tool/smoke_common.sh"
+  chmod +x "$MISSING_SCRIPT_DIR/tool/beta_handoff.sh" "$MISSING_SCRIPT_DIR/tool/smoke_common.sh"
+
+  for present_script in "${required_scripts[@]}"; do
+    if [[ "$present_script" == "$required_script" ]]; then
+      continue
+    fi
+
+    cat > "$MISSING_SCRIPT_DIR/${present_script#./}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 exit 0
 EOF
-chmod +x "$MISSING_SCRIPT_DIR/tool/import_smoke.sh"
+    chmod +x "$MISSING_SCRIPT_DIR/${present_script#./}"
+  done
 
-set +e
-missing_script_output="$(
-  cd "$MISSING_SCRIPT_DIR" &&
-  ./tool/beta_handoff.sh 2>&1
-)"
-missing_script_status=$?
-set -e
+  set +e
+  missing_script_output="$(
+    cd "$MISSING_SCRIPT_DIR" &&
+    ./tool/beta_handoff.sh 2>&1
+  )"
+  missing_script_status=$?
+  set -e
 
-if [[ "$missing_script_status" -eq 0 ]]; then
-  echo "[beta-handoff-smoke] expected a non-zero status when a required script is missing" >&2
-  echo "$missing_script_output" >&2
-  exit 1
-fi
+  if [[ "$missing_script_status" -eq 0 ]]; then
+    echo "[beta-handoff-smoke] expected a non-zero status when $required_script is missing" >&2
+    echo "$missing_script_output" >&2
+    exit 1
+  fi
 
-if ! grep -Fqx -- '[beta-handoff] missing required script: ./tool/demo_smoke.sh' <<<"$missing_script_output"; then
-  echo "[beta-handoff-smoke] missing-script guard output drifted" >&2
-  echo "$missing_script_output" >&2
-  exit 1
-fi
+  if ! grep -Fqx -- "[beta-handoff] missing required script: $required_script" <<<"$missing_script_output"; then
+    echo "[beta-handoff-smoke] missing-script guard output drifted for $required_script" >&2
+    echo "$missing_script_output" >&2
+    exit 1
+  fi
+done
 
 MISSING_SHARED_HELPER_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR" "$FAIL_DIR" "$MISSING_SCRIPT_DIR" "$MISSING_SHARED_HELPER_DIR"' EXIT
@@ -413,6 +440,7 @@ echo "[beta-handoff-smoke] built web follow-up labels stay surfaced"
 echo "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow pointers visible"
 echo "[beta-handoff-smoke] early stage failures stop later preflights and manual follow-up"
 echo "[beta-handoff-smoke] missing required scripts fail before startup work begins"
+echo "[beta-handoff-smoke] every required beta_handoff script is guard-checked"
 echo "[beta-handoff-smoke] missing smoke_common.sh fails before startup work begins"
 echo "[beta-handoff-smoke] missing flutter binary fails before downstream gate scripts run"
 echo "[beta-handoff-smoke] done"

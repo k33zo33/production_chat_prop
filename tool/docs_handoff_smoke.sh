@@ -530,6 +530,7 @@ checks = [
      'verify receives SKIP_PUB_GET=1 from beta_handoff' in beta_handoff_smoke and
      'early stage failures stop later preflights and manual follow-up' in beta_handoff_smoke and
      'missing required scripts fail before startup work begins' in beta_handoff_smoke and
+     'every required beta_handoff script is guard-checked' in beta_handoff_smoke and
      'missing smoke_common.sh fails before startup work begins' in beta_handoff_smoke and
      'missing flutter binary fails before downstream gate scripts run' in beta_handoff_smoke,
      'tool/beta_handoff_smoke.sh should keep validating beta_handoff order, startup/failure stops, skip-flag wiring, and missing-flutter startup guards'),
@@ -2350,6 +2351,7 @@ for expected_line in \
   "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow pointers visible" \
   "[beta-handoff-smoke] early stage failures stop later preflights and manual follow-up" \
   "[beta-handoff-smoke] missing required scripts fail before startup work begins" \
+  "[beta-handoff-smoke] every required beta_handoff script is guard-checked" \
   "[beta-handoff-smoke] missing smoke_common.sh fails before startup work begins" \
   "[beta-handoff-smoke] missing flutter binary fails before downstream gate scripts run" \
   "[beta-handoff-smoke] done"; do
