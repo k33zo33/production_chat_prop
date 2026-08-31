@@ -3,9 +3,15 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE_HELPER="$ROOT_DIR/tool/ai_helper.sh"
+GIT_BIN="${GIT_BIN:-git}"
 
 if [[ ! -f "$SOURCE_HELPER" ]]; then
   echo "[ai-helper-smoke] missing required helper script: $SOURCE_HELPER" >&2
+  exit 1
+fi
+
+if ! command -v "$GIT_BIN" >/dev/null 2>&1; then
+  echo "[ai-helper-smoke] missing required binary: $GIT_BIN" >&2
   exit 1
 fi
 
@@ -18,9 +24,9 @@ chmod +x "$TMP_DIR/tool/ai_helper.sh"
 
 cd "$TMP_DIR"
 
-git init -q
-git config user.name "AI Helper Smoke"
-git config user.email "ai-helper-smoke@example.com"
+"$GIT_BIN" init -q
+"$GIT_BIN" config user.name "AI Helper Smoke"
+"$GIT_BIN" config user.email "ai-helper-smoke@example.com"
 
 assert_status() {
   local expected_status="$1"
@@ -60,8 +66,8 @@ run_and_capture() {
 
 echo "seed" > tracked.txt
 echo "other" > ignored.txt
-git add tracked.txt ignored.txt
-git commit -q -m "seed"
+"$GIT_BIN" add tracked.txt ignored.txt
+"$GIT_BIN" commit -q -m "seed"
 
 result="$(run_and_capture "$TMP_DIR/tool/ai_helper.sh" doctor)"
 doctor_status="$(printf '%s\n' "$result" | head -n1)"
@@ -72,7 +78,7 @@ assert_output_contains "[ai-helper] doctor verdict: needs attention" "$doctor_ou
 
 echo "tracked staged change" >> tracked.txt
 echo "ignored staged change" >> ignored.txt
-git add tracked.txt ignored.txt
+"$GIT_BIN" add tracked.txt ignored.txt
 echo "fresh untracked helper review target" > untracked.txt
 
 result="$(run_and_capture "$TMP_DIR/tool/ai_helper.sh" review -- tracked.txt)"
@@ -131,7 +137,7 @@ assert_status 1 "$review_untracked_status" "staged untracked path-filter review"
 assert_output_contains "===== GEMINI CLI REVIEW =====" "$review_untracked_output" "staged untracked path-filter review"
 assert_output_contains "[ai-helper] Gemini helper unavailable." "$review_untracked_output" "staged untracked path-filter review"
 
-git commit -q -m "update tracked files"
+"$GIT_BIN" commit -q -m "update tracked files"
 
 result="$(run_and_capture "$TMP_DIR/tool/ai_helper.sh" review HEAD~1..HEAD -- tracked.txt)"
 review_range_status="$(printf '%s\n' "$result" | head -n1)"
