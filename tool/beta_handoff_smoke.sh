@@ -338,6 +338,73 @@ if ! grep -Fqx -- "[beta-handoff] missing required script: $MISSING_SHARED_HELPE
   exit 1
 fi
 
+MISSING_FLUTTER_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR" "$FAIL_DIR" "$MISSING_SCRIPT_DIR" "$MISSING_SHARED_HELPER_DIR" "$MISSING_FLUTTER_DIR"' EXIT
+
+mkdir -p "$MISSING_FLUTTER_DIR/tool"
+cp "$SOURCE_BETA_HANDOFF" "$MISSING_FLUTTER_DIR/tool/beta_handoff.sh"
+cp "$SOURCE_SMOKE_COMMON" "$MISSING_FLUTTER_DIR/tool/smoke_common.sh"
+chmod +x "$MISSING_FLUTTER_DIR/tool/beta_handoff.sh" "$MISSING_FLUTTER_DIR/tool/smoke_common.sh"
+
+MISSING_FLUTTER_LOG_PATH="$MISSING_FLUTTER_DIR/run.log"
+export MISSING_FLUTTER_LOG_PATH
+
+make_missing_flutter_stub() {
+  local name="$1"
+
+  cat > "$MISSING_FLUTTER_DIR/tool/$name" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+basename_name="$(basename "$0")"
+printf '%s|args=%s\n' "$basename_name" "$*" >> "$MISSING_FLUTTER_LOG_PATH"
+echo "[beta-handoff-smoke] missing-flutter path should fail before invoking $basename_name" >&2
+exit 99
+EOF
+
+  chmod +x "$MISSING_FLUTTER_DIR/tool/$name"
+}
+
+for stub_name in \
+  demo_smoke.sh \
+  import_smoke.sh \
+  release_smoke.sh \
+  compact_smoke.sh \
+  navigation_smoke.sh \
+  brand_neutrality_smoke.sh \
+  verify.sh \
+  web_shell_smoke.sh \
+  docs_handoff_smoke.sh \
+  manual_beta_checklist.sh \
+  ai_helper_smoke.sh; do
+  make_missing_flutter_stub "$stub_name"
+done
+
+set +e
+missing_flutter_output="$(
+  cd "$MISSING_FLUTTER_DIR" &&
+  FLUTTER_BIN=missing-flutter ./tool/beta_handoff.sh 2>&1
+)"
+missing_flutter_status=$?
+set -e
+
+if [[ "$missing_flutter_status" -eq 0 ]]; then
+  echo "[beta-handoff-smoke] expected a non-zero status when FLUTTER_BIN is missing" >&2
+  echo "$missing_flutter_output" >&2
+  exit 1
+fi
+
+if ! grep -Fqx -- '[beta-handoff] missing required binary: missing-flutter' <<<"$missing_flutter_output"; then
+  echo "[beta-handoff-smoke] missing-flutter guard output drifted" >&2
+  echo "$missing_flutter_output" >&2
+  exit 1
+fi
+
+if [[ -s "$MISSING_FLUTTER_LOG_PATH" ]]; then
+  echo "[beta-handoff-smoke] missing-flutter path should stop before downstream gate scripts run" >&2
+  cat "$MISSING_FLUTTER_LOG_PATH" >&2
+  exit 1
+fi
+
 echo "[beta-handoff-smoke] stubbed beta_handoff order stays intact"
 echo "[beta-handoff-smoke] all preflight stage labels stay surfaced"
 echo "[beta-handoff-smoke] downstream smoke scripts inherit skip version/analyze flags"
@@ -347,4 +414,5 @@ echo "[beta-handoff-smoke] manual follow-up keeps checklist and video workflow p
 echo "[beta-handoff-smoke] early stage failures stop later preflights and manual follow-up"
 echo "[beta-handoff-smoke] missing required scripts fail before startup work begins"
 echo "[beta-handoff-smoke] missing smoke_common.sh fails before startup work begins"
+echo "[beta-handoff-smoke] missing flutter binary fails before downstream gate scripts run"
 echo "[beta-handoff-smoke] done"

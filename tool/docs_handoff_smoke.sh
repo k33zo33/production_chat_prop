@@ -530,8 +530,9 @@ checks = [
      'verify receives SKIP_PUB_GET=1 from beta_handoff' in beta_handoff_smoke and
      'early stage failures stop later preflights and manual follow-up' in beta_handoff_smoke and
      'missing required scripts fail before startup work begins' in beta_handoff_smoke and
-     'missing smoke_common.sh fails before startup work begins' in beta_handoff_smoke,
-     'tool/beta_handoff_smoke.sh should keep validating beta_handoff order, startup/failure stops, and skip-flag wiring'),
+     'missing smoke_common.sh fails before startup work begins' in beta_handoff_smoke and
+     'missing flutter binary fails before downstream gate scripts run' in beta_handoff_smoke,
+     'tool/beta_handoff_smoke.sh should keep validating beta_handoff order, startup/failure stops, skip-flag wiring, and missing-flutter startup guards'),
     ('skip ponovljenog flutter bannera' in readme and 'skip dodatnog analyze' in readme and 'skip ponovnog `pub get`' in readme,
      'README should mention that beta_handoff reuses the upstream Flutter banner/analyze/pub-get steps to stay faster'),
     ('skip ponovljenog flutter bannera' in web_done and 'skip dodatnog analyze' in web_done and 'skip ponovnog `pub get`' in web_done,
@@ -2223,6 +2224,7 @@ for expected_line in \
   "[beta-handoff-smoke] early stage failures stop later preflights and manual follow-up" \
   "[beta-handoff-smoke] missing required scripts fail before startup work begins" \
   "[beta-handoff-smoke] missing smoke_common.sh fails before startup work begins" \
+  "[beta-handoff-smoke] missing flutter binary fails before downstream gate scripts run" \
   "[beta-handoff-smoke] done"; do
   if ! grep -Fqx -- "$expected_line" <<<"$beta_handoff_smoke_output"; then
     echo "[docs-handoff-smoke] beta handoff smoke output drifted: missing line: $expected_line" >&2
